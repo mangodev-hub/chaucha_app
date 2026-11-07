@@ -1,6 +1,8 @@
 // Título de sección + contenido, con el mismo espaciado en toda la app.
 import 'package:flutter/material.dart';
 
+import '../theme/tokens.dart';
+
 class Seccion extends StatelessWidget {
   const Seccion({super.key, required this.titulo, required this.child});
 
@@ -10,12 +12,12 @@ class Seccion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.only(top: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(titulo, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
+          Text(titulo, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: Espacios.m),
           child,
         ],
       ),

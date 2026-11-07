@@ -1,7 +1,7 @@
 // Pantalla de inicio de cada rol.
 import '../core/router/app_routes.dart';
-import '../features/auth/models/rol.dart';
-import '../features/auth/models/sesion_estado.dart';
+import '../features/auth/domain/entities/rol.dart';
+import '../features/auth/domain/entities/sesion_estado.dart';
 
 
 String rutaInicioPara(Rol rol) => switch (rol) {

@@ -1,0 +1,132 @@
+// Repositorios falsos y datos de prueba para los tests de solicitudes.
+import 'dart:async';
+import 'dart:typed_data';
+
+import 'package:latlong2/latlong.dart';
+import 'package:tecnicos_app/core/errors/app_failure.dart';
+import 'package:tecnicos_app/features/auth/domain/entities/rol.dart';
+import 'package:tecnicos_app/features/auth/domain/entities/usuario.dart';
+import 'package:tecnicos_app/features/cotizaciones/domain/entities/cotizacion.dart';
+import 'package:tecnicos_app/features/cotizaciones/domain/entities/nueva_cotizacion.dart';
+import 'package:tecnicos_app/features/cotizaciones/domain/repositories/cotizacion_repository.dart';
+import 'package:tecnicos_app/features/solicitudes/domain/entities/foto_solicitud.dart';
+import 'package:tecnicos_app/features/solicitudes/domain/entities/nueva_solicitud.dart';
+import 'package:tecnicos_app/features/solicitudes/domain/entities/solicitud.dart';
+import 'package:tecnicos_app/features/solicitudes/domain/repositories/solicitud_repository.dart';
+
+Solicitud solicitudDePrueba({
+  String id = 's1',
+  LatLng? ubicacion,
+  EstadoSolicitud estado = EstadoSolicitud.abierta,
+}) =>
+    Solicitud(
+      id: id,
+      clienteId: 'c1',
+      oficioId: 1,
+      oficioNombre: 'Plomería',
+      descripcion: 'Gotea la llave',
+      estado: estado,
+      creadoEn: DateTime(2026, 11, 7),
+      ubicacion: ubicacion,
+    );
+
+Cotizacion cotizacionDePrueba({
+  String id = 'q1',
+  String solicitudId = 's1',
+  String tecnicoId = 't1',
+  EstadoCotizacion estado = EstadoCotizacion.pendiente,
+}) =>
+    Cotizacion(
+      id: id,
+      solicitudId: solicitudId,
+      tecnicoId: tecnicoId,
+      tecnicoNombre: 'Luis Mora',
+      tecnicoCalificacion: 4.5,
+      manoObra: 20,
+      materiales: 5,
+      total: 25,
+      estado: estado,
+      creadoEn: DateTime(2026, 11, 7),
+    );
+
+Usuario usuarioDePrueba(String id, Rol rol) => Usuario(
+      id: id,
+      rol: rol,
+      nombres: 'Ana',
+      apellidos: 'Pérez',
+      creadoEn: DateTime(2026),
+    );
+
+class SolicitudesFalsas implements SolicitudRepository {
+  List<Solicitud> abiertas = const [];
+  int consultasDeAbiertas = 0;
+  int obtenidas = 0;
+  final cambiosDeEstado = <(String, EstadoSolicitud)>[];
+
+  /// Si no es null, `cambiarEstado` espera a que se complete.
+  Completer<void>? cambioPendiente;
+  AppFailure? fallaAlCambiar;
+
+  @override
+  Future<List<Solicitud>> abiertasDeOficios(List<int> oficioIds) async {
+    consultasDeAbiertas++;
+    return abiertas;
+  }
+
+  @override
+  Future<Solicitud> obtener(String id) async {
+    obtenidas++;
+    return solicitudDePrueba(id: id);
+  }
+
+  @override
+  Future<void> cambiarEstado(String solicitudId, EstadoSolicitud estado) async {
+    cambiosDeEstado.add((solicitudId, estado));
+    final pendiente = cambioPendiente;
+    if (pendiente != null) await pendiente.future;
+    final falla = fallaAlCambiar;
+    if (falla != null) throw falla;
+  }
+
+  @override
+  Future<List<FotoSolicitud>> fotos(String solicitudId) async => const [];
+
+  @override
+  Future<List<Solicitud>> misSolicitudes() async => const [];
+
+  @override
+  Future<List<Solicitud>> misTrabajos() async => const [];
+
+  @override
+  Future<String> crear(NuevaSolicitud nueva) async => 'nueva';
+
+  @override
+  Future<void> marcarTerminada(
+    String solicitudId,
+    List<Uint8List> evidencias,
+  ) async {}
+}
+
+class CotizacionesFalsas implements CotizacionRepository {
+  Set<String> cotizadasPorMi = const {};
+  List<Cotizacion> deLaSolicitud = const [];
+  final aceptadas = <String>[];
+  AppFailure? fallaAlAceptar;
+
+  @override
+  Future<Set<String>> solicitudesCotizadasPorMi() async => cotizadasPorMi;
+
+  @override
+  Future<List<Cotizacion>> deSolicitud(String solicitudId) async =>
+      deLaSolicitud;
+
+  @override
+  Future<void> aceptar(Cotizacion cotizacion) async {
+    final falla = fallaAlAceptar;
+    if (falla != null) throw falla;
+    aceptadas.add(cotizacion.id);
+  }
+
+  @override
+  Future<void> enviar(NuevaCotizacion nueva) async {}
+}

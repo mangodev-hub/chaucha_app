@@ -1,76 +1,129 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Este archivo orienta a Claude Code (claude.ai/code) y al equipo de desarrollo al trabajar con el código de este repositorio.
 
-## Repository layout
+## Estructura del repositorio
 
-- **`tecnicos_app/` is the real application** — "Técnicos a domicilio" (EAGLEDEV 2026): a Flutter app (Android + web from one codebase) backed by Supabase that connects clients with home-service technicians. All work should normally happen here.
-- The root `frontend/` project (`lib/main.dart`, `test/widget_test.dart`) is an unmodified `flutter create` counter template. `untitled.cpp` / `untitled.h` are stray Qt files unrelated to the app.
-- Not a git repository.
+- **`tecnicos_app/` es la aplicación real**: "Técnicos a domicilio" (EAGLEDEV 2026), una app Flutter (Android y web con un solo código) conectada a Supabase, que pone en contacto a clientes con técnicos a domicilio. Todo el trabajo se hace aquí.
+- El proyecto `frontend/` de la raíz (`lib/main.dart`, `test/widget_test.dart`) es la plantilla de `flutter create` sin modificar. `untitled.cpp` y `untitled.h` son archivos sueltos de Qt que no tienen relación con la app.
+- Es un repositorio git (la raíz es `frontend/`).
 
-## Commands (run from `tecnicos_app/`)
+## Comandos (desde `tecnicos_app/`)
 
 ```bash
-# One-time: create env.json from the template and fill in Supabase values (env.json is gitignored)
+# Una sola vez: crear env.json a partir de la plantilla y completar los datos de Supabase (env.json está en .gitignore)
 cp env.example.json env.json
 flutter pub get
 
-# Run (web). Supabase config is injected at compile time; the app throws a StateError at startup without it.
+# Ejecutar en web. La configuración de Supabase se inyecta al compilar; sin ella la app lanza un StateError al arrancar.
 flutter run -d chrome --web-port=3000 --dart-define-from-file=env.json
-# Android: same, with -d <device-id>
+# Android: igual, con -d <id-del-dispositivo>
 
 flutter analyze
-flutter test                                   # test/ is currently empty
-flutter test test/some_test.dart               # single file
-flutter test test/some_test.dart --plain-name "test name"   # single test
+flutter test                                   # los tests replican lib/: test/app/, test/features/<feature>/
+flutter test test/algun_test.dart              # un solo archivo
+flutter test test/algun_test.dart --plain-name "nombre del test"   # un solo test
 ```
 
-The README also lists `bash scripts/verificar_adr.sh` and refers to `docs/PROTOTIPO.md`, `docs/pasos/`, and frontend ADRs — none of these exist in this checkout.
+El README menciona `bash scripts/verificar_adr.sh`, `docs/PROTOTIPO.md`, `docs/pasos/` y ADRs del frontend: ninguno existe en esta copia.
 
-## Lint configuration
+## Configuración del linter
 
-`analysis_options.yaml` enables `strict-casts` and `strict-raw-types`, plus rules including `prefer_single_quotes`, `prefer_final_locals`, `prefer_const_constructors`, `directives_ordering`, `avoid_dynamic_calls`, `avoid_print` (use `debugPrint`), `unawaited_futures` (wrap fire-and-forget futures in `unawaited(...)`), `cancel_subscriptions`, `close_sinks`. With strict casts, JSON from Supabase must be cast explicitly (e.g. `row['id'] as String`).
+`analysis_options.yaml` activa `strict-casts` y `strict-raw-types`, y reglas como `prefer_single_quotes`, `prefer_final_locals`, `prefer_const_constructors`, `directives_ordering`, `avoid_dynamic_calls`, `avoid_print` (usar `debugPrint`), `unawaited_futures` (envolver los futures que no se esperan en `unawaited(...)`), `cancel_subscriptions` y `close_sinks`. Con `strict-casts`, el JSON de Supabase se convierte explícitamente (por ejemplo `fila['id'] as String`). El SDK admite parámetros nombrados privados: `const X({required this._repo})` se llama como `X(repo: ...)`, y el linter lo pide con `prefer_initializing_formals`.
 
-## Architecture
+## Arquitectura
 
-MVVM organized by feature, with a **custom state manager** (no Provider/Riverpod/Bloc). Identifiers, comments, and UI strings are in **Spanish** — keep new code consistent (`iniciar`, `enviar`, `crearViewModel`, `cerrarSesion`, etc.).
+**Clean Architecture por features con Riverpod 3.** La migración desde el diseño anterior (MVVM con `BaseStore`) terminó el 2026-11-07 y no queda código viejo. Identificadores, comentarios y textos de la interfaz van **en español** (`iniciar`, `enviar`, `cerrarSesion`, `aEntidad`, etc.).
 
-```
+```text
 lib/
-  main.dart            # bootstrap only: Env → SupabaseBootstrap → AppDependencies → App
-  app/                 # composition root: DI container, GoRouter, redirect guard, technician shell
-  core/                # cross-cutting: state, errors, supabase helpers, storage, geo, validators, shared widgets
-  features/<feature>/  # auth, solicitudes, cotizaciones, chat, perfil_puntos
-    models/ services/ viewmodels/ views/
+  main.dart            # solo arranca: Env → SupabaseBootstrap → ProviderContainer (lee sesionProvider desde el inicio) → App
+  app/                 # routerProvider, guardia de redirección (route_guard.dart), TecnicoShell (pestañas del técnico)
+  core/                # transversal: providers base, errores, utilidades de Supabase, storage, geo, validadores, widgets compartidos
+  features/            # auth, catalogo, chat, cotizaciones, perfil_puntos, solicitudes
+    <feature>/
+      domain/        entities/ (Dart puro, sin JSON)  repositories/ (interfaces)  usecases/
+      data/          models/ (fromJson + aEntidad(), mapeo de enums a la base)  repositories/ (implementación Supabase + su Provider)
+      presentation/  providers/  views/  widgets/
 ```
 
-### Dependency injection
-`app/app_dependencies.dart` is a hand-written container. `AppDependencies.supabase(client)` instantiates every `Supabase*Service` implementation once. Services are passed down explicitly via constructors — there is no service locator or `InheritedWidget`. Adding a service means: define the `abstract interface class` in `features/x/services/`, add a `Supabase...` implementation, and wire it in `AppDependencies`.
+Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiempo real) y `solicitudes` (casos de uso, acciones por entidad, formularios).
 
-### State management (`core/state/`)
-- `ViewState<T>` is a sealed class: `ViewInitial` / `ViewLoading` / `ViewLoaded(data)` / `ViewError(message)`.
-- `BaseStore<T> extends ValueNotifier<ViewState<T>>` is the base for every ViewModel:
-  - `execute(action)` — loads data, emitting Loading → Loaded/Error automatically.
-  - `ejecutarAccion(action)` — for user actions (submit, send); toggles the `procesando` notifier, ignores re-entry while busy, and **returns `String?` error message (null = success)** instead of changing the main state. Views show the returned message with `context.mostrarMensaje(...)`.
-  - `createField(initial)` creates extra `ValueNotifier` fields that are auto-disposed; `addSubscription(...)` / `addDisposer(...)` register cleanup. `emit` is a no-op after dispose.
-- Views render state with `core/widgets/view_state_builder.dart` (`ViewStateBuilder<T>`), which handles loading/error/retry by default.
+### Reglas de diseño
 
-### View ↔ ViewModel lifecycle
-Views are `StatefulWidget`s that receive a **factory** `crearViewModel: () => XViewModel(...)` (not an instance). The State creates it with `late final _vm = widget.crearViewModel();`, calls `_vm.iniciar()` / load in `initState`, and **disposes it in `dispose`**. The router builds these factories, pulling services from `AppDependencies` and route params from `GoRouterState`.
+- Los providers se escriben **a mano**: sin `riverpod_generator` ni `build_runner`.
+- **Casos de uso solo** cuando la lógica combina varios repositorios o tiene reglas de negocio (`ObtenerFeedTecnico`, `ObtenerDetalleSolicitud` y `AceptarCotizacion` en `solicitudes/domain/usecases/`). En los demás casos el notifier llama directo al repositorio. El `Provider` de un caso de uso vive en el archivo de providers de presentación que lo usa.
+- El `Provider` de cada repositorio vive junto a su implementación Supabase (por ejemplo `solicitudRepositoryProvider`), para que los tests lo puedan sobrescribir. Una feature puede importar entidades, interfaces de repositorio y providers de repositorio de otra.
+- Los detalles exclusivos de la base van en `data/models/` y nunca en `domain/`: listas de columnas y joins, mapeo de enums a texto (`RolDb`, `EstadoSolicitudDb`), metadatos de registro y valores por defecto para columnas faltantes. Los joins de Supabase pueden llegar como objeto o como lista de un elemento: se leen con `anidado(...)` de `core/utils/json_utils.dart`.
+- No se crean providers que nadie usa: una feature sin pantallas propias (`cotizaciones`) solo expone el provider de su repositorio y sus widgets compartidos.
 
-### Errors
-All Supabase calls in services are wrapped in `supabaseGuard(() async { ... })` (`core/supabase/supabase_guard.dart`), which converts `AuthException` / `PostgrestException` / `StorageException` into `AppFailure` with user-facing Spanish messages (maps Postgres codes like `42501` RLS denial, `23505` unique, `P0001` raised exceptions pass their message through). ViewModels only catch `AppFailure`; anything else becomes a generic error. Realtime `.stream()` queries are not wrapped — handle errors in the `listen(onError:)`.
+### Errores
 
-`client.uidActual` (extension in `supabase_extensions.dart`) returns the current user id or throws `AppFailure` if the session expired.
+- Toda llamada a Supabase dentro de un repositorio va envuelta en `supabaseGuard(() async { ... })` (`core/supabase/supabase_guard.dart`). Convierte `AuthException`, `PostgrestException` y `StorageException` en `AppFailure` con mensajes en español para el usuario: `42501` es permiso denegado por RLS, `23505` registro duplicado, y los `P0001` (`raise exception`) pasan su mensaje tal cual. No se usa `Either` ni `fpdart`.
+- Las consultas en tiempo real (`.stream()`) no pasan por `supabaseGuard`: la **capa de datos** convierte sus errores en `AppFailure` (ver `SupabaseChatRepository.mensajes`).
+- Los notifiers usan `asyncGuard` (`core/errors/async_guard.dart`) en lugar de `AsyncValue.guard`: además imprime en consola los errores inesperados (los que no son `AppFailure`).
+- `AsyncValueView.mensajeDe(error)` convierte cualquier error en el mensaje para el usuario.
+- `client.uidActual` (`core/supabase/supabase_extensions.dart`) devuelve el id del usuario conectado o lanza `AppFailure` si la sesión expiró.
+- Para cargas en paralelo que deben conservar el `AppFailure` original, usar `Future.wait` y no el `.wait` de records, que envuelve los errores en `ParallelWaitError`.
 
-### Session and routing
-- `SessionStore` (`features/auth/viewmodels/session_store.dart`) is the single source of truth for auth: a `ValueNotifier<SesionEstado>` (`SesionVerificando` / `SinSesion(aviso)` / `ConSesion(usuario)`). It listens to auth changes, loads the `Usuario` profile, and signs out with a notice if the profile is missing. A version counter discards stale async results.
-- `app/app_router.dart` uses GoRouter with `refreshListenable: sessionStore` and delegates `redirect` to the pure function `resolverRedireccion` in `app/route_guard.dart`: verifying → `/`, no session → `/login` unless on a public route, logged in → forced into the role's zone (`/cliente/...` or `/tecnico/...`).
-- Route paths live in `core/router/app_routes.dart`; use its helpers (`AppRoutes.detalleSolicitud(id, esCliente: ...)`, `AppRoutes.chat(...)`) since detail/chat routes are duplicated under both the client and technician prefixes.
-- Role `admin` redirects to `/admin`, but no admin route is defined yet.
-- The technician home is `TecnicoShell`, a tabbed shell (feed / my jobs / profile).
+### Patrones de presentación
 
-### Supabase backend expectations
-- Config via dart-defines `SUPABASE_URL` and `SUPABASE_ANON_KEY` (`core/config/env.dart`).
-- Tables referenced include `conversaciones`, `mensajes`, plus those used by solicitudes, cotizaciones, perfiles, documentos, oficios. Authorization relies on RLS (permission errors surface as code `42501`).
-- Storage buckets (`core/storage/storage_service.dart`): `solicitudes` and `cedulas`, both **private** — images are read through signed URLs (1 h validity), never public URLs.
+- **Leer datos:** `FutureProvider.autoDispose` (con `.family` si depende de un id). Las vistas lo muestran con `AsyncValueView<T>` (`core/widgets/async_value_view.dart`): muestra la carga la primera vez y al reintentar tras un error, pero mantiene los datos visibles durante una recarga. Reintentar: `ref.invalidate(provider)`. Deslizar para recargar: `onRefresh: () => esperarSinError(ref.refresh(provider.future))` (`core/utils/refrescar.dart`).
+- **Datos del usuario conectado** (`perfilTecnicoProvider`, `misSolicitudesProvider`, …): observan `usuarioActualProvider.select((u) => u?.id)` para recargarse si cambia la cuenta. Los datos derivados observan su fuente: `feedProvider` espera a `perfilTecnicoProvider.future`, así que guardar el perfil actualiza el feed.
+- **Acciones y envíos de formularios:** `AsyncNotifierProvider.autoDispose`, con `.family` si son por entidad. En Riverpod 3 el argumento de la family es un **parámetro del constructor** del notifier (por ejemplo `AccionesSolicitudNotifier(this.solicitudId)`). El patrón es:
+  1. si `state.isLoading`, ignorar la llamada;
+  2. pasar a `AsyncLoading`;
+  3. ejecutar con `asyncGuard`;
+  4. comprobar `ref.mounted` antes de asignar `state`;
+  5. si salió bien, invalidar el provider de datos afectado;
+  6. devolver `bool` o el id creado.
+
+  La vista muestra el mensaje de éxito, o lee el `AsyncError` del provider para mostrar el error con `context.mostrarMensaje`. Las validaciones que son reglas de negocio lanzan `AppFailure` dentro del guard (por ejemplo "Selecciona al menos un oficio.").
+- **Tiempo real:** `StreamProvider.autoDispose.family` por id; la suscripción se cancela al cerrar la pantalla (`mensajesProvider`).
+- **Estado de formularios** (chips elegidos, pin del mapa, fotos, mostrar u ocultar contraseña): va en el `State` del widget con `setState`, no en providers. Los formularios que se llenan con datos cargados usan `ref.listenManual(provider, ..., fireImmediately: true)` en `initState` y completan los campos una sola vez (con una bandera `_inicializado`) sin `setState` (ver `perfil_tecnico_view.dart`). Nunca llamar a `setState` dentro de `initState`: asignar el campo directamente.
+- En los callbacks de un `ConsumerWidget`, comprobar `context.mounted` después de cada `await` antes de usar `ref`.
+
+### Sesión y navegación
+
+- `sesionProvider` (`SesionNotifier`, en `features/auth/presentation/providers/sesion_provider.dart`) es la única fuente de verdad de la sesión. Su estado `SesionEstado` puede ser `SesionVerificando`, `SinSesion(aviso)` o `ConSesion(usuario)`.
+  - Escucha `AuthRepository.cambiosDeSesion` y carga el perfil `Usuario`.
+  - Si el perfil no existe o falla la carga, cierra la sesión con un aviso.
+  - Un contador de versión descarta respuestas que llegan tarde.
+  - `usuarioActualProvider` expone el `Usuario?` actual. Para cerrar sesión: `ref.read(sesionProvider.notifier).cerrarSesion()`.
+- `routerProvider` (`app/app_router.dart`) crea el GoRouter **una sola vez**. Conecta `sesionProvider` con `refreshListenable` usando `ref.listen`, nunca `ref.watch`, que recrearía el router en cada cambio de sesión.
+  - `redirect` delega en la función pura `resolverRedireccion` (`app/route_guard.dart`): mientras verifica va a `/`; sin sesión va a `/login` salvo en rutas públicas; con sesión queda dentro de la zona de su rol (`/cliente/...` o `/tecnico/...`).
+  - Las pantallas reciben solo parámetros de ruta (`SolicitudDetalleView(solicitudId: ...)`) y leen todo lo demás de providers.
+- Las rutas están en `core/router/app_routes.dart`. Usar sus helpers (`AppRoutes.detalleSolicitud(id, esCliente: ...)`, `AppRoutes.chat(...)`), porque el detalle y el chat existen tanto bajo `/cliente` como bajo `/tecnico`.
+- El rol `admin` redirige a `/admin`, pero esa ruta todavía no existe.
+- El inicio del técnico es `TecnicoShell`, un `IndexedStack` con tres pestañas (feed, mis trabajos, perfil) que se mantienen montadas.
+
+### Lo que la app espera de Supabase
+
+- Configuración por dart-defines `SUPABASE_URL` y `SUPABASE_ANON_KEY` (`core/config/env.dart`). Los providers de infraestructura compartida están en `core/providers/core_providers.dart`: `supabaseClientProvider` (se sobrescribe en `main.dart`), `storageServiceProvider` y `ubicacionServiceProvider`.
+- Tablas usadas: `usuarios`, `perfiles_tecnicos`, `tecnico_oficios`, `niveles_gamificacion`, `oficios`, `solicitudes_servicio`, `solicitud_archivos`, `cotizaciones`, `conversaciones`, `mensajes`, `resenas` y `documentos_tecnico`. Los permisos dependen de RLS; un permiso denegado llega como código `42501`.
+- Buckets de Storage (`core/storage/storage_service.dart`): `solicitudes` y `cedulas`, ambos **privados**. Las imágenes se leen con URLs firmadas (válidas 1 hora), nunca con URLs públicas.
+
+### Operaciones con varias escrituras no atómicas (pendiente de backend)
+
+- **Aceptar una cotización** es el caso de uso `AceptarCotizacion`: `CotizacionRepository.aceptar` (acepta una y rechaza las demás pendientes) más `SolicitudRepository.cambiarEstado(aceptada)`. No es atómico. El 2026-11-07 se propuso al equipo de backend una función RPC `public.aceptar_cotizacion(p_cotizacion_id uuid)` (security invoker, bloqueo de fila, verificación de `row_count`). **Estamos esperando a backend: no se llama a esa función hasta que el usuario confirme que existe en Supabase.** Las instrucciones para backend (SQL, pruebas, cómo revertir) están en [`PENDIENTE_BACKEND.md`](PENDIENTE_BACKEND.md). Cuando se confirme, el caso de uso se reemplaza por `_client.rpc('aceptar_cotizacion', params: {'p_cotizacion_id': id})`.
+- También son no atómicas, con menos riesgo, y son candidatas a RPC:
+  - `PerfilRepository.guardar`: actualiza el perfil y luego sincroniza `tecnico_oficios`; volver a guardar lo corrige.
+  - `SolicitudRepository.crear`: inserta la solicitud y después sube las fotos. Si falla una foto, la solicitud ya quedó creada, y reintentar la duplica.
+
+### Diseño visual (provisional)
+
+El estilo actual es **provisional** y va a cambiar: paleta, tipografía y marca están por definir. Todo lo documenta [`tecnicos_app/docs/DISENO.md`](tecnicos_app/docs/DISENO.md). Colores, radios, espacios y fuente viven en `core/theme/tokens.dart`, y el tema global en `core/theme/app_theme.dart`. **No escribir colores sueltos** (`Colors.green`, `Color(0xFF...)`) en las pantallas: usar `Colores.*` o `Theme.of(context).colorScheme`. `google_fonts` está fijado en `^8.0.0`, porque la 9.x usa el paquete separado `material_ui` y sus tipos no son compatibles con `flutter/material`.
+
+### Tests
+
+Se usa `ProviderContainer.test(overrides: [...])` con repositorios falsos. Pasar `retry: (_, _) => null` al probar estados de error, para desactivar el reintento automático de Riverpod 3. Mantener vivos los providers con `container.listen(provider, (_, _) {})`. Los falsos y datos de prueba compartidos van en un archivo que no termine en `_test.dart` (por ejemplo `test/features/solicitudes/falsos.dart`). Cerrar los `StreamController` desde un método del falso, por la regla `close_sinks`.
+
+## Reglas del equipo (GUÍA OBLIGATORIA)
+
+- **Idioma:** responde siempre en español. Comentarios, nombres de variables y métodos, y textos de la interfaz se escriben en español.
+- **Arquitectura:** la app usa **Clean Architecture por features con Riverpod**. Todo código nuevo sigue las convenciones de este archivo; no se vuelve a introducir `BaseStore`, `ViewModel` ni un contenedor de dependencias propio.
+- **Reglas de trabajo:**
+  1. Antes de modificar código, explica el plan paso a paso en español y espera confirmación.
+  2. Después de cada cambio, ejecuta `flutter analyze` y `flutter test` dentro de `tecnicos_app/` y corrige cualquier error, advertencia o test fallido antes de continuar.
+  3. No rompas la navegación de `GoRouter` (redirecciones por rol) ni la integración con Supabase (`supabaseGuard`, RLS, buckets privados).
+  4. No uses la función RPC `aceptar_cotizacion` hasta que backend confirme que existe en Supabase.

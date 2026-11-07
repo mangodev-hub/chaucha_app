@@ -1,0 +1,13 @@
+// Metadatos que recibe `signUp`. Un trigger de la base crea la fila en
+// `usuarios` a partir de ellos.
+import '../../domain/entities/registro_datos.dart';
+import 'rol_db.dart';
+
+extension RegistroDatosDb on RegistroDatos {
+  Map<String, dynamic> toMetadata() => {
+        'nombres': nombres.trim(),
+        'apellidos': apellidos.trim(),
+        'cedula': cedula.trim(),
+        'rol': rol.valorDb,
+      };
+}

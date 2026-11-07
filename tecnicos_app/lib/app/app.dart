@@ -1,38 +1,20 @@
-// Widget raíz. Crea el router una sola vez.
+// Widget raíz. El router vive en `routerProvider` (se crea una sola vez).
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
-import 'app_dependencies.dart';
 import 'app_router.dart';
 
-
-class App extends StatefulWidget {
-  const App({super.key, required this.dependencies});
-
-  final AppDependencies dependencies;
+class App extends ConsumerWidget {
+  const App({super.key});
 
   @override
-  State<App> createState() => _AppState();
-}
-
-class _AppState extends State<App> {
-  late final GoRouter _router = buildAppRouter(widget.dependencies);
-
-  @override
-  void dispose() {
-    _router.dispose();
-    widget.dependencies.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: 'Técnicos a domicilio',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      routerConfig: _router,
+      routerConfig: ref.watch(routerProvider),
     );
   }
 }
