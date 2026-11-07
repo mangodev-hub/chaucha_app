@@ -101,6 +101,7 @@ Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiemp
 
 - Configuración por dart-defines `SUPABASE_URL` y `SUPABASE_ANON_KEY` (`core/config/env.dart`). Los providers de infraestructura compartida están en `core/providers/core_providers.dart`: `supabaseClientProvider` (se sobrescribe en `main.dart`), `storageServiceProvider` y `ubicacionServiceProvider`.
 - Tablas usadas: `usuarios`, `perfiles_tecnicos`, `tecnico_oficios`, `niveles_gamificacion`, `oficios`, `solicitudes_servicio`, `solicitud_archivos`, `cotizaciones`, `conversaciones`, `mensajes`, `resenas` y `documentos_tecnico`. Los permisos dependen de RLS; un permiso denegado llega como código `42501`.
+- El esquema completo (tablas, políticas RLS, funciones) exportado con el CLI de Supabase está en `tecnicos_app/supabase/migrations/`.
 - Buckets de Storage (`core/storage/storage_service.dart`): `solicitudes` y `cedulas`, ambos **privados**. Las imágenes se leen con URLs firmadas (válidas 1 hora), nunca con URLs públicas.
 
 ### Operaciones con varias escrituras
