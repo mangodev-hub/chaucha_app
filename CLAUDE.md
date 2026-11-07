@@ -123,7 +123,7 @@ Se usa `ProviderContainer.test(overrides: [...])` con repositorios falsos. Pasar
 - **Idioma:** responde siempre en español. Comentarios, nombres de variables y métodos, y textos de la interfaz se escriben en español.
 - **Arquitectura:** la app usa **Clean Architecture por features con Riverpod**. Todo código nuevo sigue las convenciones de este archivo; no se vuelve a introducir `BaseStore`, `ViewModel` ni un contenedor de dependencias propio.
 - **Reglas de trabajo:**
-  1. Antes de modificar código, explica el plan paso a paso en español y espera confirmación.
+  1. Antes de modificar código, explica el plan paso a paso  y espera confirmación.
   2. Después de cada cambio, ejecuta `flutter analyze` y `flutter test` dentro de `tecnicos_app/` y corrige cualquier error, advertencia o test fallido antes de continuar.
   3. No rompas la navegación de `GoRouter` (redirecciones por rol) ni la integración con Supabase (`supabaseGuard`, RLS, buckets privados).
   4. No uses la función RPC `aceptar_cotizacion` hasta que backend confirme que existe en Supabase.
