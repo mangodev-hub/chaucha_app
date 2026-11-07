@@ -71,10 +71,12 @@ void main() {
     expect(solicitudes.obtenidas, 1);
   });
 
-  test('aceptar usa el caso de uso: cotización y estado de la solicitud', () async {
+  test('aceptar llama al repositorio; el estado lo cambia la base', () async {
     expect(await acciones().aceptar(cotizacionDePrueba(id: 'q7')), isTrue);
+    await container.read(detalleSolicitudProvider('s1').future);
 
     expect(cotizaciones.aceptadas, ['q7']);
-    expect(solicitudes.cambiosDeEstado, [('s1', EstadoSolicitud.aceptada)]);
+    expect(solicitudes.cambiosDeEstado, isEmpty);
+    expect(solicitudes.obtenidas, 2); // recarga el detalle
   });
 }

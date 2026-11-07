@@ -12,8 +12,7 @@ abstract interface class CotizacionRepository {
   /// Ids de las solicitudes que el técnico conectado ya cotizó.
   Future<Set<String>> solicitudesCotizadasPorMi();
 
-  /// Acepta [cotizacion] y rechaza las demás pendientes de la misma
-  /// solicitud. El estado de la solicitud lo cambia el caso de uso
-  /// `AceptarCotizacion` (feature solicitudes).
+  /// Acepta [cotizacion], rechaza las demás pendientes de la misma solicitud
+  /// y marca la solicitud como aceptada, en una sola transacción.
   Future<void> aceptar(Cotizacion cotizacion);
 }

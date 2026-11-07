@@ -9,7 +9,6 @@ import '../../domain/entities/cotizacion.dart';
 import '../../domain/entities/nueva_cotizacion.dart';
 import '../../domain/repositories/cotizacion_repository.dart';
 import '../models/cotizacion_model.dart';
-import '../models/estado_cotizacion_db.dart';
 
 final cotizacionRepositoryProvider = Provider<CotizacionRepository>(
   (ref) => SupabaseCotizacionRepository(ref.watch(supabaseClientProvider)),
@@ -60,22 +59,16 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
     });
   }
 
-  // OJO: dos escrituras separadas, no una transacción. El caso de uso
-  // `AceptarCotizacion` (solicitudes) agrega una tercera: el estado de la
-  // solicitud. La solución de fondo es la función RPC `aceptar_cotizacion`.
+  /// Acepta la cotización, rechaza las demás pendientes y marca la solicitud
+  /// como aceptada, todo en una transacción (función RPC en Supabase, ver
+  /// `base_de_datos/aceptar_cotizacion.sql`).
   @override
   Future<void> aceptar(Cotizacion cotizacion) {
     return supabaseGuard(() async {
-      await _client
-          .from(_tabla)
-          .update({'estado': EstadoCotizacion.aceptada.valorDb})
-          .eq('id', cotizacion.id);
-      await _client
-          .from(_tabla)
-          .update({'estado': EstadoCotizacion.rechazada.valorDb})
-          .eq('solicitud_id', cotizacion.solicitudId)
-          .neq('id', cotizacion.id)
-          .eq('estado', EstadoCotizacion.pendiente.valorDb);
+      await _client.rpc(
+        'aceptar_cotizacion',
+        params: {'p_cotizacion_id': cotizacion.id},
+      );
     });
   }
 }

@@ -16,20 +16,12 @@ import '../../../perfil_puntos/domain/entities/nueva_resena.dart';
 import '../../data/repositories/supabase_solicitud_repository.dart';
 import '../../domain/entities/detalle_solicitud.dart';
 import '../../domain/entities/solicitud.dart';
-import '../../domain/usecases/aceptar_cotizacion.dart';
 import '../../domain/usecases/obtener_detalle_solicitud.dart';
 
 final obtenerDetalleSolicitudProvider = Provider<ObtenerDetalleSolicitud>(
   (ref) => ObtenerDetalleSolicitud(
     solicitudes: ref.watch(solicitudRepositoryProvider),
     cotizaciones: ref.watch(cotizacionRepositoryProvider),
-  ),
-);
-
-final aceptarCotizacionProvider = Provider<AceptarCotizacion>(
-  (ref) => AceptarCotizacion(
-    cotizaciones: ref.watch(cotizacionRepositoryProvider),
-    solicitudes: ref.watch(solicitudRepositoryProvider),
   ),
 );
 
@@ -59,8 +51,10 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
-  Future<bool> aceptar(Cotizacion cotizacion) =>
-      _ejecutar(() => ref.read(aceptarCotizacionProvider)(cotizacion));
+  /// La función RPC acepta, rechaza las demás y marca la solicitud.
+  Future<bool> aceptar(Cotizacion cotizacion) => _ejecutar(
+        () => ref.read(cotizacionRepositoryProvider).aceptar(cotizacion),
+      );
 
   Future<bool> confirmarTerminado() => _ejecutar(
         () => ref
