@@ -51,8 +51,8 @@ Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiemp
 
 ### Reglas de diseño
 
+- **Casos de uso solo** cuando la lógica combina varios repositorios o tiene reglas de negocio (`ObtenerFeedTecnico` y `ObtenerDetalleSolicitud` en `solicitudes/domain/usecases/`). En los demás casos el notifier llama directo al repositorio. El `Provider` de un caso de uso vive en el archivo de providers de presentación que lo usa.
 - Los providers se escriben **a mano**: sin `riverpod_generator` ni `build_runner`.
-- **Casos de uso solo** cuando la lógica combina varios repositorios o tiene reglas de negocio (`ObtenerFeedTecnico`, `ObtenerDetalleSolicitud` y `AceptarCotizacion` en `solicitudes/domain/usecases/`). En los demás casos el notifier llama directo al repositorio. El `Provider` de un caso de uso vive en el archivo de providers de presentación que lo usa.
 - El `Provider` de cada repositorio vive junto a su implementación Supabase (por ejemplo `solicitudRepositoryProvider`), para que los tests lo puedan sobrescribir. Una feature puede importar entidades, interfaces de repositorio y providers de repositorio de otra.
 - Los detalles exclusivos de la base van en `data/models/` y nunca en `domain/`: listas de columnas y joins, mapeo de enums a texto (`RolDb`, `EstadoSolicitudDb`), metadatos de registro y valores por defecto para columnas faltantes. Los joins de Supabase pueden llegar como objeto o como lista de un elemento: se leen con `anidado(...)` de `core/utils/json_utils.dart`.
 - No se crean providers que nadie usa: una feature sin pantallas propias (`cotizaciones`) solo expone el provider de su repositorio y sus widgets compartidos.
@@ -103,10 +103,10 @@ Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiemp
 - Tablas usadas: `usuarios`, `perfiles_tecnicos`, `tecnico_oficios`, `niveles_gamificacion`, `oficios`, `solicitudes_servicio`, `solicitud_archivos`, `cotizaciones`, `conversaciones`, `mensajes`, `resenas` y `documentos_tecnico`. Los permisos dependen de RLS; un permiso denegado llega como código `42501`.
 - Buckets de Storage (`core/storage/storage_service.dart`): `solicitudes` y `cedulas`, ambos **privados**. Las imágenes se leen con URLs firmadas (válidas 1 hora), nunca con URLs públicas.
 
-### Operaciones con varias escrituras no atómicas (pendiente de backend)
+### Operaciones con varias escrituras
 
-- **Aceptar una cotización** es el caso de uso `AceptarCotizacion`: `CotizacionRepository.aceptar` (acepta una y rechaza las demás pendientes) más `SolicitudRepository.cambiarEstado(aceptada)`. No es atómico. El 2026-11-07 se propuso al equipo de backend una función RPC `public.aceptar_cotizacion(p_cotizacion_id uuid)` (security invoker, bloqueo de fila, verificación de `row_count`). **Estamos esperando a backend: no se llama a esa función hasta que el usuario confirme que existe en Supabase.** Las instrucciones para backend (SQL, pruebas, cómo revertir) están en [`PENDIENTE_BACKEND.md`](PENDIENTE_BACKEND.md). Cuando se confirme, el caso de uso se reemplaza por `_client.rpc('aceptar_cotizacion', params: {'p_cotizacion_id': id})`.
-- También son no atómicas, con menos riesgo, y son candidatas a RPC:
+- **Aceptar una cotización** usa la función RPC `aceptar_cotizacion` (atómica, `security invoker`, solo el cliente dueño de la solicitud). Su SQL está en [`base_de_datos/aceptar_cotizacion.sql`](base_de_datos/aceptar_cotizacion.sql).
+- Siguen siendo no atómicas, con menos riesgo, y son candidatas a RPC:
   - `PerfilRepository.guardar`: actualiza el perfil y luego sincroniza `tecnico_oficios`; volver a guardar lo corrige.
   - `SolicitudRepository.crear`: inserta la solicitud y después sube las fotos. Si falla una foto, la solicitud ya quedó creada, y reintentar la duplica.
 
@@ -126,4 +126,3 @@ Se usa `ProviderContainer.test(overrides: [...])` con repositorios falsos. Pasar
   1. Antes de modificar código, explica el plan paso a paso  y espera confirmación.
   2. Después de cada cambio, ejecuta `flutter analyze` y `flutter test` dentro de `tecnicos_app/` y corrige cualquier error, advertencia o test fallido antes de continuar.
   3. No rompas la navegación de `GoRouter` (redirecciones por rol) ni la integración con Supabase (`supabaseGuard`, RLS, buckets privados).
-  4. No uses la función RPC `aceptar_cotizacion` hasta que backend confirme que existe en Supabase.
