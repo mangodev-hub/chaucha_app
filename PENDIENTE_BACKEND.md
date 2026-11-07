@@ -17,7 +17,7 @@ Cuando un cliente acepta una cotización, hoy la app hace **tres escrituras sepa
 Esto tiene tres problemas:
 
 | Problema | Qué puede pasar |
-|---|---|
+| --- | --- |
 | **No es atómico** | Si falla la escritura 2 o la 3 (red, timeout, RLS), queda una cotización aceptada con la solicitud todavía en `cotizada`, o con otras cotizaciones pendientes. |
 | **RLS falla en silencio** | Cuando una política bloquea un `UPDATE`, Postgres no da error: modifica 0 filas. La app cree que todo salió bien. |
 | **Carrera** | Si se aceptan dos cotizaciones de la misma solicitud casi al mismo tiempo (dos pestañas, doble toque), las dos pueden quedar aceptadas. |
@@ -140,13 +140,109 @@ La función no modifica tablas ni políticas. Para quitarla:
 drop function public.aceptar_cotizacion(uuid);
 ```
 
-## Después de crearla
+## Cambio en la app (frontend)
 
-**Avisen a frontend.** La app cambiará el caso de uso `AceptarCotizacion` (`tecnicos_app/lib/features/solicitudes/domain/usecases/aceptar_cotizacion.dart`) por una sola llamada:
+Lo puede hacer quien creó la función. **Orden obligatorio: primero crear y probar la función en Supabase, después cambiar la app.** Si la app llama a una función que no existe, aceptar cotizaciones deja de funcionar.
+
+### 1. Preparar el entorno
+
+```bash
+git clone https://github.com/mangodev-hub/chaucha_app.git
+cd chaucha_app
+git checkout -b <tu-nombre>/rpc-aceptar-cotizacion
+cd tecnicos_app
+flutter pub get
+```
+
+- Para subir la rama necesitas acceso de colaborador al repositorio en GitHub.
+- `tecnicos_app/env.json` no está en el repo porque tiene las claves de Supabase. Pídelo por un canal privado y nunca lo subas.
+
+### 2. El repositorio de cotizaciones llama a la función
+
+En `tecnicos_app/lib/features/cotizaciones/data/repositories/supabase_cotizacion_repository.dart`, reemplaza el método `aceptar` completo, con su comentario `// OJO: ...`, por:
 
 ```dart
-supabase.rpc('aceptar_cotizacion', params: {'p_cotizacion_id': id});
+  /// Acepta la cotización, rechaza las demás pendientes y marca la solicitud
+  /// como aceptada, todo en una transacción (función RPC en Supabase).
+  @override
+  Future<void> aceptar(Cotizacion cotizacion) {
+    return supabaseGuard(() async {
+      await _client.rpc(
+        'aceptar_cotizacion',
+        params: {'p_cotizacion_id': cotizacion.id},
+      );
+    });
+  }
 ```
+
+Si después de este cambio el import de `estado_cotizacion_db.dart` queda sin usar, bórralo: `flutter analyze` lo va a marcar.
+
+En `tecnicos_app/lib/features/cotizaciones/domain/repositories/cotizacion_repository.dart`, actualiza el comentario de `aceptar`:
+
+```dart
+  /// Acepta [cotizacion], rechaza las demás pendientes de la misma solicitud
+  /// y marca la solicitud como aceptada, en una sola transacción.
+  Future<void> aceptar(Cotizacion cotizacion);
+```
+
+### 3. Quitar el caso de uso `AceptarCotizacion`
+
+Ya no combina dos repositorios, porque la base cambia el estado de la solicitud. Si se dejara como está, la solicitud se actualizaría dos veces. Según las reglas del proyecto, sin esa combinación ya no corresponde un caso de uso:
+
+1. Borra `tecnicos_app/lib/features/solicitudes/domain/usecases/aceptar_cotizacion.dart`.
+2. En `tecnicos_app/lib/features/solicitudes/presentation/providers/detalle_provider.dart`:
+   - borra `aceptarCotizacionProvider` y el import de `aceptar_cotizacion.dart`;
+   - cambia el método `aceptar` del notifier por:
+
+     ```dart
+     Future<bool> aceptar(Cotizacion cotizacion) => _ejecutar(
+           () => ref.read(cotizacionRepositoryProvider).aceptar(cotizacion),
+         );
+     ```
+
+### 4. Actualizar los tests
+
+1. Borra `tecnicos_app/test/features/solicitudes/aceptar_cotizacion_test.dart`.
+2. En `tecnicos_app/test/features/solicitudes/acciones_solicitud_provider_test.dart`, reemplaza el último test (`'aceptar usa el caso de uso: ...'`) por:
+
+   ```dart
+   test('aceptar llama al repositorio; el estado lo cambia la base', () async {
+     expect(await acciones().aceptar(cotizacionDePrueba(id: 'q7')), isTrue);
+
+     expect(cotizaciones.aceptadas, ['q7']);
+     expect(solicitudes.cambiosDeEstado, isEmpty);
+   });
+   ```
+
+### 5. Actualizar la documentación
+
+- **`CLAUDE.md`**:
+  - Borra la regla 4 de "Reglas del equipo" ("No uses la función RPC `aceptar_cotizacion`…").
+  - En "Reglas de diseño", quita `AceptarCotizacion` de la lista de casos de uso.
+  - En "Operaciones con varias escrituras no atómicas", reemplaza el punto de "Aceptar una cotización" por: "Aceptar una cotización usa la función RPC `aceptar_cotizacion` (atómica)."
+- **`PENDIENTE_BACKEND.md`** (este archivo): deja solo la sección "Otros candidatos, sin urgencia", o bórralo si ya no queda nada pendiente.
+
+### 6. Verificar
+
+Desde `tecnicos_app/`:
+
+```bash
+flutter analyze   # debe decir "No issues found!"
+flutter test      # todos los tests deben pasar
+flutter run -d chrome --web-port=3000 --dart-define-from-file=env.json
+```
+
+Prueba manual en la app: con una cuenta de cliente, acepta una cotización de una solicitud que tenga varias. Debe quedar "Aceptada", las demás "Rechazada", y la solicitud debe aparecer como "En curso".
+
+### 7. Subir y pedir revisión
+
+```bash
+git add -A
+git commit -m "Aceptar cotización con la función RPC aceptar_cotizacion"
+git push -u origin <tu-nombre>/rpc-aceptar-cotizacion
+```
+
+Después abre un **Pull Request hacia `master`** en GitHub para que lo revisen antes de unirlo.
 
 ## Otros candidatos, sin urgencia
 
