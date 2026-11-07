@@ -7,7 +7,7 @@
 ## Estado
 
 | Tema | Estado |
-|---|---|
+| --- | --- |
 | Paleta de colores | Provisional |
 | Color de acento (verde) | Provisional, a la espera de un color de marca |
 | Tipografía (Plus Jakarta Sans) | Provisional |
@@ -35,7 +35,7 @@ Todo vive en [`lib/core/theme/tokens.dart`](../lib/core/theme/tokens.dart).
 ### Colores (`Colores`)
 
 | Token | Valor | Uso |
-|---|---|---|
+| --- | --- | --- |
 | `tinta` | `#111111` | Texto principal, botones, barra de navegación activa |
 | `tintaSuave` | `#5E5E5E` | Texto secundario, íconos inactivos |
 | `fondo` | `#FFFFFF` | Fondo de las pantallas |
@@ -63,7 +63,7 @@ Todo vive en [`lib/core/theme/tokens.dart`](../lib/core/theme/tokens.dart).
 ## Dónde se aplica
 
 | Qué | Archivo |
-|---|---|
+| --- | --- |
 | Tokens | `lib/core/theme/tokens.dart` |
 | Tema global (botones, campos, tarjetas, chips, navegación, diálogos…) | `lib/core/theme/app_theme.dart` |
 | Marca provisional (ícono + nombre) | `lib/core/widgets/marca.dart` |
