@@ -1,0 +1,108 @@
+// Mapa OpenStreetMap con un pin.
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
+
+
+
+
+
+class MapaUbicacion extends StatefulWidget {
+  const MapaUbicacion({
+    super.key,
+    required this.punto,
+    this.onCambio,
+    this.radioMetros,
+    this.otrosPuntos = const [],
+    this.altura = 280,
+  });
+
+  final LatLng punto;
+  final ValueChanged<LatLng>? onCambio;
+  final double? radioMetros;
+  final List<LatLng> otrosPuntos;
+  final double altura;
+
+  @override
+  State<MapaUbicacion> createState() => _MapaUbicacionState();
+}
+
+class _MapaUbicacionState extends State<MapaUbicacion> {
+  static const double _zoomInicial = 15;
+  final MapController _controller = MapController();
+
+  @override
+  void didUpdateWidget(covariant MapaUbicacion anterior) {
+    super.didUpdateWidget(anterior);
+
+    if (anterior.punto != widget.punto) {
+      _controller.move(widget.punto, _controller.camera.zoom);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = Theme.of(context).colorScheme;
+    final radio = widget.radioMetros;
+    return SizedBox(
+      height: widget.altura,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: FlutterMap(
+          mapController: _controller,
+          options: MapOptions(
+            initialCenter: widget.punto,
+            initialZoom: _zoomInicial,
+            onTap: widget.onCambio == null
+                ? null
+                : (_, punto) => widget.onCambio!(punto),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.eagledev.tecnicos_app',
+            ),
+            if (radio != null)
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: widget.punto,
+                    radius: radio,
+                    useRadiusInMeter: true,
+                    color: colores.primary.withValues(alpha: 0.15),
+                    borderColor: colores.primary,
+                    borderStrokeWidth: 2,
+                  ),
+                ],
+              ),
+            MarkerLayer(
+              markers: [
+                for (final otro in widget.otrosPuntos)
+                  Marker(
+                    point: otro,
+                    width: 32,
+                    height: 32,
+                    child: Icon(Icons.place, color: colores.tertiary, size: 32),
+                  ),
+                Marker(
+                  point: widget.punto,
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.topCenter,
+                  child: Icon(Icons.location_pin, color: colores.error, size: 44),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
