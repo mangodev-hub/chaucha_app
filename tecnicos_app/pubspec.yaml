@@ -44,6 +44,7 @@ dependencies:
   # La 9.x usa el paquete separado material_ui (tipos incompatibles con
   # flutter/material). Subir cuando la app migre a material_ui.
   google_fonts: ^8.0.0
+  flutter_svg: ^2.3.2
 
 dev_dependencies:
   flutter_test:

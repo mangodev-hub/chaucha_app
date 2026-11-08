@@ -10,6 +10,7 @@ import '../../domain/entities/sesion_estado.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/usuario_repository.dart';
+import '../../../../core/config/auth_redirect.dart';
 
 final sesionProvider =
     NotifierProvider<SesionNotifier, SesionEstado>(SesionNotifier.new);
@@ -29,19 +30,19 @@ class SesionNotifier extends Notifier<SesionEstado> {
   late AuthRepository _auth;
   late UsuarioRepository _usuarios;
 
-  /// Cada cambio de sesión incrementa la versión; las respuestas de un
-  /// cambio anterior que lleguen tarde se descartan.
   int _version = 0;
-
-  /// Aviso que se mostrará cuando llegue el evento de "sin sesión".
   String? _avisoPendiente;
+  bool _correoVerificado = false;
 
   @override
   SesionEstado build() {
     _auth = ref.watch(authRepositoryProvider);
     _usuarios = ref.watch(usuarioRepositoryProvider);
 
-    final suscripcion = _auth.cambiosDeSesion.listen(_alCambiarSesion);
+    final suscripcion = _auth.cambiosDeSesion.listen(
+      _alCambiarSesion,
+      onError: (Object _) => _alFallarEnlace(),
+    );
     ref.onDispose(suscripcion.cancel);
 
     return const SesionVerificando();
@@ -49,12 +50,37 @@ class SesionNotifier extends Notifier<SesionEstado> {
 
   Future<void> cerrarSesion() => _auth.cerrarSesion();
 
+  void consumirVerificado() {
+    final actual = state;
+    if (actual is SinSesion && actual.correoVerificado) {
+      _emitir(SinSesion(aviso: actual.aviso));
+    }
+  }
+
+void _alFallarEnlace() {
+  ++_version;
+  final desdeEnlace = AuthRedirect.vieneDeConfirmacion;
+  AuthRedirect.vieneDeConfirmacion = false;
+  _emitir(SinSesion(correoVerificado: desdeEnlace));
+}
+
   Future<void> _alCambiarSesion(String? usuarioId) async {
     final version = ++_version;
 
     if (usuarioId == null) {
-      _emitir(SinSesion(aviso: _avisoPendiente));
+      _emitir(SinSesion(
+        aviso: _avisoPendiente,
+        correoVerificado: _correoVerificado,
+      ));
       _avisoPendiente = null;
+      _correoVerificado = false;
+      return;
+    }
+
+    if (AuthRedirect.vieneDeConfirmacion) {
+      AuthRedirect.vieneDeConfirmacion = false;
+      _correoVerificado = true;
+      await _auth.cerrarSesion();
       return;
     }
 
@@ -79,7 +105,6 @@ class SesionNotifier extends Notifier<SesionEstado> {
     try {
       await _auth.cerrarSesion();
     } on AppFailure {
-      // Si falla el cierre remoto, el estado local ya es SinSesion.
     }
   }
 
