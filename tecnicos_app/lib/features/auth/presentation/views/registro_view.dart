@@ -12,7 +12,8 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/campos.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
-import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/aviso_banner.dart';
+import '../../../../core/validators/codigo_dactilar_validator.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/registro_resultado.dart';
 import '../../domain/entities/rol.dart';
@@ -35,6 +36,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirmacion = TextEditingController();
+  final _dactilar = TextEditingController();
   Rol _rol = Rol.cliente;
 
   @override
@@ -46,6 +48,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
       _email,
       _password,
       _confirmacion,
+      _dactilar
     ]) {
       controller.dispose();
     }
@@ -71,15 +74,10 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(registroProvider, (_, estado) {
-      if (estado case AsyncError(:final error)) {
-        context.mostrarMensaje(
-          AsyncValueView.mensajeDe(error),
-          tipo: TipoMensaje.error,
-        );
-      }
-    });
     final estado = ref.watch(registroProvider);
+        final error = estado.isLoading || !estado.hasError
+        ? null
+        : AsyncValueView.mensajeDe(estado.error!);
 
     // Si entra directo (sin confirmar correo), el router redirige solo.
     if (estado case AsyncData(value: RegistroResultado.confirmarCorreo)) {
@@ -102,18 +100,44 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
       titulo: 'Crear cuenta',
       subtitulo: 'Únete a la comunidad de servicios de Quito.',
       tituloCentrado: true,
-      child: _formulario(cargando: estado.isLoading),
+      child: _formulario(cargando: estado.isLoading, error: error),
+      anchoEscritorio: 520,
+      esRegistro: true,
     );
   }
 
-  Widget _formulario({required bool cargando}) {
+  Widget _formulario({required bool cargando, String? error}) {
     const separacion = SizedBox(height: Espacios.l);
+        final contrasena = CampoEtiquetado(
+      etiqueta: 'Contraseña',
+      child: CampoContrasena(
+        controller: _password,
+        hintText: 'Mínimo 8 caracteres',
+        autofillHints: const [AutofillHints.newPassword],
+        textInputAction: TextInputAction.next,
+        validator: FormValidators.password,
+      ),
+    );
+    final confirmacion = CampoEtiquetado(
+      etiqueta: 'Confirmar contraseña',
+      child: CampoContrasena(
+        controller: _confirmacion,
+        hintText: 'Repite tu contraseña',
+        icono: Icons.lock_reset,
+        onFieldSubmitted: (_) => _enviar(),
+        validator: _validarConfirmacion,
+      ),
+    );
     return AutofillGroup(
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (error != null) ...[
+              AvisoBanner(tipo: TipoAviso.error, mensaje: error),
+              const SizedBox(height: Espacios.l),
+            ],
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -150,7 +174,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
                     child: TextFormField(
                       controller: _nombres,
                       decoration: const InputDecoration(
-                        hintText: 'Juan Carlos',
+                        hintText: 'Jorge Luis ',
                       ),
                       textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.givenName],
@@ -166,7 +190,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
                     etiqueta: 'Apellidos',
                     child: TextFormField(
                       controller: _apellidos,
-                      decoration: const InputDecoration(hintText: 'Morales V.'),
+                      decoration: const InputDecoration(hintText: 'Zambrano García'),
                       textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.familyName],
                       textInputAction: TextInputAction.next,
@@ -178,24 +202,49 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
               ],
             ),
             separacion,
-            CampoEtiquetado(
-              etiqueta: 'Cédula de identidad',
-              ayuda: 'Ecuador (10 dígitos)',
-              child: TextFormField(
-                controller: _cedula,
-                decoration: const InputDecoration(
-                  hintText: '17xxxxxxxx',
-                  prefixIcon: Icon(Icons.badge_outlined),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
-                ],
-                textInputAction: TextInputAction.next,
-                validator: CedulaValidator.validate,
-              ),
-            ),
+Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Expanded(
+      child: CampoEtiquetado(
+        etiqueta: 'Cédula',
+        ayuda: '10 dígitos',
+        child: TextFormField(
+          controller: _cedula,
+          decoration: const InputDecoration(
+            hintText: '17xxxxxxxx',
+            prefixIcon: Icon(Icons.badge_outlined),
+            errorMaxLines: 2,
+          ),
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
+          textInputAction: TextInputAction.next,
+          validator: CedulaValidator.validate,
+        ),
+      ),
+    ),
+    const SizedBox(width: Espacios.m),
+    Expanded(
+      child: CampoEtiquetado(
+        etiqueta: 'Código dactilar',
+        child: TextFormField(
+          controller: _dactilar,
+          decoration: const InputDecoration(
+            hintText: 'V1234V5678',
+            helperText: 'Está en el reverso de tu cédula',
+          ),
+          textCapitalization: TextCapitalization.characters,
+          inputFormatters: CodigoDactilarValidator.formatters,
+          textInputAction: TextInputAction.next,
+          validator: CodigoDactilarValidator.validate,
+        ),
+      ),
+    ),
+  ],
+),
             separacion,
             CampoEtiquetado(
               etiqueta: 'Correo electrónico',
@@ -212,27 +261,20 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
               ),
             ),
             separacion,
-            CampoEtiquetado(
-              etiqueta: 'Contraseña',
-              child: CampoContrasena(
-                controller: _password,
-                hintText: 'Mínimo 8 caracteres',
-                autofillHints: const [AutofillHints.newPassword],
-                textInputAction: TextInputAction.next,
-                validator: FormValidators.password,
-              ),
-            ),
-            separacion,
-            CampoEtiquetado(
-              etiqueta: 'Confirmar contraseña',
-              child: CampoContrasena(
-                controller: _confirmacion,
-                hintText: 'Repite tu contraseña',
-                icono: Icons.lock_reset,
-                onFieldSubmitted: (_) => _enviar(),
-                validator: _validarConfirmacion,
-              ),
-            ),
+                        if (MediaQuery.sizeOf(context).width >= 900)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: contrasena),
+                  const SizedBox(width: Espacios.m),
+                  Expanded(child: confirmacion),
+                ],
+              )
+            else ...[
+              contrasena,
+              separacion,
+              confirmacion,
+            ],
             const SizedBox(height: Espacios.xl),
             BotonCarga(
               texto: 'Registrarse',

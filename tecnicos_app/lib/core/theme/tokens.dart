@@ -23,6 +23,7 @@ abstract final class Colores {
 
   /// Fondo de lo elegido o resaltado, íconos en recuadro, avatares.
   static const Color primarioSuave = Color(0xFFE3F2FD);
+  static const Color primarioProfundo = Color(0xFF0D47A1);
 
   // Texto: azul marino y gris azulado.
   static const Color tinta = Color(0xFF0F2A44);

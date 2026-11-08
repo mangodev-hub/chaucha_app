@@ -16,6 +16,7 @@ import '../providers/login_provider.dart';
 import '../providers/sesion_provider.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/enlace_auth.dart';
+import '../../../../core/widgets/boton_google.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
@@ -45,19 +46,18 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(loginProvider, (_, estado) {
-      if (estado case AsyncError(:final error)) {
-        context.mostrarMensaje(
-          AsyncValueView.mensajeDe(error),
-          tipo: TipoMensaje.error,
-        );
-      }
-    });
-    final cargando = ref.watch(loginProvider).isLoading;
+    final estadoLogin = ref.watch(loginProvider);
+    final cargando = estadoLogin.isLoading;
+    final error = cargando || !estadoLogin.hasError
+        ? null
+        : AsyncValueView.mensajeDe(estadoLogin.error!);
 
     return AuthLayout(
       titulo: 'Iniciar sesión',
-      subtitulo: 'Ingresa tus datos para gestionar tus servicios del hogar.',
+      tituloCentrado: true,
+            subtitulo: 'Ingresa tus datos para gestionar tus servicios del hogar.',
+      anchoEscritorio: 440,
+      panelDetallado: true,
       child: AutofillGroup(
         child: Form(
           key: _formKey,
@@ -65,6 +65,11 @@ class _LoginViewState extends ConsumerState<LoginView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const _AvisoSesion(),
+                            if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Espacios.l),
+                  child: AvisoBanner(tipo: TipoAviso.error, mensaje: error),
+                ),
               CampoEtiquetado(
                 etiqueta: 'Correo electrónico',
                 child: TextFormField(
@@ -99,11 +104,19 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 cargando: cargando,
                 onPressed: _enviar,
               ),
-              const SizedBox(height: Espacios.l),
-              EnlaceAuth(
-                pregunta: '¿No tienes cuenta?',
-                accion: 'Regístrate',
+              Center(
+                child: TextButton(
+                  onPressed: () => context.mostrarMensaje('Próximamente.'),
+                  child: const Text('¿Olvidaste tu contraseña?'),
+                ),
+              ),
+              BotonGoogle(
+                onPressed: () => context.mostrarMensaje('Próximamente.'),
+              ),
+              const SizedBox(height: Espacios.m),
+              OutlinedButton(
                 onPressed: () => context.go(AppRoutes.registro),
+                child: const Text('Crear cuenta nueva'),
               ),
             ],
           ),
@@ -113,18 +126,26 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 }
 
-/// Explica por qué se cerró la sesión (p. ej. cuenta sin perfil).
 class _AvisoSesion extends ConsumerWidget {
   const _AvisoSesion();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final estado = ref.watch(sesionProvider);
-    final aviso = estado is SinSesion ? estado.aviso : null;
-    if (aviso == null) return const SizedBox.shrink();
+    if (estado is! SinSesion) return const SizedBox.shrink();
+
+    final verificado = estado.correoVerificado;
+    final mensaje = verificado
+        ? 'Correo verificado, ya puedes iniciar sesión.'
+        : estado.aviso;
+    if (mensaje == null) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.only(bottom: Espacios.l),
-      child: AvisoBanner(tipo: TipoAviso.error, mensaje: aviso),
+      child: AvisoBanner(
+        tipo: verificado ? TipoAviso.exito : TipoAviso.error,
+        mensaje: mensaje,
+      ),
     );
   }
 }
