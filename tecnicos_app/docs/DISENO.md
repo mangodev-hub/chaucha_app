@@ -1,6 +1,6 @@
-# Diseño visual de la app
+# Diseño visual de la app (ChauchaApp)
 
-> **⚠️ DISEÑO PROVISIONAL.** El estilo actual es una primera versión para que la app se sienta propia y no genérica. **Va a cambiar.** Todavía falta definir con el equipo la paleta de colores, la tipografía, la marca y varias correcciones del sistema. También se prevé agregar y quitar componentes. Nada de lo que está aquí es definitivo.
+> La **paleta**, el **estilo** y los **componentes** quedaron definidos el 2026-11-07 a partir de las pantallas de referencia de login, registro y verificación (skill `diseno-chauchaapp`). La **tipografía**, el **logo** y el **modo oscuro** siguen pendientes.
 
 Última actualización: 2026-11-07.
 
@@ -8,27 +8,35 @@
 
 | Tema | Estado |
 | --- | --- |
-| Paleta de colores | Provisional |
-| Color de acento (verde) | Provisional, a la espera de un color de marca |
+| Paleta de colores (blanco y azul) | **Definida** |
+| Color de acento (verde) | Definido: solo para lo positivo (completado, aprobado, verificado) |
+| Componentes compartidos | **Definidos** (ver "Catálogo de componentes") |
+| Nombre visible | **ChauchaApp**, con el lema "Técnicos de confianza a tu puerta en Quito" |
 | Tipografía (Plus Jakarta Sans) | Provisional |
-| Marca / logo | Provisional: hoy es un ícono de Material con el nombre de la app |
-| Radios, espaciados, tamaños | Provisional |
+| Logo | Provisional: una llave de Material en un círculo azul |
 | Modo oscuro | No existe todavía |
-| Revisión de contraste y accesibilidad | Pendiente |
+| Contraste y accesibilidad | Revisado (ver "Accesibilidad") |
 
-## De dónde sale el estilo actual
+## Referencia de estilo
 
-Se tomó como referencia el estilo de apps de movilidad modernas: títulos grandes y en negrita, botones negros, tarjetas grises planas y un solo color de acento para los datos positivos. **Se tomaron los patrones, no la identidad**: no se usa el logo, la tipografía ni los colores de marca de ninguna otra app, y no se debe hacer.
+La referencia son las pantallas de **inicio de sesión**, **registro** y **verificación de identidad** del diseño del equipo (skill `.claude/skills/diseno-chauchaapp/SKILL.md`). De ellas salen estas reglas:
 
-Principios que se aplicaron:
+1. **Blanco y azul.** El azul (`primario`) es la marca: botón principal, enlaces, navegación activa, foco de los campos y progreso.
+2. **Fondo celeste suave** (`fondo`). En login y registro, un degradado celeste.
+3. **Tarjetas blancas** con esquinas redondeadas y **sombra sutil** (`TarjetaApp`). Login y registro van dentro de una tarjeta grande (radio 24).
+4. **Campos celestes sin borde** (`superficie`), con la **etiqueta en negrita arriba** (`CampoEtiquetado`), un **ícono al inicio** y el borde azul al enfocarlos.
+5. **Botón principal azul, alto y con sombra azulada**. Puede llevar una flecha al final ("Iniciar sesión →"). Desactivado, queda gris y sin sombra.
+6. **Botón secundario** con borde y texto azules. **Enlaces** en azul y negrita ("¿No tienes cuenta? **Regístrate**").
+7. **Íconos en recuadros celestes** (`IconoRecuadro`) para opciones, documentos y encabezados de bloque.
+8. **Elección con tarjetas**: sin elegir, celeste; elegida, blanca con borde azul y un check (tipo de cuenta en el registro).
+9. **Progreso con barras** y el texto "Paso X de Y" (`IndicadorPasos`).
+10. **Estados en píldoras** (`Pildora`): fondo suave del color del estado y texto en su versión oscura.
+11. **Hojas inferiores** con asa de arrastre y botón de cerrar en móvil (verificación), y diálogo en escritorio.
+12. **Un solo acento verde**, reservado para lo positivo.
 
-1. **Jerarquía con tipografía**, no con colores: títulos grandes en negrita (`headlineLarge`, `headlineMedium`) y texto secundario en gris.
-2. **Base en blanco y negro**: fondo blanco, texto y botones casi negros.
-3. **Tarjetas planas en gris claro**: sin bordes ni sombras, con esquinas redondeadas.
-4. **Un solo color de acento**, reservado para lo positivo: puntos, nivel, verificado, trabajo completado.
-5. **Datos destacados en píldoras**: calificación, comisión y estado.
+No se copian las pantallas de referencia literalmente: su lenguaje visual se adapta a cada funcionalidad.
 
-## Tokens actuales (todos provisionales)
+## Tokens
 
 Todo vive en [`lib/core/theme/tokens.dart`](../lib/core/theme/tokens.dart).
 
@@ -36,62 +44,98 @@ Todo vive en [`lib/core/theme/tokens.dart`](../lib/core/theme/tokens.dart).
 
 | Token | Valor | Uso |
 | --- | --- | --- |
-| `tinta` | `#111111` | Texto principal, botones, barra de navegación activa |
-| `tintaSuave` | `#5E5E5E` | Texto secundario, íconos inactivos |
-| `fondo` | `#FFFFFF` | Fondo de las pantallas |
-| `superficie` | `#F3F3F3` | Tarjetas, campos de texto, chips |
-| `superficieFuerte` | `#E8E8E8` | Superficies más marcadas, pista del slider |
-| `linea` | `#E2E2E2` | Divisores y bordes suaves |
-| `acento` | `#2E9E5B` | Lo positivo: encabezado del perfil, completado |
-| `acentoSuave` | `#E3F4EA` | Fondo de elementos positivos, mis mensajes en el chat |
-| `acentoOscuro` | `#1B5E36` | Texto sobre `acentoSuave` |
-| `info` | `#2563C9` | Estados "Abierta" y "Con cotizaciones" |
-| `aviso` | `#D97706` | Estados "Por confirmar" y "En revisión" |
-| `error` / `errorSuave` | `#C62828` / `#FDECEC` | Errores y avisos de sesión |
-| `estrella` | `#F5A623` | Estrellas de calificación |
+| `primario` | `#1976D2` | Marca: botones, enlaces, navegación activa, foco, progreso (con texto blanco: 4.6:1) |
+| `primarioOscuro` | `#1565C0` | Nombre de la marca, pasos completados, texto sobre `primarioSuave` |
+| `primarioVivo` | `#2196F3` | El azul brillante de la referencia, **solo decorativo** (círculo del logo). Con texto blanco no llega a AA |
+| `primarioClaro` | `#BBDEFB` | Pasos pendientes, bordes de lo resaltado |
+| `primarioSuave` | `#E3F2FD` | Fondo de lo elegido o resaltado, íconos en recuadro, avatares, avisos informativos |
+| `tinta` | `#0F2A44` | Texto principal (azul marino), fondo del visor de fotos |
+| `tintaSuave` | `#5B6B7F` | Texto secundario, íconos de los campos |
+| `fondo` | `#F2F8FE` | Fondo celeste de las pantallas y de la barra superior |
+| `tarjeta` | `#FFFFFF` | Tarjetas, diálogos, hojas inferiores, barras inferiores |
+| `superficie` | `#EAF3FC` | Campos de texto, chips y opciones sin elegir |
+| `superficieFuerte` | `#D6E6F7` | Pistas del slider, huecos de fotos que cargan, separadores del chat |
+| `linea` | `#E1EAF4` | Divisores y bordes suaves |
+| `acento` / `acentoSuave` / `acentoOscuro` | `#2E9E5B` / `#E3F4EA` / `#1B5E36` | Lo positivo: completado, aceptada, aprobado, verificado, avisos de éxito |
+| `info` | `#0369A1` | Estados "Abierta" y "Con cotizaciones", cotización pendiente, distancia |
+| `aviso` / `avisoSuave` / `avisoOscuro` | `#D97706` / `#FEF3E2` / `#92400E` | "Por confirmar", avisos de advertencia |
+| `error` / `errorSuave` / `errorOscuro` | `#C62828` / `#FDECEC` / `#8C1D18` | Errores, acciones destructivas |
+| `estrella` | `#F5A623` | Estrellas de calificación, ícono de puntos |
 
-### Tipografía (`Tipografia`)
+**Estados de solicitud:** Abierta y Con cotizaciones usan `info`, En curso `primario`, Por confirmar `aviso`, Completada `acento` y Cancelada `tintaSuave`.
 
-- Familia: **Plus Jakarta Sans**, cargada con el paquete `google_fonts`.
-- Títulos (`display`, `headline`) en peso 800 con letras un poco más juntas; `title` en 700; botones en 600.
+### Sombras (`Sombras`)
+
+- `Sombras.suave`: sombra azulada al 8 %, desenfoque 18, desplazamiento vertical 6. Para tarjetas.
+- `Sombras.boton`: color de la sombra del botón principal.
 
 ### Radios (`Radios`) y espacios (`Espacios`)
 
-- Radios: `pequeno` 8 · `medio` 12 (botones, campos) · `grande` 16 (tarjetas, encabezados) · `pildora` 999.
+- Radios: `pequeno` 8 · `medio` 12 (botones, campos, avisos) · `grande` 16 (tarjetas) · `muyGrande` 24 (tarjeta de login y registro, hojas, diálogos) · `pildora` 999.
 - Espacios: `xs` 4 · `s` 8 · `m` 12 · `l` 16 · `xl` 24 · `xxl` 32.
 
-## Dónde se aplica
+### Tipografía (`Tipografia`)
 
-| Qué | Archivo |
-| --- | --- |
-| Tokens | `lib/core/theme/tokens.dart` |
-| Tema global (botones, campos, tarjetas, chips, navegación, diálogos…) | `lib/core/theme/app_theme.dart` |
-| Marca provisional (ícono + nombre) | `lib/core/widgets/marca.dart` |
-| Splash | `lib/core/widgets/splash_view.dart` |
-| Títulos de sección | `lib/core/widgets/seccion.dart` |
-| Listas vacías | `lib/core/widgets/estado_vacio.dart` |
-| Login y registro (marca, título grande, panel oscuro en escritorio) | `lib/features/auth/presentation/widgets/auth_layout.dart` |
-| Encabezado del perfil del técnico (puntos, nivel, píldoras) | `lib/features/perfil_puntos/presentation/views/perfil_tecnico_view.dart` |
-| Saludo del inicio del cliente | `lib/features/solicitudes/presentation/views/mis_solicitudes_view.dart` |
-| Colores de cada estado de solicitud | `lib/features/solicitudes/presentation/widgets/solicitud_widgets.dart` |
+- Familia: **Plus Jakarta Sans**, cargada con `google_fonts`.
+- Títulos (`display`, `headline`) en peso 800; `title` en 700; botones y etiquetas en 600–700.
+
+## Catálogo de componentes (`lib/core/widgets/`)
+
+Las pantallas se arman con estos componentes. No se crean versiones propias de lo mismo.
+
+| Componente | Archivo | Para qué |
+| --- | --- | --- |
+| `TarjetaApp` | `tarjeta_app.dart` | La única tarjeta: blanca, radio 16, sombra suave, `onTap`, borde de color opcional |
+| `BloqueTarjeta` | `tarjeta_app.dart` | Tarjeta con encabezado (número de paso o ícono, título y subtítulo) para agrupar partes de un formulario |
+| `IconoRecuadro` | `tarjeta_app.dart` | Ícono azul en un recuadro celeste |
+| `EncabezadoPantalla` | `encabezado_pantalla.dart` | Título y subtítulo de una pantalla o una hoja, con ícono opcional |
+| `CampoEtiquetado` | `campos.dart` | Etiqueta en negrita arriba del campo, con ayuda azul opcional ("Opcional", "Ecuador (10 dígitos)") |
+| `CampoContrasena` | `campos.dart` | Campo de contraseña con candado y ojo para mostrarla u ocultarla |
+| `BotonCarga` | `boton_carga.dart` | Botón principal con carga, ícono opcional (al inicio o al final) |
+| `BarraAccion` | `barra_accion.dart` | Barra blanca fija abajo con la acción principal (móvil) |
+| `AvisoBanner` | `aviso_banner.dart` | Aviso dentro de la pantalla: `info`, `exito`, `aviso` o `error`. Versión `compacto` para etiquetas |
+| `EstadoMensaje` | `estado_mensaje.dart` | Hueco de la pantalla: lista vacía, error o éxito (`TipoEstado`), centrado o `compacto`, con botón opcional |
+| `IndicadorPasos` | `indicador_pasos.dart` | Barras de progreso con "Paso X de Y" o etiquetas bajo cada paso |
+| `Pildora` | `pildora.dart` | Estados y datos cortos (estado de solicitud o cotización, distancia, "Ya cotizaste") |
+| `CuadriculaAdaptable` | `cuadricula_adaptable.dart` | Lista que pasa a dos columnas con 640 px o más |
+| `Marca` / `Marca.vertical` | `marca.dart` | Logo y nombre en fila (barras) o apilados con el lema (login, registro, splash) |
+| `AsyncValueView` | `async_value_view.dart` | Carga, error (con `EstadoMensaje` y "Reintentar") o datos |
+| `mostrarMensaje` / `confirmar` | `mensajes.dart` | Avisos inferiores con tipo (`info`, `exito`, `error`) y diálogo de confirmación (con ícono y versión `destructivo`) |
+
+## Pantallas
+
+| Pantalla | Archivo | Notas |
+| --- | --- | --- |
+| Login y registro | `features/auth/presentation/` | Tarjeta sobre degradado celeste. En escritorio, panel azul con la marca y tres beneficios |
+| Verificación de identidad | `features/perfil_puntos/presentation/views/verificacion_view.dart` | Hoja inferior en móvil y diálogo en escritorio (`mostrarVerificacion`). Se abre desde el perfil |
+| Perfil del técnico | `features/perfil_puntos/presentation/views/perfil_tecnico_view.dart` | Encabezado azul con puntos, banner de verificación y bloques. Dos columnas en escritorio |
+| Inicio del cliente | `features/solicitudes/presentation/views/mis_solicitudes_view.dart` | Bienvenida azul con "Pedir un técnico" y filtros Activas / Finalizadas |
+| Nueva solicitud | `features/solicitudes/presentation/views/crear_solicitud_view.dart` | Cuatro bloques numerados, oficios en chips, "Publicar" fijo abajo |
+| Feed y mis trabajos | `features/solicitudes/presentation/views/` | Resumen de la zona, tarjetas con píldoras y grupos "En curso" y "Finalizados" |
+| Detalle de solicitud | `features/solicitudes/presentation/views/solicitud_detalle_view.dart` | Guía "Qué sigue", progreso y acción fija abajo. Dos columnas en escritorio |
+| Chat | `features/chat/presentation/views/chat_view.dart` | Separadores por día, mis burbujas en azul, barra de envío redondeada |
+
+## Accesibilidad
+
+- **Contraste (WCAG AA):** blanco sobre `primario` da 4.6:1, `tinta` sobre `fondo` 13:1 y `tintaSuave` sobre `fondo` 5.1:1. El azul exacto de la referencia (`#2196F3`) da 3.1:1 con texto blanco, así que se usa solo como decoración (`primarioVivo`).
+- **Píldoras:** el texto usa una versión oscurecida del color del estado, para que se lea sobre su fondo suave.
+- **Texto grande:** todas las pantallas se revisaron a 360 px y a 1280 px, con texto al 100 % y al 130 %, sin desbordes.
+- **Pendiente:** revisar los tamaños mínimos de toque con el equipo.
 
 ## Decisiones pendientes
 
-- [ ] **Paleta definitiva** y **color de marca**. Decidir si el acento sigue siendo verde.
-- [ ] **Tipografía definitiva**. Antes de publicar, **incluir los archivos de la fuente en la app** (`assets/fonts/` y `pubspec.yaml`) y desactivar la descarga en tiempo de ejecución de `google_fonts`. Hoy la fuente se descarga de internet la primera vez; sin conexión se usa la fuente del sistema.
-- [ ] **Logo e identidad**: reemplazar el ícono provisional de `Marca` y definir el ícono de la app y el splash nativo (Android/web).
-- [ ] **Iconografía**: hoy se usan los íconos de Material sin criterio unificado (algunos `outlined`, otros `rounded`).
+- [x] **Paleta definitiva** y **color de marca**: blanco y azul.
+- [x] **Componentes compartidos**: ver el catálogo.
+- [ ] **Tipografía definitiva**. Antes de publicar, **incluir los archivos de la fuente en la app** (`assets/fonts/` y `pubspec.yaml`) y desactivar la descarga en tiempo de ejecución de `google_fonts`.
+- [ ] **Logo**: reemplazar el ícono provisional de `Marca`. Definir el ícono de la app y el splash nativo, y cambiar el nombre visible en `web/index.html`, `web/manifest.json` y el `AndroidManifest.xml` (hoy solo se cambió dentro de la app).
+- [ ] **Funciones de la referencia que la app aún no tiene**: "¿Olvidaste tu contraseña?", "Continuar con Google" y los enlaces a Términos y Política de privacidad. No se pusieron botones que no hacen nada. Se agregan cuando exista la función o la página.
 - [ ] **Modo oscuro**: hoy solo existe el tema claro.
-- [ ] **Contraste y accesibilidad**: revisar el texto blanco sobre el verde del encabezado del perfil, los colores de estado sobre fondo claro y los tamaños mínimos de toque.
-- [ ] **Correcciones del sistema**: revisar con el equipo los componentes y pantallas que se agregan o se quitan, y ajustar este documento.
-- [ ] **Escritorio y web**: revisar el diseño en pantallas anchas (panel de marca del login, `NavigationRail` del técnico).
 
 ## Cómo cambiar el diseño
 
-1. **Colores, radios, espacios o fuente:** cambiar el valor en `tokens.dart`. Toda la app se actualiza sola.
-2. **Cómo se ve un tipo de componente** (todos los botones, todos los campos…): cambiarlo en `app_theme.dart`.
-3. **Una pantalla en particular:** cambiar su archivo en `presentation/`.
+1. **Colores, radios, espacios, sombras o fuente:** cambiar el valor en `tokens.dart`. Toda la app se actualiza sola.
+2. **Cómo se ve un tipo de componente de Material** (todos los botones, todos los campos…): cambiarlo en `app_theme.dart`.
+3. **Un componente propio** (tarjeta, aviso, píldora…): cambiarlo en `core/widgets/`.
+4. **Una pantalla en particular:** cambiar su archivo en `presentation/`.
 
-**Regla:** no escribir colores sueltos (`Colors.green`, `Color(0xFF...)`) en las pantallas. Usar siempre `Colores.*` o `Theme.of(context).colorScheme`, para que cambiar la paleta siga siendo cambiar un solo archivo.
-
-Al tomar una decisión pendiente, actualiza la tabla de **Estado** y marca la casilla correspondiente.
+**Regla:** no escribir colores sueltos (`Colors.green`, `Colors.white`, `Color(0xFF...)`) en las pantallas. Usar siempre `Colores.*` o `Theme.of(context).colorScheme` (por ejemplo `onPrimary` para el texto blanco sobre azul).
