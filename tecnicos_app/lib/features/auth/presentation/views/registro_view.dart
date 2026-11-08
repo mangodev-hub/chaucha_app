@@ -5,14 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/validators/cedula_validator.dart';
 import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/boton_carga.dart';
+import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/registro_resultado.dart';
 import '../../domain/entities/rol.dart';
 import '../providers/registro_provider.dart';
 import '../widgets/auth_layout.dart';
+import '../widgets/enlace_auth.dart';
 
 class RegistroView extends ConsumerStatefulWidget {
   const RegistroView({super.key});
@@ -30,7 +36,6 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
   final _password = TextEditingController();
   final _confirmacion = TextEditingController();
   Rol _rol = Rol.cliente;
-  bool _ocultarPassword = true;
 
   @override
   void dispose() {
@@ -52,7 +57,9 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
 
   Future<void> _enviar() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    await ref.read(registroProvider.notifier).registrar(
+    await ref
+        .read(registroProvider.notifier)
+        .registrar(
           email: _email.text,
           password: _password.text,
           nombres: _nombres.text,
@@ -66,150 +73,242 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
   Widget build(BuildContext context) {
     ref.listen(registroProvider, (_, estado) {
       if (estado case AsyncError(:final error)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AsyncValueView.mensajeDe(error))),
+        context.mostrarMensaje(
+          AsyncValueView.mensajeDe(error),
+          tipo: TipoMensaje.error,
         );
       }
     });
     final estado = ref.watch(registroProvider);
 
+    // Si entra directo (sin confirmar correo), el router redirige solo.
+    if (estado case AsyncData(value: RegistroResultado.confirmarCorreo)) {
+      return AuthLayout(
+        titulo: 'Revisa tu correo',
+        tituloCentrado: true,
+        child: EstadoMensaje(
+          icono: Icons.mark_email_read_outlined,
+          tipo: TipoEstado.exito,
+          mensaje:
+              'Te enviamos un enlace de confirmación. '
+              'Ábrelo y luego inicia sesión.',
+          textoAccion: 'Ir a iniciar sesión',
+          onAccion: () => context.go(AppRoutes.login),
+        ),
+      );
+    }
+
     return AuthLayout(
       titulo: 'Crear cuenta',
-      // Si entra directo (sin confirmar correo), el router redirige solo.
-      child: switch (estado) {
-        AsyncData(value: RegistroResultado.confirmarCorreo) =>
-          const _ConfirmarCorreo(),
-        _ => _formulario(cargando: estado.isLoading),
-      },
+      subtitulo: 'Únete a la comunidad de servicios de Quito.',
+      tituloCentrado: true,
+      child: _formulario(cargando: estado.isLoading),
     );
   }
 
   Widget _formulario({required bool cargando}) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SegmentedButton<Rol>(
-            segments: const [
-              ButtonSegment(
-                value: Rol.cliente,
-                label: Text('Necesito un técnico'),
-                icon: Icon(Icons.home_outlined),
-              ),
-              ButtonSegment(
-                value: Rol.tecnico,
-                label: Text('Soy técnico'),
-                icon: Icon(Icons.handyman_outlined),
-              ),
-            ],
-            selected: {_rol},
-            onSelectionChanged: (seleccion) =>
-                setState(() => _rol = seleccion.first),
-          ),
-          const SizedBox(height: 24),
-          TextFormField(
-            controller: _nombres,
-            decoration: const InputDecoration(labelText: 'Nombres'),
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.next,
-            validator: (v) => FormValidators.requerido(v, campo: 'Los nombres'),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _apellidos,
-            decoration: const InputDecoration(labelText: 'Apellidos'),
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.next,
-            validator: (v) =>
-                FormValidators.requerido(v, campo: 'Los apellidos'),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _cedula,
-            decoration: const InputDecoration(labelText: 'Cédula'),
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
-            ],
-            textInputAction: TextInputAction.next,
-            validator: CedulaValidator.validate,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _email,
-            decoration: const InputDecoration(labelText: 'Correo'),
-            keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            textInputAction: TextInputAction.next,
-            validator: FormValidators.email,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _password,
-            obscureText: _ocultarPassword,
-            autofillHints: const [AutofillHints.newPassword],
-            textInputAction: TextInputAction.next,
-            validator: FormValidators.password,
-            decoration: InputDecoration(
-              labelText: 'Contraseña',
-              suffixIcon: IconButton(
-                tooltip: _ocultarPassword ? 'Mostrar' : 'Ocultar',
-                icon: Icon(
-                  _ocultarPassword ? Icons.visibility : Icons.visibility_off,
-                ),
-                onPressed: () =>
-                    setState(() => _ocultarPassword = !_ocultarPassword),
+    const separacion = SizedBox(height: Espacios.l);
+    return AutofillGroup(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _OpcionRol(
+                      icono: Icons.search,
+                      titulo: 'Buscar un servicio',
+                      descripcion: 'Quiero contratar técnicos',
+                      elegida: _rol == Rol.cliente,
+                      onTap: () => setState(() => _rol = Rol.cliente),
+                    ),
+                  ),
+                  const SizedBox(width: Espacios.m),
+                  Expanded(
+                    child: _OpcionRol(
+                      icono: Icons.handyman_outlined,
+                      titulo: 'Ofrecer mis servicios',
+                      descripcion: 'Soy técnico profesional',
+                      elegida: _rol == Rol.tecnico,
+                      onTap: () => setState(() => _rol = Rol.tecnico),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _confirmacion,
-            obscureText: _ocultarPassword,
-            onFieldSubmitted: (_) => _enviar(),
-            validator: _validarConfirmacion,
-            decoration:
-                const InputDecoration(labelText: 'Repite la contraseña'),
-          ),
-          const SizedBox(height: 24),
-          BotonCarga(
-            texto: 'Crear cuenta',
-            cargando: cargando,
-            onPressed: _enviar,
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => context.go(AppRoutes.login),
-            child: const Text('¿Ya tienes cuenta? Inicia sesión'),
-          ),
-        ],
+            const SizedBox(height: Espacios.xl),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: CampoEtiquetado(
+                    etiqueta: 'Nombres',
+                    child: TextFormField(
+                      controller: _nombres,
+                      decoration: const InputDecoration(
+                        hintText: 'Juan Carlos',
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      autofillHints: const [AutofillHints.givenName],
+                      textInputAction: TextInputAction.next,
+                      validator: (v) =>
+                          FormValidators.requerido(v, campo: 'Los nombres'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Espacios.m),
+                Expanded(
+                  child: CampoEtiquetado(
+                    etiqueta: 'Apellidos',
+                    child: TextFormField(
+                      controller: _apellidos,
+                      decoration: const InputDecoration(hintText: 'Morales V.'),
+                      textCapitalization: TextCapitalization.words,
+                      autofillHints: const [AutofillHints.familyName],
+                      textInputAction: TextInputAction.next,
+                      validator: (v) =>
+                          FormValidators.requerido(v, campo: 'Los apellidos'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            separacion,
+            CampoEtiquetado(
+              etiqueta: 'Cédula de identidad',
+              ayuda: 'Ecuador (10 dígitos)',
+              child: TextFormField(
+                controller: _cedula,
+                decoration: const InputDecoration(
+                  hintText: '17xxxxxxxx',
+                  prefixIcon: Icon(Icons.badge_outlined),
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                textInputAction: TextInputAction.next,
+                validator: CedulaValidator.validate,
+              ),
+            ),
+            separacion,
+            CampoEtiquetado(
+              etiqueta: 'Correo electrónico',
+              child: TextFormField(
+                controller: _email,
+                decoration: const InputDecoration(
+                  hintText: 'ejemplo@correo.com',
+                  prefixIcon: Icon(Icons.mail_outline),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                textInputAction: TextInputAction.next,
+                validator: FormValidators.email,
+              ),
+            ),
+            separacion,
+            CampoEtiquetado(
+              etiqueta: 'Contraseña',
+              child: CampoContrasena(
+                controller: _password,
+                hintText: 'Mínimo 8 caracteres',
+                autofillHints: const [AutofillHints.newPassword],
+                textInputAction: TextInputAction.next,
+                validator: FormValidators.password,
+              ),
+            ),
+            separacion,
+            CampoEtiquetado(
+              etiqueta: 'Confirmar contraseña',
+              child: CampoContrasena(
+                controller: _confirmacion,
+                hintText: 'Repite tu contraseña',
+                icono: Icons.lock_reset,
+                onFieldSubmitted: (_) => _enviar(),
+                validator: _validarConfirmacion,
+              ),
+            ),
+            const SizedBox(height: Espacios.xl),
+            BotonCarga(
+              texto: 'Registrarse',
+              icono: Icons.arrow_forward,
+              iconoAlFinal: true,
+              cargando: cargando,
+              onPressed: _enviar,
+            ),
+            const SizedBox(height: Espacios.l),
+            EnlaceAuth(
+              pregunta: '¿Ya tienes cuenta?',
+              accion: 'Inicia sesión',
+              onPressed: () => context.go(AppRoutes.login),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _ConfirmarCorreo extends StatelessWidget {
-  const _ConfirmarCorreo();
+/// Tarjeta para elegir el tipo de cuenta: celeste sin elegir; con borde
+/// azul y check cuando está elegida.
+class _OpcionRol extends StatelessWidget {
+  const _OpcionRol({
+    required this.icono,
+    required this.titulo,
+    required this.descripcion,
+    required this.elegida,
+    required this.onTap,
+  });
+
+  final IconData icono;
+  final String titulo;
+  final String descripcion;
+  final bool elegida;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Icon(Icons.mark_email_read_outlined, size: 56),
-        const SizedBox(height: 16),
-        const Text(
-          'Te enviamos un correo de confirmación. Ábrelo y luego inicia sesión.',
-          textAlign: TextAlign.center,
+    final textos = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      selected: elegida,
+      child: TarjetaApp(
+        onTap: onTap,
+        radio: Radios.medio,
+        conSombra: false,
+        color: elegida ? Colores.tarjeta : Colores.superficie,
+        colorBorde: elegida ? Colores.primario : Colores.superficie,
+        padding: const EdgeInsets.all(Espacios.m),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconoRecuadro(icono: icono, lado: 32),
+                const Spacer(),
+                if (elegida)
+                  const Icon(
+                    Icons.check_circle,
+                    color: Colores.primario,
+                    size: 22,
+                  ),
+              ],
+            ),
+            const SizedBox(height: Espacios.s),
+            Text(titulo, style: textos.titleSmall),
+            const SizedBox(height: 2),
+            Text(
+              descripcion,
+              style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
+            ),
+          ],
         ),
-        const SizedBox(height: 24),
-        FilledButton(
-          onPressed: () => context.go(AppRoutes.login),
-          child: const Text('Ir a iniciar sesión'),
-        ),
-      ],
+      ),
     );
   }
 }

@@ -1,12 +1,15 @@
-// Pestaña "Mis trabajos" del técnico: solicitudes con su cotización aceptada.
+// Pestaña "Mis trabajos" del técnico: solicitudes con su cotización aceptada,
+// separadas en "En curso" y "Finalizados".
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/estado_vacio.dart';
+import '../../../../core/widgets/cuadricula_adaptable.dart';
+import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/listas_provider.dart';
@@ -25,32 +28,67 @@ class MisTrabajosView extends ConsumerWidget {
       ref.invalidate(misTrabajosProvider);
     }
 
+    List<Widget> grupo(String titulo, List<Solicitud> trabajos) => [
+      if (trabajos.isNotEmpty)
+        Seccion(
+          titulo: '$titulo (${trabajos.length})',
+          child: CuadriculaAdaptable(
+            children: [
+              for (final t in trabajos)
+                SolicitudCard(solicitud: t, onTap: () => abrir(t)),
+            ],
+          ),
+        ),
+    ];
+
     return AsyncValueView<List<Solicitud>>(
       value: ref.watch(misTrabajosProvider),
       onRetry: () => ref.invalidate(misTrabajosProvider),
-      onData: (context, trabajos) => RefreshIndicator(
-        onRefresh: () => esperarSinError(ref.refresh(misTrabajosProvider.future)),
-        child: trabajos.isEmpty
-            ? ListView(
-                children: const [
-                  EstadoVacio(
-                    icono: Icons.work_outline,
-                    mensaje: 'Cuando un cliente acepte tu cotización, '
-                        'el trabajo aparecerá aquí.',
+      onData: (context, trabajos) {
+        final enCurso = [
+          for (final t in trabajos)
+            if (t.estado.activa) t,
+        ];
+        final finalizados = [
+          for (final t in trabajos)
+            if (!t.estado.activa) t,
+        ];
+        return RefreshIndicator(
+          onRefresh: () =>
+              esperarSinError(ref.refresh(misTrabajosProvider.future)),
+          child: trabajos.isEmpty
+              ? ListView(
+                  children: const [
+                    EstadoMensaje(
+                      icono: Icons.work_outline,
+                      titulo: 'Aún no tienes trabajos',
+                      mensaje:
+                          'Cuando un cliente acepte tu cotización, '
+                          'el trabajo aparecerá aquí.',
+                    ),
+                  ],
+                )
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    Espacios.l,
+                    0,
+                    Espacios.l,
+                    Espacios.xxl,
                   ),
-                ],
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: trabajos.length,
-                itemBuilder: (context, i) => AnchoMaximo(
-                  child: SolicitudCard(
-                    solicitud: trabajos[i],
-                    onTap: () => abrir(trabajos[i]),
-                  ),
+                  children: [
+                    AnchoMaximo(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ...grupo('En curso', enCurso),
+                          ...grupo('Finalizados', finalizados),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-      ),
+        );
+      },
     );
   }
 }

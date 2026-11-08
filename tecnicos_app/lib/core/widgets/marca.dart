@@ -1,50 +1,95 @@
-// Marca de la app: ícono + nombre.
+// Marca de la app: logo (llave en un círculo azul), nombre y lema.
 //
-// PROVISIONAL: es un ícono de Material, no un logo. Se reemplaza cuando el
-// equipo defina la identidad visual (ver `docs/DISENO.md`).
+// PROVISIONAL: el logo es un ícono de Material. Se reemplaza cuando el equipo
+// tenga el logo definitivo (ver `docs/DISENO.md`).
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 
 class Marca extends StatelessWidget {
-  const Marca({super.key, this.grande = false, this.sobreOscuro = false});
+  /// Logo y nombre en una fila (barras superiores, panel de escritorio).
+  const Marca({super.key, this.grande = false, this.sobreOscuro = false})
+    : vertical = false;
 
-  /// Versión grande (splash, panel de login en escritorio).
+  /// Logo arriba, nombre y lema centrados debajo (login, registro, splash).
+  const Marca.vertical({
+    super.key,
+    this.grande = false,
+    this.sobreOscuro = false,
+  }) : vertical = true;
+
+  static const String nombre = 'ChauchaApp';
+  static const String lema = 'Técnicos de confianza a tu puerta en Quito';
+
+  /// Versión grande (splash, panel de escritorio).
   final bool grande;
 
-  /// Colores invertidos para fondos oscuros.
+  /// Colores invertidos para fondos azules.
   final bool sobreOscuro;
 
-  static const String nombre = 'Técnicos a domicilio';
+  final bool vertical;
 
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    final lado = grande ? 56.0 : 40.0;
-    final colorTexto = sobreOscuro ? Colors.white : Colores.tinta;
+    final blanco = Theme.of(context).colorScheme.onPrimary;
+    final colorNombre = sobreOscuro ? blanco : Colores.primarioOscuro;
+
+    final logo = Container(
+      width: grande ? 64 : (vertical ? 56 : 36),
+      height: grande ? 64 : (vertical ? 56 : 36),
+      decoration: BoxDecoration(
+        color: sobreOscuro ? blanco : Colores.primarioVivo,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.build_rounded,
+        size: grande ? 32 : (vertical ? 28 : 20),
+        color: sobreOscuro ? Colores.primario : blanco,
+      ),
+    );
+
+    if (vertical) {
+      return Semantics(
+        label: '$nombre. $lema',
+        child: ExcludeSemantics(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              logo,
+              const SizedBox(height: Espacios.m),
+              Text(
+                nombre,
+                textAlign: TextAlign.center,
+                style: (grande ? textos.headlineMedium : textos.headlineSmall)
+                    ?.copyWith(color: colorNombre),
+              ),
+              const SizedBox(height: Espacios.xs),
+              Text(
+                lema,
+                textAlign: TextAlign.center,
+                style: textos.bodySmall?.copyWith(
+                  color: sobreOscuro
+                      ? blanco.withValues(alpha: 0.85)
+                      : Colores.tintaSuave,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: lado,
-          height: lado,
-          decoration: BoxDecoration(
-            color: sobreOscuro ? Colors.white : Colores.tinta,
-            borderRadius: BorderRadius.circular(Radios.medio),
-          ),
-          child: Icon(
-            Icons.handyman_rounded,
-            size: lado * 0.55,
-            color: sobreOscuro ? Colores.tinta : Colors.white,
-          ),
-        ),
-        const SizedBox(width: Espacios.m),
+        logo,
+        const SizedBox(width: Espacios.s + 2),
         Flexible(
           child: Text(
             nombre,
             style: (grande ? textos.headlineSmall : textos.titleLarge)
-                ?.copyWith(color: colorTexto),
+                ?.copyWith(color: colorNombre),
           ),
         ),
       ],
