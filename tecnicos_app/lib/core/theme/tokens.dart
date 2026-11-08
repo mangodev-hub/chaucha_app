@@ -1,30 +1,59 @@
-// Tokens de diseño: colores, radios, espacios y tipografía con nombre.
+// Tokens de diseño: colores, radios, espacios, sombras y tipografía con nombre.
 //
-// DISEÑO PROVISIONAL: estos valores se van a redefinir (paleta, tipografía,
-// marca). Para cambiar el aspecto de la app se cambian aquí, no en cada
-// pantalla. Ver `docs/DISENO.md`.
+// Estilo: blanco y azul, fondos celestes suaves, tarjetas blancas con sombra
+// sutil y campos azulados, tomado de las pantallas de referencia de login,
+// registro y verificación (skill `diseno-chauchaapp`, `docs/DISENO.md`).
+// Para cambiar el aspecto de la app se cambian aquí, no en cada pantalla.
 import 'package:flutter/material.dart';
 
 abstract final class Colores {
-  // Base: casi negro sobre blanco, tarjetas en gris claro.
-  static const Color tinta = Color(0xFF111111);
-  static const Color tintaSuave = Color(0xFF5E5E5E);
-  static const Color fondo = Color(0xFFFFFFFF);
-  static const Color superficie = Color(0xFFF3F3F3);
-  static const Color superficieFuerte = Color(0xFFE8E8E8);
-  static const Color linea = Color(0xFFE2E2E2);
+  // Marca: azul. Botones, enlaces, navegación activa, foco, progreso.
+  /// Azul principal. Con texto blanco cumple AA (4.6:1).
+  static const Color primario = Color(0xFF1976D2);
 
-  // Acento (provisional: verde). Solo para lo positivo: puntos, nivel,
-  // verificado, completado.
+  /// Nombre de la marca, pasos completados, texto sobre `primarioSuave`.
+  static const Color primarioOscuro = Color(0xFF1565C0);
+
+  /// Azul brillante de la referencia, solo decorativo (círculo del logo,
+  /// íconos ilustrativos): con texto blanco no llega a AA.
+  static const Color primarioVivo = Color(0xFF2196F3);
+
+  /// Pasos pendientes, bordes de lo resaltado.
+  static const Color primarioClaro = Color(0xFFBBDEFB);
+
+  /// Fondo de lo elegido o resaltado, íconos en recuadro, avatares.
+  static const Color primarioSuave = Color(0xFFE3F2FD);
+
+  // Texto: azul marino y gris azulado.
+  static const Color tinta = Color(0xFF0F2A44);
+  static const Color tintaSuave = Color(0xFF5B6B7F);
+
+  // Fondos y superficies.
+  /// Fondo celeste muy suave de las pantallas.
+  static const Color fondo = Color(0xFFF2F8FE);
+
+  /// Tarjetas, diálogos, hojas inferiores y barras: blanco.
+  static const Color tarjeta = Color(0xFFFFFFFF);
+
+  /// Campos de texto y opciones sin elegir: celeste claro.
+  static const Color superficie = Color(0xFFEAF3FC);
+  static const Color superficieFuerte = Color(0xFFD6E6F7);
+  static const Color linea = Color(0xFFE1EAF4);
+
+  // Acento verde: solo para lo positivo (completado, aprobado, verificado).
   static const Color acento = Color(0xFF2E9E5B);
   static const Color acentoSuave = Color(0xFFE3F4EA);
   static const Color acentoOscuro = Color(0xFF1B5E36);
 
   // Semánticos.
-  static const Color info = Color(0xFF2563C9);
+  /// Celeste oscuro, distinto del primario: estados "Abierta" y similares.
+  static const Color info = Color(0xFF0369A1);
   static const Color aviso = Color(0xFFD97706);
+  static const Color avisoSuave = Color(0xFFFEF3E2);
+  static const Color avisoOscuro = Color(0xFF92400E);
   static const Color error = Color(0xFFC62828);
   static const Color errorSuave = Color(0xFFFDECEC);
+  static const Color errorOscuro = Color(0xFF8C1D18);
 
   // Estrellas de calificación.
   static const Color estrella = Color(0xFFF5A623);
@@ -34,6 +63,9 @@ abstract final class Radios {
   static const double pequeno = 8;
   static const double medio = 12;
   static const double grande = 16;
+
+  /// Tarjeta principal de login y registro, hojas inferiores.
+  static const double muyGrande = 24;
   static const double pildora = 999;
 }
 
@@ -44,6 +76,16 @@ abstract final class Espacios {
   static const double l = 16;
   static const double xl = 24;
   static const double xxl = 32;
+}
+
+abstract final class Sombras {
+  /// Sombra sutil y azulada para tarjetas.
+  static const List<BoxShadow> suave = [
+    BoxShadow(color: Color(0x140F2A44), blurRadius: 18, offset: Offset(0, 6)),
+  ];
+
+  /// Sombra del botón principal ("destacado").
+  static const Color boton = Color(0x661976D2);
 }
 
 abstract final class Tipografia {

@@ -8,6 +8,18 @@ abstract final class Formatos {
         '${dos(fecha.hour)}:${dos(fecha.minute)}';
   }
 
+  /// "Hoy", "Ayer" o la fecha (separadores del chat).
+  static String dia(DateTime fecha, {DateTime? hoy}) {
+    final ahora = hoy ?? DateTime.now();
+    final d = DateTime(fecha.year, fecha.month, fecha.day);
+    final h = DateTime(ahora.year, ahora.month, ahora.day);
+    final diferencia = h.difference(d).inDays;
+    if (diferencia == 0) return 'Hoy';
+    if (diferencia == 1) return 'Ayer';
+    String dos(int n) => n.toString().padLeft(2, '0');
+    return '${dos(fecha.day)}/${dos(fecha.month)}/${fecha.year}';
+  }
+
   static String hora(DateTime fecha) =>
       '${fecha.hour.toString().padLeft(2, '0')}:'
       '${fecha.minute.toString().padLeft(2, '0')}';

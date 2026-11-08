@@ -4,13 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
+import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/mensajes.dart';
 import '../../domain/entities/sesion_estado.dart';
 import '../providers/login_provider.dart';
 import '../providers/sesion_provider.dart';
 import '../widgets/auth_layout.dart';
+import '../widgets/enlace_auth.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
@@ -23,7 +28,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
-  bool _ocultarPassword = true;
 
   @override
   void dispose() {
@@ -34,18 +38,18 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   Future<void> _enviar() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    await ref.read(loginProvider.notifier).iniciarSesion(
-          email: _email.text,
-          password: _password.text,
-        );
+    await ref
+        .read(loginProvider.notifier)
+        .iniciarSesion(email: _email.text, password: _password.text);
   }
 
   @override
   Widget build(BuildContext context) {
     ref.listen(loginProvider, (_, estado) {
       if (estado case AsyncError(:final error)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AsyncValueView.mensajeDe(error))),
+        context.mostrarMensaje(
+          AsyncValueView.mensajeDe(error),
+          tipo: TipoMensaje.error,
         );
       }
     });
@@ -53,52 +57,56 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
     return AuthLayout(
       titulo: 'Iniciar sesión',
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _AvisoSesion(),
-            TextFormField(
-              controller: _email,
-              decoration: const InputDecoration(labelText: 'Correo'),
-              keyboardType: TextInputType.emailAddress,
-              autofillHints: const [AutofillHints.email],
-              textInputAction: TextInputAction.next,
-              validator: FormValidators.email,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _password,
-              obscureText: _ocultarPassword,
-              autofillHints: const [AutofillHints.password],
-              onFieldSubmitted: (_) => _enviar(),
-              validator: (valor) =>
-                  FormValidators.requerido(valor, campo: 'La contraseña'),
-              decoration: InputDecoration(
-                labelText: 'Contraseña',
-                suffixIcon: IconButton(
-                  tooltip: _ocultarPassword ? 'Mostrar' : 'Ocultar',
-                  icon: Icon(
-                    _ocultarPassword ? Icons.visibility : Icons.visibility_off,
+      subtitulo: 'Ingresa tus datos para gestionar tus servicios del hogar.',
+      child: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _AvisoSesion(),
+              CampoEtiquetado(
+                etiqueta: 'Correo electrónico',
+                child: TextFormField(
+                  controller: _email,
+                  decoration: const InputDecoration(
+                    hintText: 'ejemplo@correo.com',
+                    prefixIcon: Icon(Icons.mail_outline),
                   ),
-                  onPressed: () =>
-                      setState(() => _ocultarPassword = !_ocultarPassword),
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  textInputAction: TextInputAction.next,
+                  validator: FormValidators.email,
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            BotonCarga(
-              texto: 'Entrar',
-              cargando: cargando,
-              onPressed: _enviar,
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => context.go(AppRoutes.registro),
-              child: const Text('¿No tienes cuenta? Regístrate'),
-            ),
-          ],
+              const SizedBox(height: Espacios.l + 2),
+              CampoEtiquetado(
+                etiqueta: 'Contraseña',
+                child: CampoContrasena(
+                  controller: _password,
+                  hintText: 'Tu contraseña',
+                  autofillHints: const [AutofillHints.password],
+                  onFieldSubmitted: (_) => _enviar(),
+                  validator: (valor) =>
+                      FormValidators.requerido(valor, campo: 'La contraseña'),
+                ),
+              ),
+              const SizedBox(height: Espacios.xl),
+              BotonCarga(
+                texto: 'Iniciar sesión',
+                icono: Icons.arrow_forward,
+                iconoAlFinal: true,
+                cargando: cargando,
+                onPressed: _enviar,
+              ),
+              const SizedBox(height: Espacios.l),
+              EnlaceAuth(
+                pregunta: '¿No tienes cuenta?',
+                accion: 'Regístrate',
+                onPressed: () => context.go(AppRoutes.registro),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -114,20 +122,9 @@ class _AvisoSesion extends ConsumerWidget {
     final estado = ref.watch(sesionProvider);
     final aviso = estado is SinSesion ? estado.aviso : null;
     if (aviso == null) return const SizedBox.shrink();
-    final colores = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Material(
-        color: colores.errorContainer,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            aviso,
-            style: TextStyle(color: colores.onErrorContainer),
-          ),
-        ),
-      ),
+      padding: const EdgeInsets.only(bottom: Espacios.l),
+      child: AvisoBanner(tipo: TipoAviso.error, mensaje: aviso),
     );
   }
 }

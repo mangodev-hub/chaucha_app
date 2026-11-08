@@ -1,10 +1,10 @@
-// Diálogo de calificación de 1 a 5 estrellas.
+// Diálogo de calificación de 1 a 5 estrellas, con comentario opcional.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/campos.dart';
 
 typedef DatosResena = ({int estrellas, String? comentario});
-
 
 Future<DatosResena?> mostrarDialogoResena(
   BuildContext context, {
@@ -26,6 +26,15 @@ class _DialogoResena extends StatefulWidget {
 }
 
 class _DialogoResenaState extends State<_DialogoResena> {
+  static const _etiquetas = [
+    'Toca una estrella',
+    'Malo',
+    'Regular',
+    'Bueno',
+    'Muy bueno',
+    'Excelente',
+  ];
+
   int _estrellas = 0;
   final _comentario = TextEditingController();
 
@@ -37,31 +46,62 @@ class _DialogoResenaState extends State<_DialogoResena> {
 
   @override
   Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
     return AlertDialog(
+      icon: const Icon(Icons.star_rounded, color: Colores.estrella, size: 36),
       title: Text('Califica a ${widget.nombre}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var i = 1; i <= 5; i++)
-                IconButton(
-                  onPressed: () => setState(() => _estrellas = i),
-                  icon: Icon(
-                    i <= _estrellas ? Icons.star : Icons.star_border,
-                    color: Colores.estrella,
-                    size: 32,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Cada estrella ocupa un quinto del ancho, para que las cinco
+            // quepan en cualquier teléfono. (No se usa LayoutBuilder: el
+            // AlertDialog mide su contenido de antemano y no lo admite.)
+            Row(
+              children: [
+                for (var i = 1; i <= 5; i++)
+                  Expanded(
+                    child: IconButton(
+                      tooltip: '$i de 5',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 48,
+                      ),
+                      onPressed: () => setState(() => _estrellas = i),
+                      icon: Icon(
+                        i <= _estrellas
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        color: Colores.estrella,
+                        size: 34,
+                      ),
+                    ),
                   ),
+              ],
+            ),
+            Text(
+              _etiquetas[_estrellas],
+              textAlign: TextAlign.center,
+              style: textos.titleSmall?.copyWith(
+                color: _estrellas == 0 ? Colores.tintaSuave : Colores.tinta,
+              ),
+            ),
+            const SizedBox(height: Espacios.l),
+            CampoEtiquetado(
+              etiqueta: 'Comentario',
+              ayuda: 'Opcional',
+              child: TextField(
+                controller: _comentario,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: '¿Cómo fue tu experiencia?',
                 ),
-            ],
-          ),
-          TextField(
-            controller: _comentario,
-            maxLines: 3,
-            decoration: const InputDecoration(labelText: 'Comentario (opcional)'),
-          ),
-        ],
+              ),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -69,7 +109,7 @@ class _DialogoResenaState extends State<_DialogoResena> {
           child: const Text('Cancelar'),
         ),
         FilledButton(
-
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
           onPressed: _estrellas == 0
               ? null
               : () {
