@@ -111,9 +111,11 @@ Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiemp
   - `PerfilRepository.guardar`: actualiza el perfil y luego sincroniza `tecnico_oficios`; volver a guardar lo corrige.
   - `SolicitudRepository.crear`: inserta la solicitud y después sube las fotos. Si falla una foto, la solicitud ya quedó creada, y reintentar la duplica.
 
-### Diseño visual (provisional)
+### Diseño visual
 
-El estilo actual es **provisional** y va a cambiar: paleta, tipografía y marca están por definir. Todo lo documenta [`tecnicos_app/docs/DISENO.md`](tecnicos_app/docs/DISENO.md). Colores, radios, espacios y fuente viven en `core/theme/tokens.dart`, y el tema global en `core/theme/app_theme.dart`. **No escribir colores sueltos** (`Colors.green`, `Color(0xFF...)`) en las pantallas: usar `Colores.*` o `Theme.of(context).colorScheme`. `google_fonts` está fijado en `^8.0.0`, porque la 9.x usa el paquete separado `material_ui` y sus tipos no son compatibles con `flutter/material`.
+El estilo sigue la skill `diseno-chauchaapp` (`.claude/skills/diseno-chauchaapp/SKILL.md`): blanco y azul (`Colores.primario`), fondo celeste suave, tarjetas blancas con sombra sutil, campos azulados, y el verde (`Colores.acento`) solo para lo positivo. La paleta quedó definida el 2026-11-07; la tipografía y la marca siguen siendo provisionales. Todo lo documenta [`tecnicos_app/docs/DISENO.md`](tecnicos_app/docs/DISENO.md). Colores, radios, espacios y fuente viven en `core/theme/tokens.dart`, y el tema global en `core/theme/app_theme.dart`. **No escribir colores sueltos** (`Colors.green`, `Color(0xFF...)`) en las pantallas: usar `Colores.*` o `Theme.of(context).colorScheme`. `google_fonts` está fijado en `^8.0.0`, porque la 9.x usa el paquete separado `material_ui` y sus tipos no son compatibles con `flutter/material`.
+
+**Componentes visuales compartidos** (`core/widgets/`): las pantallas se arman con ellos y no con versiones propias. Son `TarjetaApp`, `BloqueTarjeta` e `IconoRecuadro` (tarjetas), `EncabezadoPantalla`, `CampoEtiquetado` y `CampoContrasena` (formularios), `AvisoBanner` (avisos dentro de la pantalla), `EstadoMensaje` (lista vacía, error o éxito), `IndicadorPasos`, `Pildora` (estados), `BarraAccion` (acción principal fija abajo en móvil), `CuadriculaAdaptable` (listas en dos columnas en escritorio) y `BotonCarga`. Para avisos inferiores se usa `context.mostrarMensaje(texto, tipo: TipoMensaje.exito | error)`. El catálogo completo está en `DISENO.md`.
 
 ### Tests
 
