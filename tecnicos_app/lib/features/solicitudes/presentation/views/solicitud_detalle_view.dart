@@ -21,11 +21,14 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/barra_accion.dart';
 import '../../../../core/widgets/boton_carga.dart';
+import '../../../../core/widgets/esqueleto_carga.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
+import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/presentation/widgets/cotizacion_widgets.dart';
@@ -158,6 +161,17 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     ref.invalidate(detalleSolicitudProvider(widget.solicitudId));
   }
 
+  /// Vuelve a la pantalla anterior o, si se entró directo por la URL, al
+  /// inicio del rol.
+  void _regresar() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    final esCliente = ref.read(usuarioActualProvider)?.rol == Rol.cliente;
+    context.go(esCliente ? AppRoutes.clienteInicio : AppRoutes.tecnicoInicio);
+  }
+
   void _verPerfil(String tecnicoId) =>
       unawaited(context.push(AppRoutes.perfilTecnico(tecnicoId)));
 
@@ -195,7 +209,17 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
           : BarraAccion(child: boton),
       body: AsyncValueView<DetalleSolicitud>(
         value: valor,
-        onRetry: () => ref.invalidate(detalle),
+        cargando: (_) => _DetalleCargando(escritorio: escritorio),
+        onError: (context, mensaje) => EstadoMensaje(
+          icono: Icons.cloud_off_outlined,
+          tipo: TipoEstado.error,
+          titulo: 'No se pudo cargar la solicitud',
+          mensaje: mensaje,
+          textoAccion: 'Reintentar',
+          onAccion: () => ref.invalidate(detalle),
+          textoAccionSecundaria: 'Regresar',
+          onAccionSecundaria: _regresar,
+        ),
         onData: (context, datos) => RefreshIndicator(
           onRefresh: () => esperarSinError(ref.refresh(detalle.future)),
           child: escritorio
@@ -393,6 +417,88 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
               ),
       ),
     ];
+  }
+}
+
+/// Esqueleto del detalle mientras carga: la misma forma que la pantalla
+/// (encabezado, guía, fotos y mapa).
+class _DetalleCargando extends StatelessWidget {
+  const _DetalleCargando({required this.escritorio});
+
+  final bool escritorio;
+
+  @override
+  Widget build(BuildContext context) {
+    const separacion = SizedBox(height: Espacios.l);
+    const encabezado = TarjetaApp(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              BloqueEsqueleto.circulo(tamano: 44),
+              SizedBox(width: Espacios.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BloqueEsqueleto(alto: 18, ancho: 160),
+                    SizedBox(height: Espacios.s),
+                    BloqueEsqueleto(ancho: 96),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: Espacios.l),
+          BloqueEsqueleto(),
+          SizedBox(height: Espacios.s),
+          BloqueEsqueleto(ancho: 220),
+        ],
+      ),
+    );
+    const queSigue = TarjetaApp(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BloqueEsqueleto(alto: 16, ancho: 120),
+          SizedBox(height: Espacios.m),
+          BloqueEsqueleto(),
+          SizedBox(height: Espacios.s),
+          BloqueEsqueleto(ancho: 200),
+        ],
+      ),
+    );
+    const foto = BloqueEsqueleto(alto: 96, ancho: 96, radio: Radios.medio);
+    const fotos = Wrap(
+      spacing: Espacios.s,
+      runSpacing: Espacios.s,
+      children: [foto, foto, foto],
+    );
+    final mapa = BloqueEsqueleto(
+      alto: escritorio ? 280 : 220,
+      radio: Radios.grande,
+    );
+
+    return EsqueletoCarga(
+      etiqueta: 'Cargando la solicitud',
+      child: escritorio
+          ? _Escritorio(
+              izquierda: [encabezado, separacion, fotos, separacion, mapa],
+              derecha: const [queSigue],
+            )
+          : _Movil(
+              children: [
+                encabezado,
+                separacion,
+                queSigue,
+                separacion,
+                fotos,
+                separacion,
+                mapa,
+              ],
+            ),
+    );
   }
 }
 

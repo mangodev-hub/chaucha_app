@@ -61,6 +61,7 @@ class SolicitudesFalsas implements SolicitudRepository {
   List<Solicitud> abiertas = const [];
   int consultasDeAbiertas = 0;
   int obtenidas = 0;
+  int consultasDeMisSolicitudes = 0;
   final cambiosDeEstado = <(String, EstadoSolicitud)>[];
 
   /// Si no es null, `cambiarEstado` espera a que se complete.
@@ -92,7 +93,10 @@ class SolicitudesFalsas implements SolicitudRepository {
   Future<List<FotoSolicitud>> fotos(String solicitudId) async => const [];
 
   @override
-  Future<List<Solicitud>> misSolicitudes() async => const [];
+  Future<List<Solicitud>> misSolicitudes() async {
+    consultasDeMisSolicitudes++;
+    return const [];
+  }
 
   @override
   Future<List<Solicitud>> misTrabajos() async => const [];

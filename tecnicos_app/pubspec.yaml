@@ -46,6 +46,8 @@ dependencies:
   google_fonts: ^8.0.0
   flutter_svg: ^2.3.2
   url_launcher: ^6.3.3
+  # Registro de usuarios desde el panel admin sin tocar la sesión actual.
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +70,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Imágenes de la app (por ejemplo, la ilustración del login).
+  assets:
+    - assets/img/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

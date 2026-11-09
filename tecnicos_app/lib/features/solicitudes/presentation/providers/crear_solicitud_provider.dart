@@ -9,11 +9,12 @@ import '../../../../core/errors/app_failure.dart';
 import '../../../../core/errors/async_guard.dart';
 import '../../data/repositories/supabase_solicitud_repository.dart';
 import '../../domain/entities/nueva_solicitud.dart';
+import 'listas_provider.dart';
 
 final crearSolicitudProvider =
     AsyncNotifierProvider.autoDispose<CrearSolicitudNotifier, String?>(
-  CrearSolicitudNotifier.new,
-);
+      CrearSolicitudNotifier.new,
+    );
 
 class CrearSolicitudNotifier extends AsyncNotifier<String?> {
   @override
@@ -35,7 +36,9 @@ class CrearSolicitudNotifier extends AsyncNotifier<String?> {
         throw const AppFailure('Selecciona el tipo de servicio.');
       }
       final referencia = direccion.trim();
-      return ref.read(solicitudRepositoryProvider).crear(
+      return ref
+          .read(solicitudRepositoryProvider)
+          .crear(
             NuevaSolicitud(
               oficioId: oficioId,
               descripcion: descripcion,
@@ -45,7 +48,10 @@ class CrearSolicitudNotifier extends AsyncNotifier<String?> {
             ),
           );
     });
-    if (ref.mounted) state = resultado;
+    if (!ref.mounted) return resultado.value;
+    state = resultado;
+    // La lista del cliente ya tiene una solicitud más.
+    if (resultado.value != null) ref.invalidate(misSolicitudesProvider);
     return resultado.value;
   }
 }

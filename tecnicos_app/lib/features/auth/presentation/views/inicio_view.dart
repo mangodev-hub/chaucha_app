@@ -7,10 +7,11 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/espacio_publicitario.dart';
+import '../../../../core/widgets/carrusel_aliados.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/seccion.dart';
+import '../../../../core/widgets/tarjeta_portada.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
 import '../../../solicitudes/presentation/providers/listas_provider.dart';
@@ -72,6 +73,7 @@ class InicioView extends ConsumerStatefulWidget {
   @override
   ConsumerState<InicioView> createState() => _InicioViewState();
 }
+
 class _InicioViewState extends ConsumerState<InicioView> {
   /// Oficio elegido en las píldoras (null = todos).
   String? _filtro;
@@ -102,7 +104,8 @@ class _InicioViewState extends ConsumerState<InicioView> {
           trailing: esCliente && oficios.hasValue
               ? TextButton.icon(
                   iconAlignment: IconAlignment.end,
-                  onPressed: () => _verTodos(context, ref, oficios.value!, conteo),
+                  onPressed: () =>
+                      _verTodos(context, ref, oficios.value!, conteo),
                   icon: const Icon(Icons.arrow_forward, size: 18),
                   label: Text('Ver todos (${oficios.value!.length})'),
                 )
@@ -154,7 +157,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
                   children: [
                     _mapa(tecnicos, 520),
                     const SizedBox(height: Espacios.xl),
-                    const EspacioPublicitario(),
+                    const CarruselAliados(),
                   ],
                 ),
               ),
@@ -169,7 +172,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
               separacion,
               lista,
               separacion,
-              const EspacioPublicitario(),
+              const CarruselAliados(),
               separacion,
               const BannerConfianza(),
             ],
@@ -187,13 +190,28 @@ class _InicioViewState extends ConsumerState<InicioView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  TarjetaPortada(
+                    titulo: esCliente
+                        ? '¿Qué arreglamos hoy?'
+                        : 'Técnicos en Quito.',
+                    subtitulo: 'Técnicos verificados, a la puerta de tu casa.',
+                    dato: switch (tecnicos.value?.length) {
+                      null => 'Técnicos verificados',
+                      1 => '1 técnico cerca · en vivo',
+                      final n => '$n técnicos cerca · en vivo',
+                    },
+                    iconoDato: Icons.near_me_rounded,
+                  ),
+                  // El buscador va pegado a la portada; sin él, el cuerpo
+                  // lleva la separación normal entre secciones.
                   if (esCliente) ...[
+                    const SizedBox(height: Espacios.l),
                     HeroBusqueda(
                       onNueva: (texto) =>
                           _pedir(context, ref, descripcion: texto),
                     ),
-                    separacion,
                   ],
+                  separacion,
                   cuerpo,
                 ],
               ),
@@ -223,8 +241,9 @@ class _InicioViewState extends ConsumerState<InicioView> {
         tecnicos: lista,
         alto: alto,
         etiquetaRadio: 'Radio: $km km (PostGIS)',
-        onContactar:
-            widget.esCliente ? () => _solicitarTecnico(context, ref) : null,
+        onContactar: widget.esCliente
+            ? () => _solicitarTecnico(context, ref)
+            : null,
       ),
     );
   }
@@ -279,7 +298,11 @@ class _InicioViewState extends ConsumerState<InicioView> {
             }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [titulo, const SizedBox(height: Espacios.m), filtros],
+              children: [
+                titulo,
+                const SizedBox(height: Espacios.m),
+                filtros,
+              ],
             );
           },
         ),
