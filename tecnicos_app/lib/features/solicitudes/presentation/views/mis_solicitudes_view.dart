@@ -1,5 +1,3 @@
-// Inicio del cliente: saludo con el botón para pedir un técnico y sus
-// solicitudes, separadas en activas y finalizadas.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,17 +8,13 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
-import '../../../../core/widgets/marca.dart';
 import '../../../../core/widgets/seccion.dart';
-import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/listas_provider.dart';
 import '../widgets/solicitud_widgets.dart';
 
 class MisSolicitudesView extends ConsumerStatefulWidget {
-  const MisSolicitudesView({super.key, required this.onCerrarSesion});
-
-  final VoidCallback onCerrarSesion;
+  const MisSolicitudesView({super.key});
 
   @override
   ConsumerState<MisSolicitudesView> createState() => _MisSolicitudesViewState();
@@ -48,46 +42,43 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Marca(),
-        actions: [
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: widget.onCerrarSesion,
+    return RefreshIndicator(
+      onRefresh: () =>
+          esperarSinError(ref.refresh(misSolicitudesProvider.future)),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          Espacios.l,
+          Espacios.l,
+          Espacios.l,
+          Espacios.xxl,
+        ),
+        children: [
+          AnchoMaximo(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('Mis solicitudes', style: textos.titleLarge),
+                    ),
+                    FilledButton.icon(
+                      onPressed: _nueva,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Nueva solicitud'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Espacios.m),
+                AsyncValueView<List<Solicitud>>(
+                  value: ref.watch(misSolicitudesProvider),
+                  onRetry: () => ref.invalidate(misSolicitudesProvider),
+                  onData: (context, solicitudes) => _lista(solicitudes),
+                ),
+              ],
+            ),
           ),
         ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () =>
-            esperarSinError(ref.refresh(misSolicitudesProvider.future)),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            Espacios.l,
-            Espacios.s,
-            Espacios.l,
-            Espacios.xxl,
-          ),
-          children: [
-            AnchoMaximo(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _Bienvenida(onNueva: _nueva),
-                  const SizedBox(height: Espacios.xl),
-                  Text('Mis solicitudes', style: textos.titleLarge),
-                  const SizedBox(height: Espacios.m),
-                  AsyncValueView<List<Solicitud>>(
-                    value: ref.watch(misSolicitudesProvider),
-                    onRetry: () => ref.invalidate(misSolicitudesProvider),
-                    onData: (context, solicitudes) => _lista(solicitudes),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -148,77 +139,6 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
             ],
           ),
       ],
-    );
-  }
-}
-
-/// Encabezado azul: saludo con el nombre y el botón para pedir un técnico.
-class _Bienvenida extends ConsumerWidget {
-  const _Bienvenida({required this.onNueva});
-
-  final VoidCallback onNueva;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final textos = Theme.of(context).textTheme;
-    final blanco = Theme.of(context).colorScheme.onPrimary;
-    final nombre = ref.watch(usuarioActualProvider)?.nombres;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(Radios.grande),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colores.primario, Colores.primarioOscuro],
-          ),
-        ),
-        child: Stack(
-          children: [
-            // Ícono grande decorativo, recortado en la esquina.
-            Positioned(
-              right: -18,
-              bottom: -22,
-              child: ExcludeSemantics(
-                child: Icon(
-                  Icons.build_rounded,
-                  size: 130,
-                  color: blanco.withValues(alpha: 0.12),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(Espacios.xl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nombre == null ? 'Hola' : 'Hola, $nombre',
-                    style: textos.headlineMedium?.copyWith(color: blanco),
-                  ),
-                  const SizedBox(height: Espacios.xs),
-                  Text(
-                    '¿Qué necesitas arreglar hoy?',
-                    style: textos.bodyLarge?.copyWith(
-                      color: blanco.withValues(alpha: 0.9),
-                    ),
-                  ),
-                  const SizedBox(height: Espacios.l + 4),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colores.tarjeta,
-                      foregroundColor: Colores.primario,
-                    ),
-                    onPressed: onNueva,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Pedir un técnico'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -16,6 +16,7 @@ class MapaUbicacion extends StatefulWidget {
     this.radioMetros,
     this.otrosPuntos = const [],
     this.altura = 280,
+    this.zoom = 15,
   });
 
   final LatLng punto;
@@ -23,13 +24,13 @@ class MapaUbicacion extends StatefulWidget {
   final double? radioMetros;
   final List<LatLng> otrosPuntos;
   final double altura;
+  final double zoom;
 
   @override
   State<MapaUbicacion> createState() => _MapaUbicacionState();
 }
 
 class _MapaUbicacionState extends State<MapaUbicacion> {
-  static const double _zoomInicial = 15;
   final MapController _controller = MapController();
 
   @override
@@ -59,7 +60,7 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
           mapController: _controller,
           options: MapOptions(
             initialCenter: widget.punto,
-            initialZoom: _zoomInicial,
+            initialZoom: widget.zoom,
             onTap: widget.onCambio == null
                 ? null
                 : (_, punto) => widget.onCambio!(punto),
