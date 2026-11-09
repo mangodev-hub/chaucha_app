@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tecnicos_app/core/errors/app_failure.dart';
 import 'package:tecnicos_app/features/chat/data/repositories/supabase_chat_repository.dart';
+import 'package:tecnicos_app/features/chat/domain/entities/conversacion.dart';
+import 'package:tecnicos_app/features/chat/domain/entities/conversacion_pendiente.dart';
 import 'package:tecnicos_app/features/chat/domain/entities/mensaje.dart';
 import 'package:tecnicos_app/features/chat/domain/repositories/chat_repository.dart';
 import 'package:tecnicos_app/features/chat/presentation/providers/enviar_mensaje_provider.dart';
@@ -23,6 +25,13 @@ class _ChatFalso implements ChatRepository {
   Stream<List<Mensaje>> mensajes(String conversacionId) => flujo.stream;
 
   @override
+  Future<List<ConversacionPendiente>> porResponder() async => const [];
+
+  @override
+  Future<Conversacion> conversacion(String conversacionId) async =>
+      Conversacion(id: conversacionId, solicitudId: 's1', tecnicoId: 't1');
+
+  @override
   Future<void> enviar({
     required String conversacionId,
     required String texto,
@@ -38,17 +47,16 @@ class _ChatFalso implements ChatRepository {
   Future<String> obtenerOCrearConversacion({
     required String solicitudId,
     required String tecnicoId,
-  }) async =>
-      'c1';
+  }) async => 'c1';
 }
 
 Mensaje _mensaje(String id) => Mensaje(
-      id: id,
-      conversacionId: 'c1',
-      autorId: 'u1',
-      contenido: 'Hola $id',
-      enviadoEn: DateTime(2026),
-    );
+  id: id,
+  conversacionId: 'c1',
+  autorId: 'u1',
+  contenido: 'Hola $id',
+  enviadoEn: DateTime(2026),
+);
 
 Future<void> _esperar() async {
   for (var i = 0; i < 5; i++) {
@@ -123,17 +131,19 @@ void main() {
       expect((error! as AppFailure).message, 'No tienes permiso.');
     });
 
-    test('ignora un segundo envío mientras el primero sigue en curso',
-        () async {
-      chat.envioPendiente = Completer<void>();
+    test(
+      'ignora un segundo envío mientras el primero sigue en curso',
+      () async {
+        chat.envioPendiente = Completer<void>();
 
-      final primero = notifier().enviar('uno');
-      expect(container.read(enviarMensajeProvider('c1')).isLoading, isTrue);
-      expect(await notifier().enviar('dos'), isFalse);
+        final primero = notifier().enviar('uno');
+        expect(container.read(enviarMensajeProvider('c1')).isLoading, isTrue);
+        expect(await notifier().enviar('dos'), isFalse);
 
-      chat.envioPendiente!.complete();
-      expect(await primero, isTrue);
-      expect(chat.enviados.map((e) => e.texto), ['uno']);
-    });
+        chat.envioPendiente!.complete();
+        expect(await primero, isTrue);
+        expect(chat.enviados.map((e) => e.texto), ['uno']);
+      },
+    );
   });
 }

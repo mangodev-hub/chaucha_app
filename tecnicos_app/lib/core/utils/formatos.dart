@@ -20,6 +20,14 @@ abstract final class Formatos {
     return '${dos(fecha.day)}/${dos(fecha.month)}/${fecha.year}';
   }
 
+  /// "Lun 10/11/2026" (fecha del servicio).
+  static String fechaCorta(DateTime fecha) {
+    const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    String dos(int n) => n.toString().padLeft(2, '0');
+    return '${dias[fecha.weekday - 1]} '
+        '${dos(fecha.day)}/${dos(fecha.month)}/${fecha.year}';
+  }
+
   static String hora(DateTime fecha) =>
       '${fecha.hour.toString().padLeft(2, '0')}:'
       '${fecha.minute.toString().padLeft(2, '0')}';

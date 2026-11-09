@@ -143,7 +143,7 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
       child: EncabezadoPantalla(
         titulo: 'Pide un técnico',
         subtitulo:
-            'Cuéntanos qué pasa y recibe cotizaciones de técnicos '
+            'Cuéntanos qué pasa y recibe ofertas de técnicos '
             'cerca de ti.',
       ),
     );

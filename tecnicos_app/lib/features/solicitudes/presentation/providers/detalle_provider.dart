@@ -9,7 +9,6 @@ import '../../../../core/errors/async_guard.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../chat/data/repositories/supabase_chat_repository.dart';
 import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
-import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/domain/entities/nueva_cotizacion.dart';
 import '../../../perfil_puntos/data/repositories/supabase_perfil_repository.dart';
 import '../../../perfil_puntos/domain/entities/nueva_resena.dart';
@@ -25,21 +24,19 @@ final obtenerDetalleSolicitudProvider = Provider<ObtenerDetalleSolicitud>(
   ),
 );
 
-final detalleSolicitudProvider =
-    FutureProvider.autoDispose.family<DetalleSolicitud, String>(
-  (ref, solicitudId) {
-    final usuario = ref.watch(usuarioActualProvider);
-    if (usuario == null) {
-      throw const AppFailure('Tu sesión expiró. Inicia sesión de nuevo.');
-    }
-    return ref.watch(obtenerDetalleSolicitudProvider)(solicitudId, usuario);
-  },
-);
+final detalleSolicitudProvider = FutureProvider.autoDispose
+    .family<DetalleSolicitud, String>((ref, solicitudId) {
+      final usuario = ref.watch(usuarioActualProvider);
+      if (usuario == null) {
+        throw const AppFailure('Tu sesión expiró. Inicia sesión de nuevo.');
+      }
+      return ref.watch(obtenerDetalleSolicitudProvider)(solicitudId, usuario);
+    });
 
 final accionesSolicitudProvider = AsyncNotifierProvider.autoDispose
     .family<AccionesSolicitudNotifier, void, String>(
-  AccionesSolicitudNotifier.new,
-);
+      AccionesSolicitudNotifier.new,
+    );
 
 /// Acciones del detalle. Comparten un solo estado de "procesando": mientras
 /// una está en curso, las demás se ignoran (devuelven false / null).
@@ -51,45 +48,48 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
-  /// La función RPC acepta, rechaza las demás y marca la solicitud.
-  Future<bool> aceptar(Cotizacion cotizacion) => _ejecutar(
-        () => ref.read(cotizacionRepositoryProvider).aceptar(cotizacion),
-      );
-
   Future<bool> confirmarTerminado() => _ejecutar(
-        () => ref
-            .read(solicitudRepositoryProvider)
-            .cambiarEstado(solicitudId, EstadoSolicitud.completada),
-      );
+    () => ref
+        .read(solicitudRepositoryProvider)
+        .cambiarEstado(solicitudId, EstadoSolicitud.completada),
+  );
 
   Future<bool> cancelar() => _ejecutar(
-        () => ref
-            .read(solicitudRepositoryProvider)
-            .cambiarEstado(solicitudId, EstadoSolicitud.cancelada),
-      );
+    () => ref
+        .read(solicitudRepositoryProvider)
+        .cambiarEstado(solicitudId, EstadoSolicitud.cancelada),
+  );
 
-  Future<bool> enviarCotizacion({
-    required double manoObra,
-    required double materiales,
-    String? detalle,
+  /// El técnico ofrece sus servicios: precio base y cómo lo resolvería. El
+  /// precio final se acuerda después por chat.
+  Future<bool> enviarOferta({
+    required double precioBase,
+    required String solucion,
   }) {
-    return _ejecutar(
-      () => ref.read(cotizacionRepositoryProvider).enviar(
+    return _ejecutar(() async {
+      if (solucion.trim().isEmpty) {
+        throw const AppFailure('Explica cómo resolverías el problema.');
+      }
+      if (precioBase <= 0) {
+        throw const AppFailure('El precio base debe ser mayor que 0.');
+      }
+      await ref
+          .read(cotizacionRepositoryProvider)
+          .enviar(
             NuevaCotizacion(
               solicitudId: solicitudId,
-              manoObra: manoObra,
-              materiales: materiales,
-              detalle: detalle,
+              precioBase: precioBase,
+              solucion: solucion.trim(),
             ),
-          ),
-    );
+          );
+    });
   }
 
   Future<bool> marcarTerminada(List<Uint8List> evidencias) => _ejecutar(
-        () => ref
-            .read(solicitudRepositoryProvider)
-            .marcarTerminada(solicitudId, evidencias),
-      );
+    () => ref
+        .read(solicitudRepositoryProvider)
+        .marcarTerminada(solicitudId, evidencias),
+  );
 
   Future<bool> calificar({
     required String destinatarioId,
@@ -97,7 +97,9 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
     String? comentario,
   }) {
     return _ejecutar(
-      () => ref.read(perfilRepositoryProvider).crearResena(
+      () => ref
+          .read(perfilRepositoryProvider)
+          .crearResena(
             NuevaResena(
               solicitudId: solicitudId,
               destinatarioId: destinatarioId,
@@ -112,16 +114,14 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
   /// Devuelve el id de la conversación, o null si falló o se ignoró.
   Future<String?> abrirChat(String tecnicoId) async {
     String? conversacionId;
-    await _ejecutar(
-      () async {
-        conversacionId =
-            await ref.read(chatRepositoryProvider).obtenerOCrearConversacion(
-                  solicitudId: solicitudId,
-                  tecnicoId: tecnicoId,
-                );
-      },
-      recargar: false,
-    );
+    await _ejecutar(() async {
+      conversacionId = await ref
+          .read(chatRepositoryProvider)
+          .obtenerOCrearConversacion(
+            solicitudId: solicitudId,
+            tecnicoId: tecnicoId,
+          );
+    }, recargar: false);
     return conversacionId;
   }
 

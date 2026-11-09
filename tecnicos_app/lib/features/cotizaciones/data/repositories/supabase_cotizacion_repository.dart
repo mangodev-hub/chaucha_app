@@ -2,13 +2,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/errors/app_failure.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/supabase/supabase_extensions.dart';
 import '../../../../core/supabase/supabase_guard.dart';
 import '../../domain/entities/cotizacion.dart';
 import '../../domain/entities/nueva_cotizacion.dart';
+import '../../domain/entities/tarifa.dart';
 import '../../domain/repositories/cotizacion_repository.dart';
 import '../models/cotizacion_model.dart';
+import '../models/estado_cotizacion_db.dart';
 
 final cotizacionRepositoryProvider = Provider<CotizacionRepository>(
   (ref) => SupabaseCotizacionRepository(ref.watch(supabaseClientProvider)),
@@ -29,22 +32,74 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
           .select(CotizacionModel.columnas)
           .eq('solicitud_id', solicitudId)
           .order('creado_en');
-      return filas
-          .map((fila) => CotizacionModel.fromJson(fila).aEntidad())
-          .toList();
+      return filas.map(CotizacionModel.desdeFila).toList();
+    });
+  }
+
+  @override
+  Future<List<Cotizacion>> misOfertas() {
+    return supabaseGuard(() async {
+      final filas = await _client
+          .from(_tabla)
+          .select(CotizacionModel.columnas)
+          .eq('tecnico_id', _client.uidActual)
+          .order('creado_en', ascending: false);
+      return filas.map(CotizacionModel.desdeFila).toList();
     });
   }
 
   @override
   Future<void> enviar(NuevaCotizacion nueva) {
     return supabaseGuard(() async {
-      await _client.from(_tabla).insert({
-        'solicitud_id': nueva.solicitudId,
-        'tecnico_id': _client.uidActual,
-        'mano_obra': nueva.manoObra,
-        'materiales': nueva.materiales,
-        'detalle': nueva.detalle?.trim(),
-      });
+      await _client
+          .from(_tabla)
+          .insert(
+            CotizacionModel.filaNueva(
+              solicitudId: nueva.solicitudId,
+              tecnicoId: _client.uidActual,
+              precioBase: nueva.precioBase,
+              solucion: nueva.solucion,
+            ),
+          );
+    });
+  }
+
+  /// Solo cambia la oferta del técnico conectado que sigue pendiente. Si no
+  /// se actualizó ninguna fila (ya no está pendiente, o RLS lo impidió),
+  /// avisa con un [AppFailure].
+  @override
+  Future<void> enviarTarifa(String cotizacionId, NuevaTarifa tarifa) {
+    return supabaseGuard(() async {
+      final filas = await _client
+          .from(_tabla)
+          .update(CotizacionModel.cambiosTarifa(tarifa))
+          .eq('id', cotizacionId)
+          .eq('tecnico_id', _client.uidActual)
+          .eq('estado', EstadoCotizacion.pendiente.valorDb)
+          .select('id');
+      if (filas.isEmpty) {
+        throw const AppFailure(
+          'No se pudo enviar el ticket. Puede que la oferta ya no esté '
+          'pendiente.',
+        );
+      }
+    });
+  }
+
+  @override
+  Future<void> rechazarTarifa(String cotizacionId) {
+    return supabaseGuard(() async {
+      final filas = await _client
+          .from(_tabla)
+          .update(CotizacionModel.cambiosRechazo)
+          .eq('id', cotizacionId)
+          .eq('estado', EstadoCotizacion.pendiente.valorDb)
+          .select('id');
+      if (filas.isEmpty) {
+        throw const AppFailure(
+          'No se pudo rechazar el ticket. Puede que ya no esté pendiente.',
+        );
+      }
     });
   }
 

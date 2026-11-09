@@ -1,9 +1,15 @@
 // Detalle de una solicitud. La misma pantalla sirve al cliente y al técnico;
 // lo que ve y puede hacer cada uno lo decide `DetalleSolicitud`.
 //
+// Flujo: el técnico ofrece sus servicios (precio base y solución); el
+// cliente revisa las ofertas, le escribe al que le guste y acuerdan el precio
+// por chat.
+//
 // En móvil: una columna y la acción principal fija abajo. En escritorio: dos
-// columnas (la solicitud a la izquierda; guía, acción y cotizaciones a la
+// columnas (la solicitud a la izquierda; guía, acción y ofertas a la
 // derecha).
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +17,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/media/selector_fotos.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
-import '../../../../core/utils/formatos.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/barra_accion.dart';
@@ -73,19 +78,6 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     }
   }
 
-  Future<void> _aceptar(Cotizacion cotizacion) async {
-    final ok = await context.confirmar(
-      'Aceptar cotización',
-      '¿Contratar a ${cotizacion.tecnicoNombre} por '
-          '${Formatos.dinero(cotizacion.total)}? Las demás se rechazarán.',
-      textoConfirmar: 'Contratar',
-      icono: Icons.handshake_outlined,
-    );
-    if (ok) {
-      await _resultado(_acciones.aceptar(cotizacion), 'Cotización aceptada.');
-    }
-  }
-
   Future<void> _confirmarTerminado() async {
     final ok = await context.confirmar(
       'Confirmar trabajo',
@@ -102,7 +94,7 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
   Future<void> _cancelar() async {
     final ok = await context.confirmar(
       'Cancelar solicitud',
-      'Los técnicos ya no podrán cotizarla.',
+      'Los técnicos ya no podrán enviarte ofertas.',
       textoConfirmar: 'Sí, cancelar',
       textoCancelar: 'Volver',
       destructivo: true,
@@ -111,16 +103,15 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     if (ok) await _resultado(_acciones.cancelar(), 'Solicitud cancelada.');
   }
 
-  Future<void> _cotizar() async {
-    final datos = await mostrarFormularioCotizacion(context);
+  Future<void> _ofrecer() async {
+    final datos = await mostrarFormularioOferta(context);
     if (datos == null) return;
     await _resultado(
-      _acciones.enviarCotizacion(
-        manoObra: datos.manoObra,
-        materiales: datos.materiales,
-        detalle: datos.detalle,
+      _acciones.enviarOferta(
+        precioBase: datos.precioBase,
+        solucion: datos.solucion,
       ),
-      'Cotización enviada.',
+      'Oferta enviada. Si al cliente le interesa, te escribirá.',
     );
   }
 
@@ -162,7 +153,13 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     }
     final esCliente = ref.read(usuarioActualProvider)?.id != tecnicoId;
     await context.push(AppRoutes.chat(id, esCliente: esCliente));
+    if (!mounted) return;
+    // En el chat se pudo confirmar un ticket (la solicitud pasa a "En curso").
+    ref.invalidate(detalleSolicitudProvider(widget.solicitudId));
   }
+
+  void _verPerfil(String tecnicoId) =>
+      unawaited(context.push(AppRoutes.perfilTecnico(tecnicoId)));
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +212,7 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
                       const SizedBox(height: Espacios.l),
                       boton,
                     ],
-                    ..._cotizaciones(datos, procesando: procesando),
+                    ..._ofertas(datos, procesando: procesando),
                   ],
                 )
               : _Movil(
@@ -226,7 +223,7 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
                     // Por confirmar, la evidencia es lo que hay que revisar.
                     if (datos.estado == EstadoSolicitud.porConfirmar)
                       ..._evidencia(datos),
-                    ..._cotizaciones(datos, procesando: procesando),
+                    ..._ofertas(datos, procesando: procesando),
                     if (datos.estado != EstadoSolicitud.porConfirmar)
                       ..._evidencia(datos),
                     ..._fotosProblema(datos),
@@ -264,9 +261,9 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     }
     if (estado.recibeCotizaciones && d.miCotizacion == null) {
       return (
-        texto: 'Enviar cotización',
-        icono: Icons.request_quote_outlined,
-        alPulsar: _cotizar,
+        texto: 'Ofrecer mis servicios',
+        icono: Icons.handyman_outlined,
+        alPulsar: _ofrecer,
       );
     }
     if (d.soyTecnicoAsignado && estado == EstadoSolicitud.aceptada) {
@@ -320,24 +317,29 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     ];
   }
 
-  List<Widget> _cotizaciones(DetalleSolicitud d, {required bool procesando}) {
+  List<Widget> _ofertas(DetalleSolicitud d, {required bool procesando}) {
     if (!d.soyCliente) {
       final mia = d.miCotizacion;
       if (mia == null) return const [];
+      // El técnico abre el chat para leer o responder; solo el cliente
+      // puede escribir primero (lo controla la pantalla del chat).
       return [
         Seccion(
-          titulo: 'Tu cotización',
+          titulo: 'Tu oferta',
           child: CotizacionCard(
             cotizacion: mia,
             destacada: mia.estado == EstadoCotizacion.aceptada,
             accionesActivas: !procesando,
-            onChat: () => _chat(mia.tecnicoId),
+            textoChat: 'Abrir chat',
+            onChat: mia.estado == EstadoCotizacion.rechazada
+                ? null
+                : () => _chat(mia.tecnicoId),
           ),
         ),
       ];
     }
 
-    // Con un técnico contratado, se destaca su cotización y el resto se pliega.
+    // Con un técnico contratado, se destaca su oferta y el resto se pliega.
     final aceptada = d.cotizacionAceptada;
     if (aceptada != null) {
       final otras = [
@@ -352,24 +354,27 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
             destacada: true,
             accionesActivas: !procesando,
             onChat: () => _chat(aceptada.tecnicoId),
+            onVerPerfil: () => _verPerfil(aceptada.tecnicoId),
           ),
         ),
-        if (otras.isNotEmpty) _CotizacionesPlegadas(cotizaciones: otras),
+        if (otras.isNotEmpty)
+          _OfertasPlegadas(ofertas: otras, onVerPerfil: _verPerfil),
       ];
     }
 
     final n = d.cotizaciones.length;
-    final puedeAceptar = d.estado.recibeCotizaciones;
+    final recibeOfertas = d.estado.recibeCotizaciones;
     return [
       Seccion(
-        titulo: n == 0 ? 'Cotizaciones' : 'Cotizaciones ($n)',
+        titulo: n == 0 ? 'Ofertas' : 'Ofertas ($n)',
         child: n == 0
             ? EstadoMensaje(
-                icono: Icons.request_quote_outlined,
+                icono: Icons.local_offer_outlined,
                 compacto: true,
-                mensaje: puedeAceptar
-                    ? 'Aún no hay cotizaciones. Te avisaremos cuando lleguen.'
-                    : 'Esta solicitud no recibió cotizaciones.',
+                mensaje: recibeOfertas
+                    ? 'Aún no hay ofertas. Te avisaremos cuando un técnico '
+                          'ofrezca sus servicios.'
+                    : 'Esta solicitud no recibió ofertas.',
               )
             : Column(
                 children: [
@@ -377,11 +382,12 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
                     CotizacionCard(
                       cotizacion: c,
                       accionesActivas: !procesando,
-                      onAceptar:
-                          puedeAceptar && c.estado == EstadoCotizacion.pendiente
-                          ? () => _aceptar(c)
-                          : null,
+                      // Se contrata confirmando el ticket en el chat.
+                      textoChat: c.tarifaPendiente
+                          ? 'Revisar ticket en el chat'
+                          : 'Escribir al técnico',
                       onChat: () => _chat(c.tecnicoId),
+                      onVerPerfil: () => _verPerfil(c.tecnicoId),
                     ),
                 ],
               ),
@@ -476,15 +482,16 @@ class _MenuOpciones extends StatelessWidget {
   }
 }
 
-/// Cotizaciones que no se eligieron, plegadas debajo del técnico asignado.
-class _CotizacionesPlegadas extends StatelessWidget {
-  const _CotizacionesPlegadas({required this.cotizaciones});
+/// Ofertas que no se eligieron, plegadas debajo del técnico asignado.
+class _OfertasPlegadas extends StatelessWidget {
+  const _OfertasPlegadas({required this.ofertas, required this.onVerPerfil});
 
-  final List<Cotizacion> cotizaciones;
+  final List<Cotizacion> ofertas;
+  final void Function(String tecnicoId) onVerPerfil;
 
   @override
   Widget build(BuildContext context) {
-    final n = cotizaciones.length;
+    final n = ofertas.length;
     return Padding(
       padding: const EdgeInsets.only(top: Espacios.s),
       child: ExpansionTile(
@@ -493,12 +500,16 @@ class _CotizacionesPlegadas extends StatelessWidget {
         shape: const Border(),
         collapsedShape: const Border(),
         title: Text(
-          n == 1
-              ? 'Ver 1 cotización no elegida'
-              : 'Ver $n cotizaciones no elegidas',
+          n == 1 ? 'Ver 1 oferta no elegida' : 'Ver $n ofertas no elegidas',
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        children: [for (final c in cotizaciones) CotizacionCard(cotizacion: c)],
+        children: [
+          for (final c in ofertas)
+            CotizacionCard(
+              cotizacion: c,
+              onVerPerfil: () => onVerPerfil(c.tecnicoId),
+            ),
+        ],
       ),
     );
   }

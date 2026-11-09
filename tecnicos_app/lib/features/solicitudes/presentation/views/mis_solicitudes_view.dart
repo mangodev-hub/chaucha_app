@@ -90,7 +90,7 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
         icono: Icons.handyman_outlined,
         titulo: 'Aún no tienes solicitudes',
         mensaje:
-            'Pide un técnico y recibe cotizaciones de profesionales '
+            'Pide un técnico y recibe ofertas de profesionales '
             'cerca de ti.',
       );
     }
