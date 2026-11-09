@@ -157,9 +157,9 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
       titulo: 'Crear cuenta',
       subtitulo: 'Únete a la comunidad de servicios de Quito.',
       tituloCentrado: true,
-      child: _formulario(cargando: estado.isLoading, error: error),
       anchoEscritorio: 520,
       esRegistro: true,
+      child: _formulario(cargando: estado.isLoading, error: error),
     );
   }
 

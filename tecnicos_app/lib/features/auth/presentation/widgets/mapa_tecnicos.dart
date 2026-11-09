@@ -67,7 +67,7 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
             options: MapOptions(
               initialCenter: widget.punto,
               initialZoom: _zoomInicial,
-              interactionOptions: InteractionOptions(
+              interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all &
                     ~InteractiveFlag.rotate &
                     ~InteractiveFlag.scrollWheelZoom,

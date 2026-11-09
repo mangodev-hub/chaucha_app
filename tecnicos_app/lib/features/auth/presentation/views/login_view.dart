@@ -9,14 +9,12 @@ import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
+import '../../../../core/widgets/boton_google.dart';
 import '../../../../core/widgets/campos.dart';
-import '../../../../core/widgets/mensajes.dart';
 import '../../domain/entities/sesion_estado.dart';
 import '../providers/login_provider.dart';
 import '../providers/sesion_provider.dart';
 import '../widgets/auth_layout.dart';
-import '../widgets/enlace_auth.dart';
-import '../../../../core/widgets/boton_google.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});

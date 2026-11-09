@@ -236,7 +236,7 @@ class EncabezadoSeccion extends StatelessWidget {
             ],
           ),
         ),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }
