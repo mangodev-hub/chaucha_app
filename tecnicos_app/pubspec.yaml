@@ -45,6 +45,7 @@ dependencies:
   # flutter/material). Subir cuando la app migre a material_ui.
   google_fonts: ^8.0.0
   flutter_svg: ^2.3.2
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
