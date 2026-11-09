@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../features/auth/presentation/views/inicio_view.dart';
+import 'inicio_shell.dart';  
 import '../core/router/app_routes.dart';
 import '../core/widgets/splash_view.dart';
 import '../features/auth/domain/entities/sesion_estado.dart';
@@ -17,11 +18,12 @@ import '../features/solicitudes/presentation/views/mis_solicitudes_view.dart';
 import '../features/solicitudes/presentation/views/mis_trabajos_view.dart';
 import '../features/solicitudes/presentation/views/solicitud_detalle_view.dart';
 import 'route_guard.dart';
-import 'tecnico_shell.dart';
+import '../features/auth/presentation/views/completar_perfil_view.dart';
+import '../features/auth/presentation/views/recuperar_view.dart';
+import '../features/auth/presentation/views/restablecer_view.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  // `ref.listen` (no `ref.watch`): el GoRouter no se recrea al cambiar la
-  // sesión; solo se le avisa para que vuelva a evaluar `redirect`.
+
   final cambiosDeSesion = ValueNotifier<SesionEstado>(ref.read(sesionProvider));
   ref.listen(sesionProvider, (_, nuevo) => cambiosDeSesion.value = nuevo);
 
@@ -55,15 +57,43 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.registro,
         builder: (context, state) => const RegistroView(),
       ),
+            GoRoute(
+        path: AppRoutes.recuperar,
+        builder: (context, state) => const RecuperarView(),
+      ),
       GoRoute(
-        path: AppRoutes.clienteInicio,
+        path: AppRoutes.restablecer,
+        builder: (context, state) => RestablecerView(
+          onCancelar: () =>
+              ref.read(sesionProvider.notifier).cancelarRecuperacion(),
+        ),
+      ),
+            GoRoute(
+        path: AppRoutes.completarPerfil,
         builder: (context, state) =>
-            MisSolicitudesView(onCerrarSesion: cerrarSesion),
-        routes: [
-          GoRoute(
-            path: 'nueva',
-            builder: (context, state) => const CrearSolicitudView(),
-          ),
+            CompletarPerfilView(onCerrarSesion: cerrarSesion),
+      ),
+GoRoute(
+  path: AppRoutes.clienteInicio,
+  builder: (context, state) => InicioShell(
+    onCerrarSesion: cerrarSesion,
+    destinos: const [
+      Destino('Inicio', Icons.home_outlined, InicioView(esCliente: true)),
+      Destino('Mis solicitudes', Icons.assignment_outlined,
+          MisSolicitudesView()),
+    ],
+  ),
+  routes: [
+GoRoute(
+  path: 'nueva',
+  builder: (context, state) {
+    final extra = state.extra as ({int? oficioId, String? descripcion})?;
+    return CrearSolicitudView(
+      oficioId: extra?.oficioId,
+      descripcion: extra?.descripcion,
+    );
+  },
+),
           GoRoute(
             path: 'solicitud/:id',
             builder: (context, state) => detalle(state),
@@ -76,12 +106,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.tecnicoInicio,
-        builder: (context, state) => TecnicoShell(
-          onCerrarSesion: cerrarSesion,
-          feed: const FeedView(),
-          trabajos: const MisTrabajosView(),
-          perfil: const PerfilTecnicoView(),
-        ),
+builder: (context, state) => InicioShell(
+  onCerrarSesion: cerrarSesion,
+  destinos: const [
+    Destino('Inicio', Icons.home_outlined, InicioView(esCliente: false)),
+    Destino('Solicitudes cerca', Icons.travel_explore, FeedView()),
+    Destino('Mis trabajos', Icons.work_outline, MisTrabajosView()),
+    Destino('Mi perfil', Icons.person_outline, PerfilTecnicoView()),
+  ],
+),
         routes: [
           GoRoute(
             path: 'solicitud/:id',

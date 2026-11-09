@@ -1,5 +1,3 @@
-// Formulario para pedir un técnico, en cuatro bloques numerados: oficio,
-// descripción, ubicación y fotos. "Publicar" queda fijo abajo en móvil.
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -29,7 +27,10 @@ import '../../domain/entities/nueva_solicitud.dart';
 import '../providers/crear_solicitud_provider.dart';
 
 class CrearSolicitudView extends ConsumerStatefulWidget {
-  const CrearSolicitudView({super.key});
+  const CrearSolicitudView({super.key, this.oficioId, this.descripcion});
+
+  final int? oficioId;
+  final String? descripcion;
 
   @override
   ConsumerState<CrearSolicitudView> createState() => _CrearSolicitudViewState();
@@ -48,8 +49,8 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
   @override
   void initState() {
     super.initState();
-    // Aquí no se puede usar setState: se marca directo y se busca el GPS.
-    _buscandoGps = true;
+    _oficioId = widget.oficioId;
+    _descripcion.text = widget.descripcion ?? '';
     unawaited(_buscarUbicacion());
   }
 
