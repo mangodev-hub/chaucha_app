@@ -1,5 +1,6 @@
 // Dibuja la pantalla según un [AsyncValue] de Riverpod: carga, error (con
-// botón de reintentar) o datos.
+// botón de reintentar) o datos. La carga es un spinner, salvo que la pantalla
+// pase su propio [cargando] (por ejemplo un `EsqueletoCarga`).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,12 +14,16 @@ class AsyncValueView<T> extends StatelessWidget {
     required this.onData,
     this.onError,
     this.onRetry,
+    this.cargando,
   });
 
   final AsyncValue<T> value;
   final Widget Function(BuildContext context, T data) onData;
   final Widget Function(BuildContext context, String message)? onError;
   final VoidCallback? onRetry;
+
+  /// Lo que se ve mientras carga. Si es null, un spinner centrado.
+  final WidgetBuilder? cargando;
 
   /// Mensaje para el usuario: el de [AppFailure] o uno genérico.
   static String mensajeDe(Object error) => error is AppFailure
@@ -32,7 +37,9 @@ class AsyncValueView<T> extends StatelessWidget {
       // que ya se ven, se mantienen en pantalla.
       skipLoadingOnRefresh: !value.hasError,
       data: (data) => onData(context, data),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () =>
+          cargando?.call(context) ??
+          const Center(child: CircularProgressIndicator()),
       error: (error, _) {
         final mensaje = mensajeDe(error);
         return onError?.call(context, mensaje) ??

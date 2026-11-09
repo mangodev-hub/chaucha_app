@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
-import '../../../../core/widgets/espacio_publicitario.dart';
+import '../../../../core/widgets/carrusel_aliados.dart';
 
 
 const _azul = Colores.primarioVivo;
@@ -50,7 +50,7 @@ class PerfilClienteView extends StatelessWidget {
                     SizedBox(height: 16),
                     _Privacidad(),
                     SizedBox(height: 16),
-                    EspacioPublicitario(),
+                    CarruselAliados(),
                   ],
                 );
                 return Column(

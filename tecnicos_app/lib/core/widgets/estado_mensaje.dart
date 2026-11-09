@@ -1,7 +1,9 @@
 // Mensaje de estado para huecos de la pantalla: lista vacía, error o éxito.
 // Centrado y grande, o [compacto] (en una fila) para usarlo dentro de una
-// sección. Con botón de acción opcional. En el tipo éxito, el ícono aparece
-// con un rebote y (en la versión grande) lleva un check animado.
+// sección. Con botón de acción opcional y, en la versión grande, una acción
+// secundaria debajo (por ejemplo "Volver al inicio"). En el tipo éxito, el
+// ícono aparece con un rebote y (en la versión grande) lleva un check
+// animado.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
@@ -34,6 +36,8 @@ class EstadoMensaje extends StatelessWidget {
     this.compacto = false,
     this.textoAccion,
     this.onAccion,
+    this.textoAccionSecundaria,
+    this.onAccionSecundaria,
   });
 
   final IconData icono;
@@ -46,12 +50,18 @@ class EstadoMensaje extends StatelessWidget {
   final String? textoAccion;
   final VoidCallback? onAccion;
 
+  /// Botón de texto debajo del principal. Solo en la versión grande.
+  final String? textoAccionSecundaria;
+  final VoidCallback? onAccionSecundaria;
+
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final titulo = this.titulo;
     final textoAccion = this.textoAccion;
     final hayAccion = textoAccion != null && onAccion != null;
+    final textoSecundario = textoAccionSecundaria;
+    final haySecundaria = textoSecundario != null && onAccionSecundaria != null;
     final exito = tipo == TipoEstado.exito;
 
     if (compacto) {
@@ -155,6 +165,13 @@ class EstadoMensaje extends StatelessWidget {
               if (hayAccion) ...[
                 const SizedBox(height: Espacios.xl),
                 FilledButton(onPressed: onAccion, child: Text(textoAccion)),
+              ],
+              if (haySecundaria) ...[
+                SizedBox(height: hayAccion ? Espacios.s : Espacios.xl),
+                TextButton(
+                  onPressed: onAccionSecundaria,
+                  child: Text(textoSecundario),
+                ),
               ],
             ],
           ),

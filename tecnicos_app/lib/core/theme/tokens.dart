@@ -87,6 +87,21 @@ abstract final class Sombras {
 
   /// Sombra del botón principal ("destacado").
   static const Color boton = Color(0x661976D2);
+
+  /// Sombra azul de las tarjetas con fondo azul (`TarjetaPortada`).
+  static const List<BoxShadow> azul = [
+    BoxShadow(color: Color(0x401976D2), blurRadius: 24, offset: Offset(0, 10)),
+  ];
+}
+
+abstract final class Degradados {
+  /// Fondo de las tarjetas de portada del inicio: del azul principal al
+  /// profundo. Con texto blanco cumple AA en todo el recorrido.
+  static const LinearGradient portada = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Colores.primario, Colores.primarioProfundo],
+  );
 }
 
 /// Duraciones y curvas de las animaciones. Las pantallas y componentes piden

@@ -16,12 +16,12 @@ import '../../../../core/utils/formatos.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
-import '../../../../core/widgets/encabezado_pantalla.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../../core/widgets/tarjeta_portada.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../chat/domain/entities/conversacion_pendiente.dart';
 import '../../../perfil_puntos/domain/entities/nivel.dart';
@@ -56,13 +56,8 @@ class InicioTecnicoView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final nombre = ref.watch(usuarioActualProvider)?.nombres;
     final escritorio = ResponsiveLayout.isDesktop(context);
 
-    final encabezado = EncabezadoPantalla(
-      titulo: nombre == null ? 'Hola' : 'Hola, $nombre',
-      subtitulo: 'Este es tu resumen de hoy.',
-    );
     const urgente = [_ParaEmpezar(), _Pendientes(), _NuevasCerca()];
     const progreso = [_Actividad(), _Reputacion()];
 
@@ -76,7 +71,7 @@ class InicioTecnicoView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                encabezado,
+                const _Portada(),
                 if (escritorio)
                   const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,6 +103,45 @@ class InicioTecnicoView extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Portada
+// ---------------------------------------------------------------------------
+
+/// Saludo con el total de pendientes del día (chats por responder y trabajos
+/// en curso) en la píldora, cuando ya cargaron.
+class _Portada extends ConsumerWidget {
+  const _Portada();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nombre = ref.watch(usuarioActualProvider)?.nombres;
+    final chats = ref.watch(chatsPorResponderProvider).value?.length;
+    final trabajos = ref
+        .watch(resumenTecnicoProvider)
+        .value
+        ?.trabajosEnCurso
+        .length;
+    final pendientes = chats == null || trabajos == null
+        ? null
+        : chats + trabajos;
+
+    return TarjetaPortada(
+      titulo: nombre == null ? 'Hola.' : 'Hola, $nombre.',
+      subtitulo: 'Este es tu resumen de hoy.',
+      icono: Icons.engineering_rounded,
+      dato: switch (pendientes) {
+        null => null,
+        0 => 'Estás al día',
+        1 => '1 pendiente hoy',
+        final n => '$n pendientes hoy',
+      },
+      iconoDato: pendientes == 0
+          ? Icons.task_alt_rounded
+          : Icons.notifications_active_outlined,
     );
   }
 }

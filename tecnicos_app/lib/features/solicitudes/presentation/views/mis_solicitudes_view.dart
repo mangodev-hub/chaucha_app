@@ -26,8 +26,11 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
 
   Future<void> _nueva() async {
     final creada = await context.push<String>(AppRoutes.clienteNuevaSolicitud);
+    if (!mounted || creada == null) return;
+    // Eligió "Ver mi solicitud" en la pantalla de éxito.
+    await context.push(AppRoutes.detalleSolicitud(creada, esCliente: true));
     if (!mounted) return;
-    if (creada != null) ref.invalidate(misSolicitudesProvider);
+    ref.invalidate(misSolicitudesProvider);
   }
 
   Future<void> _abrir(Solicitud solicitud) async {
