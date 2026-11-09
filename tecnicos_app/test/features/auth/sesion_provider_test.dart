@@ -17,6 +17,21 @@ import 'package:tecnicos_app/features/auth/presentation/providers/sesion_provide
 class _AuthFalso implements AuthRepository {
   final cambios = StreamController<String?>.broadcast();
   int cierres = 0;
+  @override
+  Stream<void> get recuperacionIniciada => const Stream.empty();
+
+  @override
+  String? get usuarioId => null;
+
+  @override
+  Future<void> enviarRecuperacion(String email) async {}
+
+  @override
+  Future<void> reenviarConfirmacion(String email) async {}
+
+  @override
+  Future<void> cambiarContrasena(String nueva) async {}
+  @override Future<void> iniciarConGoogle() async {}
 
   @override
   Stream<String?> get cambiosDeSesion => cambios.stream;
@@ -39,7 +54,13 @@ class _AuthFalso implements AuthRepository {
 }
 
 class _UsuariosFalso implements UsuarioRepository {
-  /// Respuesta por id: un [Usuario], null (sin perfil) o un [Completer].
+  @override
+  Future<void> completarPerfil({
+    required String cedula,
+    required String codigoDactilar,
+    required Rol rol,
+  }) async {}
+
   final Map<String, Object?> respuestas = {};
   AppFailure? falla;
 
@@ -91,6 +112,18 @@ void main() {
 
   test('arranca verificando', () {
     expect(estado(), isA<SesionVerificando>());
+  });
+
+  test('recargarUsuario actualiza el perfil de la sesión', () async {
+    usuarios.respuestas['u1'] = _usuario('u1');
+    auth.cambios.add('u1');
+    await _esperar();
+    expect(container.read(usuarioActualProvider)?.rol, Rol.cliente);
+
+    usuarios.respuestas['u1'] = _usuario('u1', rol: Rol.tecnico);
+    await container.read(sesionProvider.notifier).recargarUsuario();
+
+    expect(container.read(usuarioActualProvider)?.rol, Rol.tecnico);
   });
 
   test('sin usuario pasa a SinSesion sin aviso', () async {

@@ -25,6 +25,7 @@ class RegistroNotifier extends AsyncNotifier<RegistroResultado?> {
     required String apellidos,
     required String cedula,
     required Rol rol,
+    required String codigoDactilar,
   }) async {
     final datos = RegistroDatos(
       email: email,
@@ -33,6 +34,7 @@ class RegistroNotifier extends AsyncNotifier<RegistroResultado?> {
       apellidos: apellidos,
       cedula: cedula,
       rol: rol,
+      codigoDactilar: codigoDactilar,
     );
     state = const AsyncLoading();
     final resultado =

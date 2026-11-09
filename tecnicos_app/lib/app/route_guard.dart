@@ -19,7 +19,11 @@ String? resolverRedireccion({
       ubicacion == AppRoutes.splash ? null : AppRoutes.splash,
     SinSesion() =>
       AppRoutes.publicas.contains(ubicacion) ? null : AppRoutes.login,
+          ConSesion(:final usuario) when !usuario.perfilCompleto =>
+      ubicacion == AppRoutes.completarPerfil ? null : AppRoutes.completarPerfil,
     ConSesion(:final usuario) => _redireccionConSesion(usuario.rol, ubicacion),
+        SesionRecuperando() =>
+      ubicacion == AppRoutes.restablecer ? null : AppRoutes.restablecer,
   };
 }
 

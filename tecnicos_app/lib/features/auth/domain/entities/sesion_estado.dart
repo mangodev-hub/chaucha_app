@@ -23,3 +23,7 @@ final class ConSesion extends SesionEstado {
 
   final Usuario usuario;
 }
+
+final class SesionRecuperando extends SesionEstado {
+  const SesionRecuperando();
+}

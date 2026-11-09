@@ -1,4 +1,5 @@
-// Pantalla de registro de clientes y técnicos.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,19 +8,21 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/validators/cedula_validator.dart';
+import '../../../../core/validators/codigo_dactilar_validator.dart';
 import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/campos.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
-import '../../../../core/widgets/aviso_banner.dart';
-import '../../../../core/validators/codigo_dactilar_validator.dart';
-import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../../core/widgets/mensajes.dart';
 import '../../domain/entities/registro_resultado.dart';
 import '../../domain/entities/rol.dart';
+import '../providers/recuperacion_providers.dart';
 import '../providers/registro_provider.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/enlace_auth.dart';
+import '../widgets/opcion_rol.dart';
 
 class RegistroView extends ConsumerStatefulWidget {
   const RegistroView({super.key});
@@ -38,9 +41,12 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
   final _confirmacion = TextEditingController();
   final _dactilar = TextEditingController();
   Rol _rol = Rol.cliente;
+  Timer? _temporizador;
+  int _espera = 0;
 
   @override
   void dispose() {
+    _temporizador?.cancel();
     for (final controller in [
       _nombres,
       _apellidos,
@@ -60,38 +66,89 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
 
   Future<void> _enviar() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    await ref
-        .read(registroProvider.notifier)
-        .registrar(
+    await ref.read(registroProvider.notifier).registrar(
           email: _email.text,
           password: _password.text,
           nombres: _nombres.text,
           apellidos: _apellidos.text,
           cedula: _cedula.text,
           rol: _rol,
+          codigoDactilar: _dactilar.text,
         );
+  }
+
+  void _iniciarEspera() {
+    setState(() => _espera = 60);
+    _temporizador?.cancel();
+    _temporizador = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() => _espera--);
+      if (_espera <= 0) t.cancel();
+    });
+  }
+
+  Future<void> _reenviar() async {
+    await ref.read(reenviarConfirmacionProvider.notifier).reenviar(_email.text);
+    if (!mounted) return;
+    final estado = ref.read(reenviarConfirmacionProvider);
+    if (estado.hasError) {
+      context.mostrarMensaje(
+        AsyncValueView.mensajeDe(estado.error!),
+        tipo: TipoMensaje.error,
+      );
+      return;
+    }
+    context.mostrarMensaje(
+      'Te enviamos el correo otra vez.',
+      tipo: TipoMensaje.exito,
+    );
+    _iniciarEspera();
   }
 
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(registroProvider);
-        final error = estado.isLoading || !estado.hasError
+    final reenvio = ref.watch(reenviarConfirmacionProvider);
+    final error = estado.isLoading || !estado.hasError
         ? null
         : AsyncValueView.mensajeDe(estado.error!);
 
-    // Si entra directo (sin confirmar correo), el router redirige solo.
     if (estado case AsyncData(value: RegistroResultado.confirmarCorreo)) {
       return AuthLayout(
         titulo: 'Revisa tu correo',
         tituloCentrado: true,
-        child: EstadoMensaje(
-          icono: Icons.mark_email_read_outlined,
-          tipo: TipoEstado.exito,
-          mensaje:
-              'Te enviamos un enlace de confirmación. '
-              'Ábrelo y luego inicia sesión.',
-          textoAccion: 'Ir a iniciar sesión',
-          onAccion: () => context.go(AppRoutes.login),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            EstadoMensaje(
+              icono: Icons.mark_email_read_outlined,
+              tipo: TipoEstado.exito,
+              mensaje:
+                  'Te enviamos un enlace de confirmación. '
+                  'Ábrelo y luego inicia sesión.',
+              textoAccion: 'Iniciar sesión',
+              onAccion: () => context.go(AppRoutes.login),
+            ),
+            const SizedBox(height: Espacios.l),
+            Text(
+              '¿No recibiste el correo de confirmación? Revisa spam o '
+              'promociones; a veces tarda unos minutos.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colores.tintaSuave),
+            ),
+            TextButton(
+              onPressed: (_espera > 0 || reenvio.isLoading) ? null : _reenviar,
+              child: Text(
+                _espera > 0 ? 'Reenviar en ${_espera}s' : 'Reenviar correo',
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -108,7 +165,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
 
   Widget _formulario({required bool cargando, String? error}) {
     const separacion = SizedBox(height: Espacios.l);
-        final contrasena = CampoEtiquetado(
+    final contrasena = CampoEtiquetado(
       etiqueta: 'Contraseña',
       child: CampoContrasena(
         controller: _password,
@@ -143,7 +200,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    child: _OpcionRol(
+                    child: OpcionRol(
                       icono: Icons.search,
                       titulo: 'Buscar un servicio',
                       descripcion: 'Quiero contratar técnicos',
@@ -153,7 +210,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
                   ),
                   const SizedBox(width: Espacios.m),
                   Expanded(
-                    child: _OpcionRol(
+                    child: OpcionRol(
                       icono: Icons.handyman_outlined,
                       titulo: 'Ofrecer mis servicios',
                       descripcion: 'Soy técnico profesional',
@@ -190,7 +247,8 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
                     etiqueta: 'Apellidos',
                     child: TextFormField(
                       controller: _apellidos,
-                      decoration: const InputDecoration(hintText: 'Zambrano García'),
+                      decoration:
+                          const InputDecoration(hintText: 'Zambrano García'),
                       textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.familyName],
                       textInputAction: TextInputAction.next,
@@ -202,49 +260,49 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
               ],
             ),
             separacion,
-Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Expanded(
-      child: CampoEtiquetado(
-        etiqueta: 'Cédula',
-        ayuda: '10 dígitos',
-        child: TextFormField(
-          controller: _cedula,
-          decoration: const InputDecoration(
-            hintText: '17xxxxxxxx',
-            prefixIcon: Icon(Icons.badge_outlined),
-            errorMaxLines: 2,
-          ),
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(10),
-          ],
-          textInputAction: TextInputAction.next,
-          validator: CedulaValidator.validate,
-        ),
-      ),
-    ),
-    const SizedBox(width: Espacios.m),
-    Expanded(
-      child: CampoEtiquetado(
-        etiqueta: 'Código dactilar',
-        child: TextFormField(
-          controller: _dactilar,
-          decoration: const InputDecoration(
-            hintText: 'V1234V5678',
-            helperText: 'Está en el reverso de tu cédula',
-          ),
-          textCapitalization: TextCapitalization.characters,
-          inputFormatters: CodigoDactilarValidator.formatters,
-          textInputAction: TextInputAction.next,
-          validator: CodigoDactilarValidator.validate,
-        ),
-      ),
-    ),
-  ],
-),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: CampoEtiquetado(
+                    etiqueta: 'Cédula',
+                    ayuda: '10 dígitos',
+                    child: TextFormField(
+                      controller: _cedula,
+                      decoration: const InputDecoration(
+                        hintText: '17xxxxxxxx',
+                        prefixIcon: Icon(Icons.badge_outlined),
+                        errorMaxLines: 2,
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                      textInputAction: TextInputAction.next,
+                      validator: CedulaValidator.validate,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Espacios.m),
+                Expanded(
+                  child: CampoEtiquetado(
+                    etiqueta: 'Código dactilar',
+                    child: TextFormField(
+                      controller: _dactilar,
+                      decoration: const InputDecoration(
+                        hintText: 'V1234V5678',
+                        helperText: 'Está en el reverso de tu cédula',
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                      inputFormatters: CodigoDactilarValidator.formatters,
+                      textInputAction: TextInputAction.next,
+                      validator: CodigoDactilarValidator.validate,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             separacion,
             CampoEtiquetado(
               etiqueta: 'Correo electrónico',
@@ -261,7 +319,7 @@ Row(
               ),
             ),
             separacion,
-                        if (MediaQuery.sizeOf(context).width >= 900)
+            if (MediaQuery.sizeOf(context).width >= 900)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -288,65 +346,6 @@ Row(
               pregunta: '¿Ya tienes cuenta?',
               accion: 'Inicia sesión',
               onPressed: () => context.go(AppRoutes.login),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Tarjeta para elegir el tipo de cuenta: celeste sin elegir; con borde
-/// azul y check cuando está elegida.
-class _OpcionRol extends StatelessWidget {
-  const _OpcionRol({
-    required this.icono,
-    required this.titulo,
-    required this.descripcion,
-    required this.elegida,
-    required this.onTap,
-  });
-
-  final IconData icono;
-  final String titulo;
-  final String descripcion;
-  final bool elegida;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    return Semantics(
-      button: true,
-      selected: elegida,
-      child: TarjetaApp(
-        onTap: onTap,
-        radio: Radios.medio,
-        conSombra: false,
-        color: elegida ? Colores.tarjeta : Colores.superficie,
-        colorBorde: elegida ? Colores.primario : Colores.superficie,
-        padding: const EdgeInsets.all(Espacios.m),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                IconoRecuadro(icono: icono, lado: 32),
-                const Spacer(),
-                if (elegida)
-                  const Icon(
-                    Icons.check_circle,
-                    color: Colores.primario,
-                    size: 22,
-                  ),
-              ],
-            ),
-            const SizedBox(height: Espacios.s),
-            Text(titulo, style: textos.titleSmall),
-            const SizedBox(height: 2),
-            Text(
-              descripcion,
-              style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
             ),
           ],
         ),

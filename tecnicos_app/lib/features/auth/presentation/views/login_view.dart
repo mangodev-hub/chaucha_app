@@ -84,8 +84,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                   validator: FormValidators.email,
                 ),
               ),
-              const SizedBox(height: Espacios.l + 2),
-              CampoEtiquetado(
+              const SizedBox(height: Espacios.xl),
+                            CampoEtiquetado(
                 etiqueta: 'Contraseña',
                 child: CampoContrasena(
                   controller: _password,
@@ -96,7 +96,15 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       FormValidators.requerido(valor, campo: 'La contraseña'),
                 ),
               ),
-              const SizedBox(height: Espacios.xl),
+              const SizedBox(height: Espacios.s),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => context.go(AppRoutes.recuperar),
+                  child: const Text('¿Olvidaste tu contraseña?'),
+                ),
+              ),
+              const SizedBox(height: Espacios.l),
               BotonCarga(
                 texto: 'Iniciar sesión',
                 icono: Icons.arrow_forward,
@@ -104,16 +112,13 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 cargando: cargando,
                 onPressed: _enviar,
               ),
-              Center(
-                child: TextButton(
-                  onPressed: () => context.mostrarMensaje('Próximamente.'),
-                  child: const Text('¿Olvidaste tu contraseña?'),
-                ),
-              ),
+              const SizedBox(height: Espacios.xxl),
               BotonGoogle(
-                onPressed: () => context.mostrarMensaje('Próximamente.'),
+                onPressed: cargando
+                    ? null
+                    : () => ref.read(loginProvider.notifier).iniciarConGoogle(),
               ),
-              const SizedBox(height: Espacios.m),
+              const SizedBox(height: Espacios.l),
               OutlinedButton(
                 onPressed: () => context.go(AppRoutes.registro),
                 child: const Text('Crear cuenta nueva'),
