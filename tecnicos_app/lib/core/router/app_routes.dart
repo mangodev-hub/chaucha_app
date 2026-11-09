@@ -6,12 +6,14 @@ abstract final class AppRoutes {
   static const String login = '/login';
   static const String registro = '/registro';
 
-
+  static const String completarPerfil = '/completar-perfil';
   static const String clienteInicio = '/cliente';
   static const String tecnicoInicio = '/tecnico';
   static const String adminInicio = '/admin';
+  static const String recuperar = '/recuperar';
+  static const String restablecer = '/restablecer';
 
-  static const Set<String> publicas = {login, registro};
+  static const Set<String> publicas = {login, registro, recuperar};
 
 
   static const String clienteNuevaSolicitud = '/cliente/nueva';

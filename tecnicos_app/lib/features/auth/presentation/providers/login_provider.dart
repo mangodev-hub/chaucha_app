@@ -13,7 +13,14 @@ final loginProvider =
 class LoginNotifier extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
-
+  Future<void> iniciarConGoogle() async {
+    if (state.isLoading) return;
+    state = const AsyncLoading();
+    final resultado = await asyncGuard(
+      () => ref.read(authRepositoryProvider).iniciarConGoogle(),
+    );
+    if (ref.mounted) state = resultado;
+  }
   Future<void> iniciarSesion({
     required String email,
     required String password,

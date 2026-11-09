@@ -47,6 +47,44 @@ void main() {
   });
 
   group('con sesión', () {
+        test('sin cédula registrada va a completar el perfil', () {
+      final sesion = ConSesion(
+        Usuario(
+          id: 'u1',
+          rol: Rol.cliente,
+          nombres: 'Ana',
+          apellidos: '',
+          creadoEn: DateTime(2026),
+          perfilCompleto: false,
+        ),
+      );
+      expect(
+        _redirigir(sesion, AppRoutes.clienteInicio),
+        AppRoutes.completarPerfil,
+      );
+      expect(_redirigir(sesion, AppRoutes.splash), AppRoutes.completarPerfil);
+      expect(_redirigir(sesion, AppRoutes.completarPerfil), isNull);
+    });
+      group('recuperando contraseña', () {
+    const sesion = SesionRecuperando();
+
+    test('solo puede estar en restablecer', () {
+      expect(_redirigir(sesion, AppRoutes.restablecer), isNull);
+      expect(_redirigir(sesion, AppRoutes.login), AppRoutes.restablecer);
+      expect(_redirigir(sesion, '/cliente'), AppRoutes.restablecer);
+    });
+  });
+
+  test('recuperar es pública', () {
+    expect(_redirigir(const SinSesion(), AppRoutes.recuperar), isNull);
+  });
+
+    test('con el perfil completo no se queda en completar perfil', () {
+      expect(
+        _redirigir(_con(Rol.cliente), AppRoutes.completarPerfil),
+        AppRoutes.clienteInicio,
+      );
+    });
     test('el cliente navega dentro de su zona', () {
       final sesion = _con(Rol.cliente);
       expect(_redirigir(sesion, AppRoutes.clienteInicio), isNull);

@@ -9,5 +9,6 @@ extension RegistroDatosDb on RegistroDatos {
         'apellidos': apellidos.trim(),
         'cedula': cedula.trim(),
         'rol': rol.valorDb,
+        'codigo_dactilar': codigoDactilar.trim().toUpperCase(),
       };
 }

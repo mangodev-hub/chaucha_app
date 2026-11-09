@@ -23,9 +23,46 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Stream<String?> get cambiosDeSesion => _auth.onAuthStateChange
+      .where((evento) => evento.event != AuthChangeEvent.passwordRecovery)
       .map((evento) => evento.session?.user.id)
       .distinct();
 
+  @override
+  Stream<void> get recuperacionIniciada => _auth.onAuthStateChange
+      .where((evento) => evento.event == AuthChangeEvent.passwordRecovery)
+      .map<void>((_) {});
+
+  @override
+  String? get usuarioId => _auth.currentUser?.id;
+
+  @override
+  Future<void> enviarRecuperacion(String email) {
+    return supabaseGuard(() async {
+      await _auth.resetPasswordForEmail(
+        email.trim(),
+        redirectTo: AuthRedirect.url,
+      );
+    });
+  }
+
+  @override
+  Future<void> reenviarConfirmacion(String email) {
+    return supabaseGuard(() async {
+      await _auth.resend(
+        type: OtpType.signup,
+        email: email.trim(),
+        emailRedirectTo: AuthRedirect.url,
+      );
+    });
+  }
+
+  @override
+  Future<void> cambiarContrasena(String nueva) {
+    return supabaseGuard(() async {
+      await _auth.updateUser(UserAttributes(password: nueva));
+    });
+  }
+  
   @override
   Future<void> iniciarSesion({
     required String email,
@@ -55,7 +92,17 @@ class SupabaseAuthRepository implements AuthRepository {
           : RegistroResultado.confirmarCorreo;
     });
   }
-
+  @override
+  Future<void> iniciarConGoogle() {
+    return supabaseGuard(() async {
+      await _auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: AuthRedirect.url,
+        queryParams: {'prompt': 'select_account'},
+      );
+    });
+  }
   @override
   Future<void> cerrarSesion() => supabaseGuard(_auth.signOut);
 }
+

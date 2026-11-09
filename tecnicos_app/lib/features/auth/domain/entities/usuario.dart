@@ -9,12 +9,14 @@ class Usuario {
     required this.apellidos,
     required this.creadoEn,
     this.fotoPerfilRuta,
+    this.perfilCompleto = true,
   });
 
   final String id;
   final Rol rol;
   final String nombres;
   final String apellidos;
+  final bool perfilCompleto;
 
   /// Ruta del archivo en Storage (no una URL).
   final String? fotoPerfilRuta;

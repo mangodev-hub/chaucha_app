@@ -44,11 +44,30 @@ class SesionNotifier extends Notifier<SesionEstado> {
       onError: (Object _) => _alFallarEnlace(),
     );
     ref.onDispose(suscripcion.cancel);
-
+    final recuperacion = _auth.recuperacionIniciada.listen((_) {
+      ++_version;
+      _emitir(const SesionRecuperando());
+    });
+    ref.onDispose(recuperacion.cancel);
     return const SesionVerificando();
+  }
+  
+  Future<void> finalizarRecuperacion() => _alCambiarSesion(_auth.usuarioId);
+
+  Future<void> cancelarRecuperacion() async {
+    ++_version;
+    _emitir(const SinSesion());
+    await _auth.cerrarSesion();
   }
 
   Future<void> cerrarSesion() => _auth.cerrarSesion();
+
+  Future<void> recargarUsuario() async {
+    final actual = state;
+    if (actual is! ConSesion) return;
+    final perfil = await _usuarios.obtenerPorId(actual.usuario.id);
+    if (perfil != null) _emitir(ConSesion(perfil));
+  }
 
   void consumirVerificado() {
     final actual = state;

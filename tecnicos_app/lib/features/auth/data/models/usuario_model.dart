@@ -11,10 +11,14 @@ class UsuarioModel {
     required this.apellidos,
     required this.creadoEn,
     this.fotoPerfilRuta,
+    this.perfilCompleto = true,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
+    final identidad = json['identidades'];
     return UsuarioModel(
+      perfilCompleto:
+        identidad is List ? identidad.isNotEmpty : identidad != null,
       id: json['id'] as String,
       rol: RolDb.desdeDb(json['rol'] as String),
       nombres: json['nombres'] as String,
@@ -26,7 +30,9 @@ class UsuarioModel {
 
   /// Columnas que se piden en el `select`.
   static const String columnas =
-      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en';
+      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, '
+      'identidades(usuario_id)';
+
 
   final String id;
   final Rol rol;
@@ -34,6 +40,7 @@ class UsuarioModel {
   final String apellidos;
   final String? fotoPerfilRuta;
   final DateTime creadoEn;
+  final bool perfilCompleto;
 
   Usuario aEntidad() => Usuario(
         id: id,
@@ -42,5 +49,6 @@ class UsuarioModel {
         apellidos: apellidos,
         fotoPerfilRuta: fotoPerfilRuta,
         creadoEn: creadoEn,
+        perfilCompleto: perfilCompleto,
       );
 }
