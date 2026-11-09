@@ -1,4 +1,3 @@
-// Solicitud de servicio que publica un cliente.
 import 'package:latlong2/latlong.dart';
 
 enum EstadoSolicitud {
@@ -9,8 +8,8 @@ enum EstadoSolicitud {
   completada,
   cancelada;
 
-  /// Solo se puede cotizar (y aceptar cotizaciones) mientras está abierta.
   bool get recibeCotizaciones => this == abierta || this == cotizada;
+  bool get oficioEditable => this == abierta;
 }
 
 class Solicitud {

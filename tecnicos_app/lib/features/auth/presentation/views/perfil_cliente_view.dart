@@ -300,19 +300,6 @@ class _Cabecera extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    FilledButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: const Text('Editar perfil'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _azul,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     TextButton(
                       onPressed: () => _mostrarBaja(context),
                       style: TextButton.styleFrom(foregroundColor: _rojo),

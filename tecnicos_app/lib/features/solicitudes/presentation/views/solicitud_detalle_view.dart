@@ -13,7 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../widgets/editar_solicitud_dialog.dart';
 import '../../../../core/media/selector_fotos.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
@@ -40,7 +40,7 @@ import '../widgets/solicitud_widgets.dart';
 /// Acción principal del detalle según el rol y el estado.
 typedef _Accion = ({String texto, IconData icono, VoidCallback alPulsar});
 
-enum _Opcion { cancelar }
+enum _Opcion { editar, eliminar, cancelar }
 
 class SolicitudDetalleView extends ConsumerStatefulWidget {
   const SolicitudDetalleView({super.key, required this.solicitudId});
@@ -113,6 +113,40 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
       ),
       'Oferta enviada. Si al cliente le interesa, te escribirá.',
     );
+  }
+    Future<void> _editar(Solicitud solicitud) async {
+    final datos = await mostrarEditarSolicitud(context, solicitud);
+    if (datos == null) return;
+    await _resultado(
+      _acciones.editar(
+        descripcion: datos.descripcion,
+        oficioId: datos.oficioId,
+        direccion: datos.direccion,
+      ),
+      'Solicitud actualizada.',
+    );
+  }
+
+  Future<void> _eliminar() async {
+    final ok = await context.confirmar(
+      'Eliminar solicitud',
+      'Se borrará la solicitud junto con las propuestas y los chats con '
+          'técnicos. No se puede deshacer.',
+      textoConfirmar: 'Sí, eliminar',
+      textoCancelar: 'Volver',
+      destructivo: true,
+      icono: Icons.delete_outline,
+    );
+    if (!ok) return;
+    final hecho = await _acciones.eliminar();
+    if (!mounted) return;
+    if (hecho) {
+      context
+        ..mostrarMensaje('Solicitud eliminada.', tipo: TipoMensaje.exito)
+        ..pop();
+    } else {
+      _mostrarErrorDeAccion();
+    }
   }
 
   Future<void> _marcarTerminada() async {
@@ -187,7 +221,12 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
         title: const Text('Detalle de la solicitud'),
         actions: [
           if (datos != null && _puedeCancelar(datos))
-            _MenuOpciones(habilitado: !procesando, onCancelar: _cancelar),
+              _MenuOpciones(
+              habilitado: !procesando,
+              onEditar: () => _editar(datos.solicitud),
+              onEliminar: _eliminar,
+              onCancelar: _cancelar,
+            ),
         ],
       ),
       bottomNavigationBar: boton == null || escritorio
@@ -452,31 +491,51 @@ class _Escritorio extends StatelessWidget {
 
 /// Menú ⋮ del AppBar con las acciones secundarias (hoy: cancelar).
 class _MenuOpciones extends StatelessWidget {
-  const _MenuOpciones({required this.habilitado, required this.onCancelar});
+  const _MenuOpciones({
+    required this.habilitado,
+    required this.onEditar,
+    required this.onEliminar,
+    required this.onCancelar,
+  });
 
   final bool habilitado;
+  final VoidCallback onEditar;
+  final VoidCallback onEliminar;
   final VoidCallback onCancelar;
 
   @override
   Widget build(BuildContext context) {
     final error = Theme.of(context).colorScheme.error;
+    PopupMenuItem<_Opcion> item(
+      _Opcion v,
+      IconData icono,
+      String texto, {
+      Color? color,
+    }) => PopupMenuItem(
+      value: v,
+      child: Row(
+        children: [
+          Icon(icono, color: color),
+          const SizedBox(width: Espacios.m),
+          Text(texto, style: TextStyle(color: color)),
+        ],
+      ),
+    );
+
     return PopupMenuButton<_Opcion>(
       tooltip: 'Más opciones',
       enabled: habilitado,
-      onSelected: (opcion) => switch (opcion) {
+      onSelected: (o) => switch (o) {
+        _Opcion.editar => onEditar(),
+        _Opcion.eliminar => onEliminar(),
         _Opcion.cancelar => onCancelar(),
       },
       itemBuilder: (context) => [
-        PopupMenuItem(
-          value: _Opcion.cancelar,
-          child: Row(
-            children: [
-              Icon(Icons.cancel_outlined, color: error),
-              const SizedBox(width: Espacios.m),
-              Text('Cancelar solicitud', style: TextStyle(color: error)),
-            ],
-          ),
-        ),
+        item(_Opcion.editar, Icons.edit_outlined, 'Editar solicitud'),
+        item(_Opcion.cancelar, Icons.cancel_outlined, 'Cancelar solicitud',
+            color: error),
+        item(_Opcion.eliminar, Icons.delete_outline, 'Eliminar solicitud',
+            color: error),
       ],
     );
   }

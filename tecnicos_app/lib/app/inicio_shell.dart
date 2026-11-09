@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/tokens.dart';
 import '../core/widgets/responsive_layout.dart';
-import '../features/auth/presentation/providers/sesion_provider.dart';
+import 'menu_cuenta.dart';
 
 class Destino {
   const Destino(this.titulo, this.icono, this.vista);
@@ -18,10 +18,13 @@ class InicioShell extends ConsumerStatefulWidget {
     super.key,
     required this.destinos,
     required this.onCerrarSesion,
+    this.accion,
   });
 
   final List<Destino> destinos;
   final VoidCallback onCerrarSesion;
+
+  final Widget? accion;
 
   @override
   ConsumerState<InicioShell> createState() => _InicioShellState();
@@ -32,6 +35,8 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   void _cambiar(int indice) => setState(() => _indice = indice);
 
+  void _irAPerfil() => _cambiar(widget.destinos.length - 1);
+
   @override
   Widget build(BuildContext context) {
     final destinos = widget.destinos;
@@ -41,11 +46,10 @@ class _InicioShellState extends ConsumerState<InicioShell> {
     );
 
     if (ResponsiveLayout.isDesktop(context)) {
-      final nombre = ref.watch(usuarioActualProvider)?.nombres;
       return Scaffold(
         body: Column(
           children: [
-            _barraSuperior(context, nombre),
+            _barraSuperior(context),
             Expanded(child: contenido),
           ],
         ),
@@ -56,11 +60,12 @@ class _InicioShellState extends ConsumerState<InicioShell> {
       appBar: AppBar(
         title: Text(destinos[_indice].titulo),
         actions: [
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: widget.onCerrarSesion,
+          MenuCuenta(
+            compacto: true,
+            onPerfil: _irAPerfil,
+            onCerrarSesion: widget.onCerrarSesion,
           ),
+          const SizedBox(width: Espacios.s),
         ],
       ),
       body: contenido,
@@ -79,7 +84,7 @@ class _InicioShellState extends ConsumerState<InicioShell> {
     );
   }
 
-  Widget _barraSuperior(BuildContext context, String? nombre) {
+  Widget _barraSuperior(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     return Container(
       decoration: const BoxDecoration(
@@ -143,41 +148,18 @@ class _InicioShellState extends ConsumerState<InicioShell> {
                       ),
                     ),
                   const Spacer(),
+                  if (widget.accion != null) ...[
+                    widget.accion!,
+                    const SizedBox(width: Espacios.l),
+                  ],
                   Container(
                     padding: const EdgeInsets.only(left: Espacios.m),
                     decoration: const BoxDecoration(
                       border: Border(left: BorderSide(color: Colores.linea)),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: const BoxDecoration(
-                            color: Colores.primario,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            size: 18,
-                            color: Colores.tarjeta,
-                          ),
-                        ),
-                        if (nombre != null) ...[
-                          const SizedBox(width: Espacios.s + 2),
-                          Text(
-                            nombre,
-                            style: textos.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                        IconButton(
-                          tooltip: 'Cerrar sesión',
-                          icon: const Icon(Icons.logout, size: 20),
-                          onPressed: widget.onCerrarSesion,
-                        ),
-                      ],
+                    child: MenuCuenta(
+                      onPerfil: _irAPerfil,
+                      onCerrarSesion: widget.onCerrarSesion,
                     ),
                   ),
                 ],
@@ -205,7 +187,6 @@ class _Pestana extends StatelessWidget {
   Widget build(BuildContext context) {
     final duracion = Movimiento.de(context, Movimiento.normal);
     final borde = BorderRadius.circular(Radios.pequeno);
-    // El fondo y el color del texto cambian con una transición.
     return AnimatedContainer(
       duration: duracion,
       curve: Movimiento.entrada,
@@ -242,9 +223,6 @@ class _Pestana extends StatelessWidget {
   }
 }
 
-/// Ícono de la pestaña elegida: aparece con un pequeño rebote. La barra lo
-/// monta de nuevo cada vez que se elige la pestaña, así que el rebote se
-/// repite en cada cambio.
 class _IconoActivo extends StatelessWidget {
   const _IconoActivo(this.icono);
 

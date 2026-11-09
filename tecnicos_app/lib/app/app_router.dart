@@ -80,15 +80,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 GoRoute(
   path: AppRoutes.clienteInicio,
-  builder: (context, state) => InicioShell(
-    onCerrarSesion: cerrarSesion,
-    destinos: const [
-      Destino('Inicio', Icons.home_outlined, InicioView(esCliente: true)),
-      Destino('Mis solicitudes', Icons.assignment_outlined,
-          MisSolicitudesView()),
-      Destino('Mi perfil', Icons.person_outline, PerfilClienteView()),
-    ],
-  ),
+builder: (context, state) => InicioShell(
+  onCerrarSesion: cerrarSesion,
+  destinos: const [
+    Destino('Inicio', Icons.home_outlined, InicioView(esCliente: true)),
+    Destino('Mis solicitudes', Icons.assignment_outlined, MisSolicitudesView()),
+    Destino('Mi perfil', Icons.person_outline, PerfilClienteView()),
+  ],
+),
   routes: [
 GoRoute(
   path: 'nueva',
