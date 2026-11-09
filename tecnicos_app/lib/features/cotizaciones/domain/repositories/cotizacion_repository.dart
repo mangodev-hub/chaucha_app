@@ -1,18 +1,31 @@
-// Contrato de cotizaciones. Los métodos lanzan [AppFailure] si fallan.
+// Contrato de las ofertas de los técnicos (tabla `cotizaciones`). Los métodos
+// lanzan [AppFailure] si fallan.
 import '../entities/cotizacion.dart';
 import '../entities/nueva_cotizacion.dart';
+import '../entities/tarifa.dart';
 
 abstract interface class CotizacionRepository {
-  /// Cotizaciones de una solicitud, de la más antigua a la más nueva.
+  /// Ofertas de una solicitud, de la más antigua a la más nueva.
   Future<List<Cotizacion>> deSolicitud(String solicitudId);
 
-  /// Envía la cotización a nombre del técnico conectado.
+  /// Envía la oferta (precio base y solución) a nombre del técnico conectado.
   Future<void> enviar(NuevaCotizacion nueva);
 
-  /// Ids de las solicitudes que el técnico conectado ya cotizó.
+  /// Ofertas del técnico conectado, de la más nueva a la más antigua.
+  Future<List<Cotizacion>> misOfertas();
+
+  /// Ids de las solicitudes en las que el técnico conectado ya ofertó.
   Future<Set<String>> solicitudesCotizadasPorMi();
 
   /// Acepta [cotizacion], rechaza las demás pendientes de la misma solicitud
-  /// y marca la solicitud como aceptada, en una sola transacción.
+  /// y marca la solicitud como aceptada, en una sola transacción. Es lo que
+  /// hace el cliente al confirmar el ticket de trabajo.
   Future<void> aceptar(Cotizacion cotizacion);
+
+  /// El técnico conectado envía el ticket de trabajo sobre su oferta
+  /// pendiente. El precio base no cambia.
+  Future<void> enviarTarifa(String cotizacionId, NuevaTarifa tarifa);
+
+  /// El cliente rechaza el ticket; el técnico puede enviar otro.
+  Future<void> rechazarTarifa(String cotizacionId);
 }

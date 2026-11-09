@@ -146,16 +146,25 @@ class _Guia {
       EstadoSolicitud.abierta ||
       EstadoSolicitud.cotizada when n == 0 => const _Guia(
         Icons.hourglass_top,
-        'Esperando cotizaciones',
+        'Esperando ofertas',
         'Los técnicos de la zona revisarán tu solicitud. '
-            'Te avisaremos cuando coticen.',
+            'Te avisaremos cuando ofrezcan sus servicios.',
         Colores.info,
       ),
+      EstadoSolicitud.abierta || EstadoSolicitud.cotizada
+          when d.cotizaciones.any((c) => c.tarifaPendiente) =>
+        const _Guia(
+          Icons.receipt_long_outlined,
+          'Tienes un ticket por confirmar',
+          'Un técnico te envió el precio acordado. Revísalo en el chat y '
+              'confírmalo para empezar.',
+          Colores.aviso,
+        ),
       EstadoSolicitud.abierta || EstadoSolicitud.cotizada => _Guia(
-        Icons.request_quote_outlined,
-        n == 1 ? 'Tienes 1 cotización' : 'Tienes $n cotizaciones',
-        'Compáralas y acepta la que prefieras. Puedes escribir a cada '
-        'técnico antes de decidir.',
+        Icons.local_offer_outlined,
+        n == 1 ? 'Tienes 1 oferta' : 'Tienes $n ofertas',
+        'Revisa el precio base y la solución de cada técnico. Escríbele al '
+        'que te guste para acordar el precio.',
         Colores.info,
       ),
       EstadoSolicitud.aceptada => _Guia(
@@ -181,7 +190,7 @@ class _Guia {
       EstadoSolicitud.cancelada => const _Guia(
         Icons.cancel_outlined,
         'Solicitud cancelada',
-        'Ya no recibe cotizaciones.',
+        'Ya no recibe ofertas.',
         Colores.tintaSuave,
       ),
     };
@@ -223,7 +232,7 @@ class _Guia {
     if (mia?.estado == EstadoCotizacion.rechazada) {
       return const _Guia(
         Icons.info_outline,
-        'El cliente eligió otra cotización',
+        'El cliente eligió otra oferta',
         'Esta solicitud ya no está disponible para ti.',
         Colores.tintaSuave,
       );
@@ -232,22 +241,32 @@ class _Guia {
       return const _Guia(
         Icons.lock_outline,
         'Solicitud cerrada',
-        'Esta solicitud ya no recibe cotizaciones.',
+        'Esta solicitud ya no recibe ofertas.',
         Colores.tintaSuave,
+      );
+    }
+    if (mia?.tarifaPendiente ?? false) {
+      return const _Guia(
+        Icons.receipt_long_outlined,
+        'Ticket enviado',
+        'Esperando que el cliente lo confirme en el chat.',
+        Colores.aviso,
       );
     }
     if (mia == null) {
       return const _Guia(
-        Icons.request_quote_outlined,
-        'Envía tu cotización',
-        'Revisa el problema y la ubicación, y propón un precio.',
+        Icons.handyman_outlined,
+        'Ofrece tus servicios',
+        'Revisa el problema y la ubicación. Envía tu precio base y explica '
+            'cómo lo resolverías.',
         Colores.info,
       );
     }
     return const _Guia(
       Icons.schedule_send_outlined,
-      'Cotización enviada',
-      'El cliente está comparando cotizaciones. Puedes escribirle por el chat.',
+      'Oferta enviada',
+      'Si al cliente le interesa, te escribirá por el chat para acordar el '
+          'precio.',
       Colores.info,
     );
   }

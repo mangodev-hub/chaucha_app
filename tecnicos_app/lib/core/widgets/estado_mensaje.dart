@@ -68,13 +68,20 @@ class EstadoMensaje extends StatelessWidget {
                       color: Colores.tintaSuave,
                     ),
                   ),
+                  // Debajo del texto (no al lado), para que quepa en
+                  // pantallas angostas o con texto grande.
+                  if (hayAccion)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 36),
+                      ),
+                      onPressed: onAccion,
+                      child: Text(textoAccion),
+                    ),
                 ],
               ),
             ),
-            if (hayAccion) ...[
-              const SizedBox(width: Espacios.s),
-              TextButton(onPressed: onAccion, child: Text(textoAccion)),
-            ],
           ],
         ),
       );

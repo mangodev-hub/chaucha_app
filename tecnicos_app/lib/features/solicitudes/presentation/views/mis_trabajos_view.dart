@@ -63,7 +63,7 @@ class MisTrabajosView extends ConsumerWidget {
                       icono: Icons.work_outline,
                       titulo: 'Aún no tienes trabajos',
                       mensaje:
-                          'Cuando un cliente acepte tu cotización, '
+                          'Cuando un cliente acepte tu oferta, '
                           'el trabajo aparecerá aquí.',
                     ),
                   ],

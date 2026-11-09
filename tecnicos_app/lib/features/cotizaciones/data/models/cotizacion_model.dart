@@ -1,75 +1,93 @@
 // Fila de `cotizaciones` + nombre y calificación del técnico (vía join).
+//
+// Columnas de la oferta y de su ticket de trabajo:
+//   precio_base     precio base de la oferta (no cambia con el ticket)
+//   detalle         cómo resolvería el problema
+//   mano_obra       precio acordado en el ticket (null hasta enviarlo)
+//   materiales      materiales del ticket (0 por defecto)
+//   total           mano_obra + materiales (columna calculada)
+//   tarifa_enviada  true cuando el técnico envió el ticket
+//   fecha_servicio  día del servicio acordado (opcional)
+//
+// Las ofertas antiguas (antes de `precio_base`) guardaban su precio en
+// mano_obra + materiales, y no tienen ticket.
 import '../../../../core/utils/json_utils.dart';
 import '../../domain/entities/cotizacion.dart';
+import '../../domain/entities/tarifa.dart';
 import 'estado_cotizacion_db.dart';
 
-class CotizacionModel {
-  const CotizacionModel({
-    required this.id,
-    required this.solicitudId,
-    required this.tecnicoId,
-    required this.tecnicoNombre,
-    required this.tecnicoCalificacion,
-    required this.manoObra,
-    required this.materiales,
-    required this.total,
-    required this.estado,
-    required this.creadoEn,
-    this.detalle,
-  });
+abstract final class CotizacionModel {
+  /// Columnas que se piden en el `select`, con el join al técnico.
+  static const String columnas =
+      'id, solicitud_id, tecnico_id, precio_base, detalle, mano_obra, '
+      'materiales, total, tarifa_enviada, fecha_servicio, estado, creado_en, '
+      'perfiles_tecnicos(calificacion_promedio, usuarios(nombres, apellidos))';
 
-  factory CotizacionModel.fromJson(Map<String, dynamic> json) {
+  static Cotizacion desdeFila(Map<String, dynamic> json) {
     // El join puede llegar como objeto o como lista de un elemento.
     final perfil = anidado(json['perfiles_tecnicos']);
     final usuario = anidado(perfil?['usuarios']);
-    final nombre =
-        '${usuario?['nombres'] ?? ''} ${usuario?['apellidos'] ?? ''}'.trim();
+    final nombre = '${usuario?['nombres'] ?? ''} ${usuario?['apellidos'] ?? ''}'
+        .trim();
     final manoObra = aDouble(json['mano_obra']);
     final materiales = aDouble(json['materiales']);
-    return CotizacionModel(
+    final solucion = (json['detalle'] as String?)?.trim();
+    final fecha = json['fecha_servicio'];
+    return Cotizacion(
       id: json['id'] as String,
       solicitudId: json['solicitud_id'] as String,
       tecnicoId: json['tecnico_id'] as String,
       tecnicoNombre: nombre.isEmpty ? 'Técnico' : nombre,
       tecnicoCalificacion: aDouble(perfil?['calificacion_promedio']),
-      manoObra: manoObra,
-      materiales: materiales,
-      // `total` es una columna calculada; si no llega, se calcula aquí.
-      total: aDouble(json['total'], porDefecto: manoObra + materiales),
-      detalle: json['detalle'] as String?,
+      precioBase: json['precio_base'] != null
+          ? aDouble(json['precio_base'])
+          : aDouble(json['total'], porDefecto: manoObra + materiales),
+      solucion: solucion == null || solucion.isEmpty ? null : solucion,
+      tarifa: json['tarifa_enviada'] == true
+          ? Tarifa(
+              precioAcordado: manoObra,
+              materiales: materiales,
+              fechaServicio: fecha is String ? aFecha(fecha) : null,
+            )
+          : null,
       estado: EstadoCotizacionDb.desdeDb(json['estado'] as String),
       creadoEn: aFecha(json['creado_en']),
     );
   }
 
-  /// Columnas que se piden en el `select`, con el join al técnico.
-  static const String columnas = 'id, solicitud_id, tecnico_id, mano_obra, '
-      'materiales, total, detalle, estado, creado_en, '
-      'perfiles_tecnicos(calificacion_promedio, usuarios(nombres, apellidos))';
+  /// Fila para insertar una oferta nueva (todavía sin ticket).
+  static Map<String, dynamic> filaNueva({
+    required String solicitudId,
+    required String tecnicoId,
+    required double precioBase,
+    required String solucion,
+  }) => {
+    'solicitud_id': solicitudId,
+    'tecnico_id': tecnicoId,
+    'precio_base': precioBase,
+    'detalle': solucion.trim(),
+    'materiales': 0,
+  };
 
-  final String id;
-  final String solicitudId;
-  final String tecnicoId;
-  final String tecnicoNombre;
-  final double tecnicoCalificacion;
-  final double manoObra;
-  final double materiales;
-  final double total;
-  final String? detalle;
-  final EstadoCotizacion estado;
-  final DateTime creadoEn;
+  /// Cambios para enviar el ticket sobre la oferta.
+  static Map<String, dynamic> cambiosTarifa(NuevaTarifa tarifa) {
+    final fecha = tarifa.fechaServicio;
+    return {
+      'mano_obra': tarifa.precioAcordado,
+      'materiales': tarifa.materiales,
+      // Al mediodía local, para que el día no cambie al convertir a UTC.
+      'fecha_servicio': fecha == null
+          ? null
+          : DateTime(
+              fecha.year,
+              fecha.month,
+              fecha.day,
+              12,
+            ).toUtc().toIso8601String(),
+      'tarifa_enviada': true,
+    };
+  }
 
-  Cotizacion aEntidad() => Cotizacion(
-        id: id,
-        solicitudId: solicitudId,
-        tecnicoId: tecnicoId,
-        tecnicoNombre: tecnicoNombre,
-        tecnicoCalificacion: tecnicoCalificacion,
-        manoObra: manoObra,
-        materiales: materiales,
-        total: total,
-        estado: estado,
-        creadoEn: creadoEn,
-        detalle: detalle,
-      );
+  /// Cambios cuando el cliente rechaza el ticket.
+  static const Map<String, dynamic> cambiosRechazo = {'tarifa_enviada': false};
 }

@@ -133,9 +133,9 @@ class _PanelMarca extends StatelessWidget {
       'Revisamos su identidad antes de activarlos',
     ),
     (
-      Icons.request_quote_outlined,
-      'Cotizaciones claras',
-      'Mano de obra y materiales por separado',
+      Icons.local_offer_outlined,
+      'Ofertas claras',
+      'Precio base y cómo resolverá tu problema',
     ),
     (
       Icons.chat_bubble_outline,

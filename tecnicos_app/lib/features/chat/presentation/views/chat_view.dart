@@ -1,4 +1,6 @@
-// Chat en tiempo real entre cliente y técnico.
+// Chat en tiempo real entre cliente y técnico. Solo el cliente inicia la
+// conversación. Cuando acuerdan el precio, el técnico envía el ticket de
+// trabajo ("Empezar trabajo") y el cliente lo confirma o lo rechaza.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,10 +10,16 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/seccion.dart';
+import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
+import '../../../cotizaciones/domain/entities/cotizacion.dart';
+import '../../../cotizaciones/domain/entities/reglas_tarifa.dart';
+import '../../../cotizaciones/presentation/widgets/tarifa_widgets.dart';
 import '../../domain/entities/mensaje.dart';
+import '../../domain/entities/reglas_chat.dart';
 import '../providers/enviar_mensaje_provider.dart';
 import '../providers/mensajes_provider.dart';
+import '../providers/tarifa_chat_provider.dart';
 
 class ChatView extends ConsumerStatefulWidget {
   const ChatView({super.key, required this.conversacionId});
@@ -51,33 +59,161 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
+  AccionesTarifaNotifier get _tarifa =>
+      ref.read(accionesTarifaProvider(widget.conversacionId).notifier);
+
+  /// Muestra [exito] si salió bien, o el error de la acción si falló.
+  Future<void> _resultado(Future<bool> accion, String exito) async {
+    final ok = await accion;
+    if (!mounted) return;
+    if (ok) {
+      context.mostrarMensaje(exito, tipo: TipoMensaje.exito);
+    } else if (ref.read(accionesTarifaProvider(widget.conversacionId))
+        case AsyncError(:final error)) {
+      context.mostrarMensaje(
+        AsyncValueView.mensajeDe(error),
+        tipo: TipoMensaje.error,
+      );
+    }
+  }
+
+  /// El técnico envía el ticket con el precio acordado.
+  Future<void> _empezarTrabajo(double precioBase) async {
+    final tarifa = await mostrarFormularioTarifa(
+      context,
+      precioBase: precioBase,
+    );
+    if (tarifa == null) return;
+    await _resultado(
+      _tarifa.enviar(tarifa),
+      'Ticket enviado. El cliente debe confirmarlo.',
+    );
+  }
+
+  Future<void> _confirmar(Cotizacion oferta) async {
+    final total = oferta.tarifa?.total ?? oferta.precioBase;
+    final ok = await context.confirmar(
+      'Confirmar ticket',
+      '¿Contratar este trabajo por ${Formatos.dinero(total)}? '
+          'Las demás ofertas no se elegirán.',
+      textoConfirmar: 'Confirmar',
+      icono: Icons.handshake_outlined,
+    );
+    if (ok) {
+      await _resultado(
+        _tarifa.confirmar(),
+        'Ticket confirmado. El trabajo está en curso.',
+      );
+    }
+  }
+
+  Future<void> _rechazar() async {
+    final ok = await context.confirmar(
+      'Rechazar ticket',
+      'Pueden seguir conversando y el técnico podrá enviarte otro.',
+      textoConfirmar: 'Sí, rechazar',
+      textoCancelar: 'Volver',
+      destructivo: true,
+      icono: Icons.cancel_outlined,
+    );
+    if (ok) await _resultado(_tarifa.rechazar(), 'Ticket rechazado.');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final miId = ref.watch(usuarioActualProvider)?.id;
-    final mensajes = ref.watch(mensajesProvider(widget.conversacionId));
-    final enviando = ref
-        .watch(enviarMensajeProvider(widget.conversacionId))
-        .isLoading;
+    final id = widget.conversacionId;
+    final usuario = ref.watch(usuarioActualProvider);
+    final miId = usuario?.id;
+    final soyCliente = usuario?.rol == Rol.cliente;
+    final mensajes = ref.watch(mensajesProvider(id));
+    final enviando = ref.watch(enviarMensajeProvider(id)).isLoading;
+    // Mientras cargan los mensajes, el técnico todavía no puede escribir.
+    final puedeEscribir =
+        miId != null &&
+        ReglasChat.puedeEscribir(
+          soyCliente: soyCliente,
+          miId: miId,
+          mensajes: mensajes.value ?? const [],
+        );
+
+    // Cada acción del ticket deja un mensaje: cuando llega uno nuevo se
+    // recarga la oferta, así la otra persona ve el ticket sin recargar.
+    ref.listen(mensajesProvider(id), (anterior, actual) {
+      final antes = anterior?.value?.length;
+      if (antes != null && actual.value?.length != antes) {
+        ref.invalidate(contextoChatProvider(id));
+      }
+    });
+
+    final contexto = ref.watch(contextoChatProvider(id));
+    final oferta = contexto.value?.oferta;
+    final estadoSolicitud = contexto.value?.estadoSolicitud;
+    final procesando = ref.watch(accionesTarifaProvider(id)).isLoading;
+    final puedeEnviarTicket =
+        puedeEscribir &&
+        estadoSolicitud != null &&
+        ReglasTarifa.puedeEnviar(
+          soyCliente: soyCliente,
+          oferta: oferta,
+          estadoSolicitud: estadoSolicitud,
+        );
+    final puedeResponder =
+        estadoSolicitud != null &&
+        ReglasTarifa.puedeResponder(
+          soyCliente: soyCliente,
+          oferta: oferta,
+          estadoSolicitud: estadoSolicitud,
+        );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Chat')),
       body: Column(
         children: [
+          FranjaTarifa(
+            soyCliente: soyCliente,
+            oferta: oferta,
+            cargando: procesando,
+            error: contexto.hasError
+                ? AsyncValueView.mensajeDe(contexto.error!)
+                : null,
+            onEmpezar: puedeEnviarTicket
+                ? () => _empezarTrabajo(oferta!.precioBase)
+                : null,
+            onVerTicket: oferta?.tarifa == null
+                ? null
+                : () => mostrarDetalleTarifa(
+                    context,
+                    oferta: oferta!,
+                    onConfirmar: puedeResponder && !procesando
+                        ? () => _confirmar(oferta)
+                        : null,
+                    onRechazar: puedeResponder && !procesando
+                        ? _rechazar
+                        : null,
+                  ),
+          ),
           Expanded(
             child: AnchoMaximo(
               ancho: _anchoMaximo,
               child: AsyncValueView<List<Mensaje>>(
                 value: mensajes,
-                onRetry: () =>
-                    ref.invalidate(mensajesProvider(widget.conversacionId)),
+                onRetry: () => ref.invalidate(mensajesProvider(id)),
                 onData: (context, mensajes) => mensajes.isEmpty
-                    ? const EstadoMensaje(
-                        icono: Icons.chat_bubble_outline,
-                        titulo: 'Inicia la conversación',
-                        mensaje:
-                            'Pregunta lo que necesites o coordina la '
-                            'visita.',
-                      )
+                    ? soyCliente
+                          ? const EstadoMensaje(
+                              icono: Icons.chat_bubble_outline,
+                              titulo: 'Inicia la conversación',
+                              mensaje:
+                                  'Pregunta lo que necesites y acuerden el '
+                                  'precio del trabajo.',
+                            )
+                          : const EstadoMensaje(
+                              icono: Icons.mark_chat_unread_outlined,
+                              titulo: 'Esperando al cliente',
+                              mensaje:
+                                  'Cuando el cliente te escriba, podrás '
+                                  'responderle aquí.',
+                            )
                     : _Mensajes(mensajes: mensajes, miId: miId),
               ),
             ),
@@ -85,6 +221,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
           _BarraEnvio(
             controller: _texto,
             enviando: enviando,
+            habilitada: puedeEscribir,
             onEnviar: _enviar,
             anchoMaximo: _anchoMaximo,
           ),
@@ -214,17 +351,21 @@ class _Burbuja extends StatelessWidget {
   }
 }
 
-/// Barra blanca inferior: campo redondeado y botón azul de enviar.
+/// Barra blanca inferior: campo redondeado y botón azul de enviar. Si no
+/// está [habilitada] (técnico antes de que el cliente escriba), muestra un
+/// aviso y desactiva el campo.
 class _BarraEnvio extends StatelessWidget {
   const _BarraEnvio({
     required this.controller,
     required this.enviando,
+    required this.habilitada,
     required this.onEnviar,
     required this.anchoMaximo,
   });
 
   final TextEditingController controller;
   final bool enviando;
+  final bool habilitada;
   final VoidCallback onEnviar;
   final double anchoMaximo;
 
@@ -252,12 +393,15 @@ class _BarraEnvio extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: controller,
+                      enabled: habilitada,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => onEnviar(),
                       minLines: 1,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'Escribe un mensaje...',
+                        hintText: habilitada
+                            ? 'Escribe un mensaje...'
+                            : 'El cliente iniciará la conversación',
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: Espacios.l + 4,
                           vertical: Espacios.m,
@@ -280,7 +424,7 @@ class _BarraEnvio extends StatelessWidget {
                     style: IconButton.styleFrom(
                       minimumSize: const Size.square(48),
                     ),
-                    onPressed: enviando ? null : onEnviar,
+                    onPressed: enviando || !habilitada ? null : onEnviar,
                     icon: const Icon(Icons.send_rounded),
                   ),
                 ],

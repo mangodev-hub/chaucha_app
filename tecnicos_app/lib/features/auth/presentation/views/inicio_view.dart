@@ -7,7 +7,9 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/espacio_publicitario.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
@@ -16,8 +18,6 @@ import '../../domain/entities/tecnico_cercano.dart';
 import '../providers/inicio_provider.dart';
 import '../widgets/inicio_widgets.dart';
 import '../widgets/mapa_tecnicos.dart';
-import '../../../../core/widgets/espacio_publicitario.dart';
-import '../../../../core/widgets/pildora.dart';
 
 /// Abre el formulario de nueva solicitud y, si se crea, va a su detalle.
 Future<void> _pedir(
@@ -45,7 +45,7 @@ Future<void> _solicitarTecnico(BuildContext context, WidgetRef ref) async {
       icon: const Icon(Icons.warning_amber_rounded, color: Colores.aviso),
       title: const Text('Publica tu requerimiento primero'),
       content: const Text(
-        'Para recibir cotizaciones debes publicar una solicitud con el '
+        'Para recibir ofertas debes publicar una solicitud con el '
         'resumen de tu problema y tu ubicación.',
       ),
       actions: [

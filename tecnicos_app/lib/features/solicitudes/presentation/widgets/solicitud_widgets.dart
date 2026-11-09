@@ -13,7 +13,7 @@ import '../../domain/entities/solicitud.dart';
 extension EstadoSolicitudVista on EstadoSolicitud {
   String get etiqueta => switch (this) {
     EstadoSolicitud.abierta => 'Abierta',
-    EstadoSolicitud.cotizada => 'Con cotizaciones',
+    EstadoSolicitud.cotizada => 'Con ofertas',
     EstadoSolicitud.aceptada => 'En curso',
     EstadoSolicitud.porConfirmar => 'Por confirmar',
     EstadoSolicitud.completada => 'Completada',
@@ -119,7 +119,7 @@ class SolicitudCard extends StatelessWidget {
                   ),
                 if (yaCotice)
                   const Pildora(
-                    texto: 'Ya cotizaste',
+                    texto: 'Ya ofertaste',
                     icono: Icons.check,
                     color: Colores.acento,
                   ),

@@ -1,20 +1,22 @@
-// Tarjeta de una cotización con sus montos y acciones opcionales, y el
-// formulario para enviar una.
+// Tarjeta de la oferta de un técnico (precio base y solución) con sus
+// acciones, y el formulario con el que el técnico ofrece sus servicios.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/validators/form_validators.dart';
+import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/campos.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/cotizacion.dart';
+import '../../domain/entities/tarifa.dart';
 
 extension EstadoCotizacionVista on EstadoCotizacion {
   String get etiqueta => switch (this) {
     EstadoCotizacion.pendiente => 'Pendiente',
     EstadoCotizacion.aceptada => 'Aceptada',
-    EstadoCotizacion.rechazada => 'Rechazada',
+    EstadoCotizacion.rechazada => 'No elegida',
   };
 
   /// Mismo criterio que los estados de solicitud: acento solo para lo positivo.
@@ -25,90 +27,104 @@ extension EstadoCotizacionVista on EstadoCotizacion {
   };
 }
 
+/// Oferta de un técnico. Los botones solo aparecen si su callback no es null.
 class CotizacionCard extends StatelessWidget {
   const CotizacionCard({
     super.key,
     required this.cotizacion,
-    this.onAceptar,
     this.onChat,
+    this.textoChat = 'Escribir al técnico',
+    this.onVerPerfil,
     this.accionesActivas = true,
     this.destacada = false,
   });
 
   final Cotizacion cotizacion;
 
-  /// Si es null, no se muestra el botón.
-  final VoidCallback? onAceptar;
+  /// Abre el chat con el técnico.
   final VoidCallback? onChat;
+  final String textoChat;
+
+  /// Abre el perfil público del técnico (al tocar su nombre).
+  final VoidCallback? onVerPerfil;
 
   /// En false, los botones se ven pero desactivados (hay una acción en curso).
   final bool accionesActivas;
 
-  /// Borde de acento para la cotización aceptada.
+  /// Borde de acento para la oferta aceptada.
   final bool destacada;
 
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final c = cotizacion;
-    final detalle = c.detalle;
-    final hayAcciones = onChat != null || onAceptar != null;
+    final solucion = c.solucion;
     return TarjetaApp(
       margin: const EdgeInsets.only(bottom: Espacios.m),
       colorBorde: destacada ? Colores.acento : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Tecnico(cotizacion: c),
+          _Tecnico(cotizacion: c, onVerPerfil: onVerPerfil),
           const SizedBox(height: Espacios.l),
-          _FilaMonto(etiqueta: 'Mano de obra', valor: c.manoObra),
-          const SizedBox(height: Espacios.xs),
-          _FilaMonto(etiqueta: 'Materiales', valor: c.materiales),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: Espacios.m),
-            child: Divider(),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Espacios.m + 2,
+              vertical: Espacios.m,
+            ),
+            decoration: BoxDecoration(
+              color: Colores.primarioSuave,
+              borderRadius: BorderRadius.circular(Radios.medio),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Precio base',
+                    style: textos.titleSmall?.copyWith(
+                      color: Colores.primarioOscuro,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Espacios.s),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      Formatos.dinero(c.precioBase),
+                      style: textos.titleLarge?.copyWith(
+                        color: Colores.primarioOscuro,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text('Total', style: textos.titleMedium),
-              const Spacer(),
-              Text(Formatos.dinero(c.total), style: textos.headlineSmall),
-            ],
-          ),
-          if (detalle != null && detalle.isNotEmpty) ...[
+          if (solucion != null) ...[
             const SizedBox(height: Espacios.m),
+            Text('Cómo lo resolvería', style: textos.labelLarge),
+            const SizedBox(height: Espacios.xs),
             Text(
-              detalle,
+              solucion,
               style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
             ),
           ],
-          if (hayAcciones) ...[
+          if (c.tarifa case final tarifa?) ...[
+            const SizedBox(height: Espacios.m),
+            _ResumenTicket(
+              tarifa: tarifa,
+              confirmado: c.estado == EstadoCotizacion.aceptada,
+            ),
+          ],
+          if (onChat != null) ...[
             const SizedBox(height: Espacios.l),
-            Row(
-              children: [
-                if (onChat != null)
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: accionesActivas ? onChat : null,
-                      icon: const Icon(Icons.chat_bubble_outline),
-                      label: const Text('Chat'),
-                    ),
-                  ),
-                if (onChat != null && onAceptar != null)
-                  const SizedBox(width: Espacios.s),
-                if (onAceptar != null)
-                  Expanded(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(0, 48),
-                      ),
-                      onPressed: accionesActivas ? onAceptar : null,
-                      child: const Text('Aceptar'),
-                    ),
-                  ),
-              ],
+            FilledButton.icon(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+              onPressed: accionesActivas ? onChat : null,
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: Text(textoChat),
             ),
           ],
         ],
@@ -117,11 +133,68 @@ class CotizacionCard extends StatelessWidget {
   }
 }
 
+/// Una línea con el ticket de trabajo: total acordado, fecha y su estado.
+class _ResumenTicket extends StatelessWidget {
+  const _ResumenTicket({required this.tarifa, required this.confirmado});
+
+  final Tarifa tarifa;
+  final bool confirmado;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    final fecha = tarifa.fechaServicio;
+    return Container(
+      padding: const EdgeInsets.all(Espacios.m),
+      decoration: BoxDecoration(
+        color: Colores.superficie,
+        borderRadius: BorderRadius.circular(Radios.medio),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.receipt_long_outlined,
+            size: 20,
+            color: Colores.primario,
+          ),
+          const SizedBox(width: Espacios.s),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ticket: ${Formatos.dinero(tarifa.total)}',
+                  style: textos.titleSmall,
+                ),
+                if (fecha != null)
+                  Text(
+                    'Servicio: ${Formatos.fechaCorta(fecha)}',
+                    style: textos.bodySmall?.copyWith(
+                      color: Colores.tintaSuave,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: Espacios.s),
+          Flexible(
+            child: confirmado
+                ? const Pildora(texto: 'Confirmado', color: Colores.acento)
+                : const Pildora(texto: 'Por confirmar', color: Colores.aviso),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Inicial, nombre y calificación del técnico, con el estado a la derecha.
+/// Si hay [onVerPerfil], la fila se puede tocar para ver su perfil.
 class _Tecnico extends StatelessWidget {
-  const _Tecnico({required this.cotizacion});
+  const _Tecnico({required this.cotizacion, this.onVerPerfil});
 
   final Cotizacion cotizacion;
+  final VoidCallback? onVerPerfil;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +203,7 @@ class _Tecnico extends StatelessWidget {
     final nombre = c.tecnicoNombre.trim();
     final inicial = nombre.isEmpty ? '?' : nombre[0].toUpperCase();
     final esNuevo = c.tecnicoCalificacion <= 0;
-    return Row(
+    final fila = Row(
       children: [
         CircleAvatar(
           backgroundColor: Colores.primarioSuave,
@@ -157,13 +230,23 @@ class _Tecnico extends StatelessWidget {
                     const Icon(Icons.star, size: 16, color: Colores.estrella),
                     const SizedBox(width: Espacios.xs),
                   ],
-                  Text(
-                    // Sin reseñas todavía: "0.0" parecería una mala nota.
-                    esNuevo
-                        ? 'Técnico nuevo'
-                        : c.tecnicoCalificacion.toStringAsFixed(1),
-                    style: textos.bodySmall?.copyWith(
-                      color: Colores.tintaSuave,
+                  Flexible(
+                    child: Text(
+                      // Sin reseñas todavía: "0.0" parecería una mala nota.
+                      [
+                        if (esNuevo)
+                          'Técnico nuevo'
+                        else
+                          c.tecnicoCalificacion.toStringAsFixed(1),
+                        if (onVerPerfil != null) 'Ver perfil',
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textos.bodySmall?.copyWith(
+                        color: onVerPerfil != null
+                            ? Colores.primario
+                            : Colores.tintaSuave,
+                      ),
                     ),
                   ),
                 ],
@@ -177,91 +260,68 @@ class _Tecnico extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class _FilaMonto extends StatelessWidget {
-  const _FilaMonto({required this.etiqueta, required this.valor});
-
-  final String etiqueta;
-  final double valor;
-
-  @override
-  Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            etiqueta,
-            style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
-          ),
-        ),
-        const SizedBox(width: Espacios.s),
-        Text(Formatos.dinero(valor), style: textos.bodyMedium),
-      ],
+    if (onVerPerfil == null) return fila;
+    return Semantics(
+      button: true,
+      label: 'Ver perfil de ${c.tecnicoNombre}',
+      child: InkWell(
+        onTap: onVerPerfil,
+        borderRadius: BorderRadius.circular(Radios.medio),
+        child: fila,
+      ),
     );
   }
 }
 
-typedef DatosCotizacion = ({
-  double manoObra,
-  double materiales,
-  String? detalle,
-});
+typedef DatosOferta = ({double precioBase, String solucion});
 
-Future<DatosCotizacion?> mostrarFormularioCotizacion(BuildContext context) {
-  return showDialog<DatosCotizacion>(
+/// Formulario del técnico: precio base y cómo resolvería el problema.
+Future<DatosOferta?> mostrarFormularioOferta(BuildContext context) {
+  return showDialog<DatosOferta>(
     context: context,
-    builder: (context) => const _FormularioCotizacion(),
+    builder: (context) => const _FormularioOferta(),
   );
 }
 
-class _FormularioCotizacion extends StatefulWidget {
-  const _FormularioCotizacion();
+class _FormularioOferta extends StatefulWidget {
+  const _FormularioOferta();
 
   @override
-  State<_FormularioCotizacion> createState() => _FormularioCotizacionState();
+  State<_FormularioOferta> createState() => _FormularioOfertaState();
 }
 
-class _FormularioCotizacionState extends State<_FormularioCotizacion> {
+class _FormularioOfertaState extends State<_FormularioOferta> {
   final _formKey = GlobalKey<FormState>();
-  final _manoObra = TextEditingController();
-  final _materiales = TextEditingController(text: '0');
-  final _detalle = TextEditingController();
+  final _precioBase = TextEditingController();
+  final _solucion = TextEditingController();
 
   @override
   void dispose() {
-    _manoObra.dispose();
-    _materiales.dispose();
-    _detalle.dispose();
+    _precioBase.dispose();
+    _solucion.dispose();
     super.dispose();
   }
 
-  double _leer(TextEditingController c) =>
-      double.parse(c.text.trim().replaceAll(',', '.'));
-
-  /// Para el total en vivo: lo que no es número cuenta como 0.
-  double _leerOCero(TextEditingController c) =>
-      double.tryParse(c.text.trim().replaceAll(',', '.')) ?? 0;
+  String? _validarPrecio(String? valor) {
+    final error = FormValidators.monto(valor, campo: 'El precio base');
+    if (error != null) return error;
+    final precio = double.parse(valor!.trim().replaceAll(',', '.'));
+    return precio <= 0 ? 'El precio base debe ser mayor que 0.' : null;
+  }
 
   void _enviar() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final detalle = _detalle.text.trim();
-    Navigator.pop<DatosCotizacion>(context, (
-      manoObra: _leer(_manoObra),
-      materiales: _leer(_materiales),
-      detalle: detalle.isEmpty ? null : detalle,
+    Navigator.pop<DatosOferta>(context, (
+      precioBase: double.parse(_precioBase.text.trim().replaceAll(',', '.')),
+      solucion: _solucion.text.trim(),
     ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    const teclado = TextInputType.numberWithOptions(decimal: true);
     return AlertDialog(
-      icon: const Icon(Icons.request_quote_outlined),
-      title: const Text('Enviar cotización'),
+      icon: const Icon(Icons.handyman_outlined),
+      title: const Text('Ofrecer mis servicios'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -270,85 +330,43 @@ class _FormularioCotizacionState extends State<_FormularioCotizacion> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               CampoEtiquetado(
-                etiqueta: 'Mano de obra',
+                etiqueta: 'Precio base',
                 ayuda: 'USD',
                 child: TextFormField(
-                  controller: _manoObra,
-                  keyboardType: teclado,
+                  controller: _precioBase,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     hintText: '0.00',
                     prefixIcon: Icon(Icons.attach_money),
                   ),
-                  validator: (v) =>
-                      FormValidators.monto(v, campo: 'La mano de obra'),
+                  validator: _validarPrecio,
                 ),
               ),
               const SizedBox(height: Espacios.l),
               CampoEtiquetado(
-                etiqueta: 'Materiales',
-                ayuda: 'USD',
+                etiqueta: '¿Cómo lo resolverías?',
                 child: TextFormField(
-                  controller: _materiales,
-                  keyboardType: teclado,
+                  controller: _solucion,
+                  minLines: 3,
+                  maxLines: 6,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
-                    hintText: '0.00',
-                    prefixIcon: Icon(Icons.attach_money),
+                    hintText:
+                        'Qué harías, cuánto tiempo te tomaría y qué incluye '
+                        'tu precio.',
                   ),
                   validator: (v) =>
-                      FormValidators.monto(v, campo: 'Materiales'),
+                      FormValidators.requerido(v, campo: 'La solución'),
                 ),
               ),
               const SizedBox(height: Espacios.l),
-              CampoEtiquetado(
-                etiqueta: 'Detalle',
-                ayuda: 'Opcional',
-                child: TextFormField(
-                  controller: _detalle,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: 'Qué incluye, tiempo estimado...',
-                  ),
-                ),
-              ),
-              const SizedBox(height: Espacios.l),
-              // Total que ve el cliente, recalculado mientras se escribe.
-              ListenableBuilder(
-                listenable: Listenable.merge([_manoObra, _materiales]),
-                builder: (context, _) => Container(
-                  padding: const EdgeInsets.all(Espacios.m + 2),
-                  decoration: BoxDecoration(
-                    color: Colores.primarioSuave,
-                    borderRadius: BorderRadius.circular(Radios.medio),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Total',
-                        style: textos.titleMedium?.copyWith(
-                          color: Colores.primarioOscuro,
-                        ),
-                      ),
-                      const SizedBox(width: Espacios.s),
-                      // En diálogos angostos, el monto se achica en vez de
-                      // desbordarse.
-                      Expanded(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            Formatos.dinero(
-                              _leerOCero(_manoObra) + _leerOCero(_materiales),
-                            ),
-                            style: textos.titleLarge?.copyWith(
-                              color: Colores.primarioOscuro,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              const AvisoBanner(
+                compacto: true,
+                mensaje:
+                    'Si al cliente le interesa, te escribirá para acordar el '
+                    'precio final.',
               ),
             ],
           ),
@@ -362,7 +380,7 @@ class _FormularioCotizacionState extends State<_FormularioCotizacion> {
         FilledButton(
           style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
           onPressed: _enviar,
-          child: const Text('Enviar'),
+          child: const Text('Enviar oferta'),
         ),
       ],
     );

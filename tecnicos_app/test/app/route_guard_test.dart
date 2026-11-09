@@ -6,14 +6,14 @@ import 'package:tecnicos_app/features/auth/domain/entities/sesion_estado.dart';
 import 'package:tecnicos_app/features/auth/domain/entities/usuario.dart';
 
 ConSesion _con(Rol rol) => ConSesion(
-      Usuario(
-        id: 'u1',
-        rol: rol,
-        nombres: 'Ana',
-        apellidos: 'Pérez',
-        creadoEn: DateTime(2026),
-      ),
-    );
+  Usuario(
+    id: 'u1',
+    rol: rol,
+    nombres: 'Ana',
+    apellidos: 'Pérez',
+    creadoEn: DateTime(2026),
+  ),
+);
 
 String? _redirigir(SesionEstado sesion, String ubicacion) =>
     resolverRedireccion(sesion: sesion, ubicacion: ubicacion);
@@ -47,7 +47,7 @@ void main() {
   });
 
   group('con sesión', () {
-        test('sin cédula registrada va a completar el perfil', () {
+    test('sin cédula registrada va a completar el perfil', () {
       final sesion = ConSesion(
         Usuario(
           id: 'u1',
@@ -65,19 +65,19 @@ void main() {
       expect(_redirigir(sesion, AppRoutes.splash), AppRoutes.completarPerfil);
       expect(_redirigir(sesion, AppRoutes.completarPerfil), isNull);
     });
-      group('recuperando contraseña', () {
-    const sesion = SesionRecuperando();
+    group('recuperando contraseña', () {
+      const sesion = SesionRecuperando();
 
-    test('solo puede estar en restablecer', () {
-      expect(_redirigir(sesion, AppRoutes.restablecer), isNull);
-      expect(_redirigir(sesion, AppRoutes.login), AppRoutes.restablecer);
-      expect(_redirigir(sesion, '/cliente'), AppRoutes.restablecer);
+      test('solo puede estar en restablecer', () {
+        expect(_redirigir(sesion, AppRoutes.restablecer), isNull);
+        expect(_redirigir(sesion, AppRoutes.login), AppRoutes.restablecer);
+        expect(_redirigir(sesion, '/cliente'), AppRoutes.restablecer);
+      });
     });
-  });
 
-  test('recuperar es pública', () {
-    expect(_redirigir(const SinSesion(), AppRoutes.recuperar), isNull);
-  });
+    test('recuperar es pública', () {
+      expect(_redirigir(const SinSesion(), AppRoutes.recuperar), isNull);
+    });
 
     test('con el perfil completo no se queda en completar perfil', () {
       expect(
@@ -89,6 +89,14 @@ void main() {
       final sesion = _con(Rol.cliente);
       expect(_redirigir(sesion, AppRoutes.clienteInicio), isNull);
       expect(_redirigir(sesion, '/cliente/solicitud/42'), isNull);
+      expect(_redirigir(sesion, AppRoutes.perfilTecnico('t9')), isNull);
+    });
+
+    test('el técnico no entra al perfil público (es zona del cliente)', () {
+      expect(
+        _redirigir(_con(Rol.tecnico), AppRoutes.perfilTecnico('t9')),
+        AppRoutes.tecnicoInicio,
+      );
     });
 
     test('el cliente no entra a la zona del técnico ni a login', () {
