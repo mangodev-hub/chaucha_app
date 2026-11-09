@@ -21,6 +21,7 @@ import 'route_guard.dart';
 import '../features/auth/presentation/views/completar_perfil_view.dart';
 import '../features/auth/presentation/views/recuperar_view.dart';
 import '../features/auth/presentation/views/restablecer_view.dart';
+import '../features/auth/presentation/views/perfil_cliente_view.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
 
@@ -53,6 +54,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.login,
         builder: (context, state) => const LoginView(),
       ),
+      
       GoRoute(
         path: AppRoutes.registro,
         builder: (context, state) => const RegistroView(),
@@ -81,6 +83,7 @@ GoRoute(
       Destino('Inicio', Icons.home_outlined, InicioView(esCliente: true)),
       Destino('Mis solicitudes', Icons.assignment_outlined,
           MisSolicitudesView()),
+      Destino('Mi perfil', Icons.person_outline, PerfilClienteView()),
     ],
   ),
   routes: [
