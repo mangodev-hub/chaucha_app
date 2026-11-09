@@ -69,7 +69,11 @@ class _InicioShellState extends ConsumerState<InicioShell> {
         onDestinationSelected: _cambiar,
         destinations: [
           for (final d in destinos)
-            NavigationDestination(icon: Icon(d.icono), label: d.titulo),
+            NavigationDestination(
+              icon: Icon(d.icono),
+              selectedIcon: _IconoActivo(d.icono),
+              label: d.titulo,
+            ),
         ],
       ),
     );
@@ -199,26 +203,62 @@ class _Pestana extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: activa ? Colores.primarioSuave : Colors.transparent,
-      borderRadius: BorderRadius.circular(Radios.pequeno),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(Radios.pequeno),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Espacios.l,
-            vertical: Espacios.s + 2,
-          ),
-          child: Text(
-            titulo,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: activa ? Colores.primario : Colores.tintaSuave,
-                  fontWeight: FontWeight.w700,
-                ),
+    final duracion = Movimiento.de(context, Movimiento.normal);
+    final borde = BorderRadius.circular(Radios.pequeno);
+    // El fondo y el color del texto cambian con una transición.
+    return AnimatedContainer(
+      duration: duracion,
+      curve: Movimiento.entrada,
+      decoration: BoxDecoration(
+        color: activa
+            ? Colores.primarioSuave
+            : Colores.primarioSuave.withValues(alpha: 0),
+        borderRadius: borde,
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: borde,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Espacios.l,
+              vertical: Espacios.s + 2,
+            ),
+            child: AnimatedDefaultTextStyle(
+              duration: duracion,
+              style: (Theme.of(context).textTheme.labelLarge ??
+                      const TextStyle())
+                  .copyWith(
+                    color: activa ? Colores.primario : Colores.tintaSuave,
+                    fontWeight: FontWeight.w700,
+                  ),
+              child: Text(titulo),
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Ícono de la pestaña elegida: aparece con un pequeño rebote. La barra lo
+/// monta de nuevo cada vez que se elige la pestaña, así que el rebote se
+/// repite en cada cambio.
+class _IconoActivo extends StatelessWidget {
+  const _IconoActivo(this.icono);
+
+  final IconData icono;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.7, end: 1),
+      duration: Movimiento.de(context, Movimiento.normal),
+      curve: Movimiento.rebote,
+      builder: (context, escala, child) =>
+          Transform.scale(scale: escala, child: child),
+      child: Icon(icono),
     );
   }
 }

@@ -1,5 +1,10 @@
 // Botón principal que se desactiva y muestra un indicador mientras [cargando].
+// El cambio entre el texto y el indicador se anima (fundido, escala y tamaño),
+// y el botón se encoge un poco mientras se presiona.
 import 'package:flutter/material.dart';
+
+import '../theme/tokens.dart';
+import 'presionable.dart';
 
 class BotonCarga extends StatelessWidget {
   const BotonCarga({
@@ -25,26 +30,57 @@ class BotonCarga extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (cargando) {
-      return const FilledButton(
-        onPressed: null,
-        child: SizedBox.square(
-          dimension: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+    final duracion = Movimiento.de(context, Movimiento.normal);
+    final boton = FilledButton(
+      onPressed: cargando ? null : onPressed,
+      child: AnimatedSize(
+        duration: duracion,
+        curve: Movimiento.entrada,
+        child: AnimatedSwitcher(
+          duration: duracion,
+          switchInCurve: Movimiento.entrada,
+          switchOutCurve: Movimiento.entrada,
+          transitionBuilder: (child, animacion) => FadeTransition(
+            opacity: animacion,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.8, end: 1).animate(animacion),
+              child: child,
+            ),
+          ),
+          child: cargando
+              ? const SizedBox.square(
+                  key: ValueKey('cargando'),
+                  dimension: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    semanticsLabel: 'Cargando',
+                  ),
+                )
+              : KeyedSubtree(
+                  key: ValueKey(('contenido', texto, icono)),
+                  child: _contenido(),
+                ),
         ),
-      );
-    }
+      ),
+    );
+    return Presionable(
+      activo: !cargando && onPressed != null,
+      escala: 0.96,
+      child: boton,
+    );
+  }
+
+  Widget _contenido() {
     final icono = this.icono;
-    if (icono != null) {
-      return FilledButton.icon(
-        style: iconoAlFinal
-            ? const ButtonStyle(iconAlignment: IconAlignment.end)
-            : null,
-        onPressed: onPressed,
-        icon: Icon(icono),
-        label: Text(texto),
-      );
-    }
-    return FilledButton(onPressed: onPressed, child: Text(texto));
+    if (icono == null) return Text(texto);
+    final partes = [
+      Icon(icono),
+      const SizedBox(width: Espacios.s),
+      Flexible(child: Text(texto)),
+    ];
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: iconoAlFinal ? partes.reversed.toList() : partes,
+    );
   }
 }

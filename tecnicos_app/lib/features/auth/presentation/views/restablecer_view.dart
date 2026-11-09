@@ -7,6 +7,7 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/sacudir.dart';
 import '../providers/recuperacion_providers.dart';
 import '../widgets/auth_layout.dart';
 
@@ -21,6 +22,12 @@ class RestablecerView extends ConsumerStatefulWidget {
 
 class _RestablecerViewState extends ConsumerState<RestablecerView> {
   final _formKey = GlobalKey<FormState>();
+
+  /// Intentos de envío fallidos: cada uno sacude el botón.
+  int _fallos = 0;
+
+  void _avisarFallo() => setState(() => _fallos++);
+
   final _password = TextEditingController();
   final _confirmacion = TextEditingController();
 
@@ -32,7 +39,10 @@ class _RestablecerViewState extends ConsumerState<RestablecerView> {
   }
 
   Future<void> _guardar() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _avisarFallo();
+      return;
+    }
     final mensajes = ScaffoldMessenger.of(context);
     final bien =
         await ref.read(restablecerProvider.notifier).cambiar(_password.text);
@@ -46,6 +56,10 @@ class _RestablecerViewState extends ConsumerState<RestablecerView> {
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(restablecerProvider);
+    // Si el servidor responde con error, el botón también se sacude.
+    ref.listen(restablecerProvider, (_, siguiente) {
+      if (siguiente.hasError && !siguiente.isLoading) _avisarFallo();
+    });
     final cargando = estado.isLoading;
     final error = cargando || !estado.hasError
         ? null
@@ -91,11 +105,14 @@ class _RestablecerViewState extends ConsumerState<RestablecerView> {
                 ),
               ),
               const SizedBox(height: Espacios.xl),
-              BotonCarga(
-                texto: 'Guardar contraseña',
-                icono: Icons.check,
-                cargando: cargando,
-                onPressed: _guardar,
+              Sacudir(
+                senal: _fallos,
+                child: BotonCarga(
+                  texto: 'Guardar contraseña',
+                  icono: Icons.check,
+                  cargando: cargando,
+                  onPressed: _guardar,
+                ),
               ),
               Center(
                 child: TextButton(

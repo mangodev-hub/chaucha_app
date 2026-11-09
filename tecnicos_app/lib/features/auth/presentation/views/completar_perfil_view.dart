@@ -9,6 +9,7 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/sacudir.dart';
 import '../../domain/entities/rol.dart';
 import '../providers/completar_perfil_provider.dart';
 import '../widgets/auth_layout.dart';
@@ -26,6 +27,12 @@ class CompletarPerfilView extends ConsumerStatefulWidget {
 
 class _CompletarPerfilViewState extends ConsumerState<CompletarPerfilView> {
   final _formKey = GlobalKey<FormState>();
+
+  /// Intentos de envío fallidos: cada uno sacude el botón.
+  int _fallos = 0;
+
+  void _avisarFallo() => setState(() => _fallos++);
+
   final _cedula = TextEditingController();
   final _dactilar = TextEditingController();
   Rol _rol = Rol.cliente;
@@ -38,7 +45,10 @@ class _CompletarPerfilViewState extends ConsumerState<CompletarPerfilView> {
   }
 
   Future<void> _enviar() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _avisarFallo();
+      return;
+    }
     await ref.read(completarPerfilProvider.notifier).completar(
           cedula: _cedula.text,
           codigoDactilar: _dactilar.text,
@@ -49,6 +59,10 @@ class _CompletarPerfilViewState extends ConsumerState<CompletarPerfilView> {
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(completarPerfilProvider);
+    // Si el servidor responde con error, el botón también se sacude.
+    ref.listen(completarPerfilProvider, (_, siguiente) {
+      if (siguiente.hasError && !siguiente.isLoading) _avisarFallo();
+    });
     final cargando = estado.isLoading;
     final error = cargando || !estado.hasError
         ? null
@@ -131,12 +145,15 @@ class _CompletarPerfilViewState extends ConsumerState<CompletarPerfilView> {
               ),
             ),
             const SizedBox(height: Espacios.xl),
-            BotonCarga(
-              texto: 'Continuar',
-              icono: Icons.arrow_forward,
-              iconoAlFinal: true,
-              cargando: cargando,
-              onPressed: _enviar,
+            Sacudir(
+              senal: _fallos,
+              child: BotonCarga(
+                texto: 'Continuar',
+                icono: Icons.arrow_forward,
+                iconoAlFinal: true,
+                cargando: cargando,
+                onPressed: _enviar,
+              ),
             ),
             Center(
               child: TextButton(

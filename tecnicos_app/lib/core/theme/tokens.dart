@@ -89,6 +89,32 @@ abstract final class Sombras {
   static const Color boton = Color(0x661976D2);
 }
 
+/// Duraciones y curvas de las animaciones. Las pantallas y componentes piden
+/// la duración con [Movimiento.de], que respeta la opción del sistema
+/// "reducir animaciones" (accesibilidad).
+abstract final class Movimiento {
+  /// Íconos que cambian (ojo de la contraseña).
+  static const Duration rapido = Duration(milliseconds: 150);
+
+  /// Cambios de estado: botones, píldoras, pasos.
+  static const Duration normal = Duration(milliseconds: 250);
+
+  /// Momentos de éxito: check animado y aparición con rebote.
+  static const Duration lento = Duration(milliseconds: 500);
+
+  /// Curva general: arranca rápido y frena suave.
+  static const Curve entrada = Curves.easeOutCubic;
+
+  /// Pasa un poco del tamaño final y vuelve ("pop"). Solo para lo positivo.
+  static const Curve rebote = Curves.easeOutBack;
+
+  /// [duracion], o cero si el sistema pide reducir las animaciones.
+  static Duration de(BuildContext context, Duration duracion) =>
+      (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+      ? Duration.zero
+      : duracion;
+}
+
 abstract final class Tipografia {
   /// Provisional. Se descarga con `google_fonts`; antes de publicar hay que
   /// incluir los archivos de la fuente en la app (ver `docs/DISENO.md`).

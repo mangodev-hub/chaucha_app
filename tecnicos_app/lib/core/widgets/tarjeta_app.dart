@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
+import 'presionable.dart';
 
 class TarjetaApp extends StatelessWidget {
   const TarjetaApp({
@@ -35,7 +36,7 @@ class TarjetaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final borde = BorderRadius.circular(radio);
     final colorBorde = this.colorBorde;
-    return Container(
+    final tarjeta = Container(
       margin: margin,
       decoration: BoxDecoration(
         color: color,
@@ -54,6 +55,9 @@ class TarjetaApp extends StatelessWidget {
         ),
       ),
     );
+    // Las tarjetas que se pueden tocar se encogen apenas al presionarlas.
+    if (onTap == null) return tarjeta;
+    return Presionable(escala: 0.98, child: tarjeta);
   }
 }
 

@@ -74,6 +74,29 @@ Todo vive en [`lib/core/theme/tokens.dart`](../lib/core/theme/tokens.dart).
 - Radios: `pequeno` 8 · `medio` 12 (botones, campos, avisos) · `grande` 16 (tarjetas) · `muyGrande` 24 (tarjeta de login y registro, hojas, diálogos) · `pildora` 999.
 - Espacios: `xs` 4 · `s` 8 · `m` 12 · `l` 16 · `xl` 24 · `xxl` 32.
 
+### Movimiento (`Movimiento`)
+
+Animaciones cortas, solo para dar respuesta a una acción o celebrar un éxito; nada en bucle ni decorativo.
+
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `rapido` | 150 ms | Íconos que cambian (ojo de la contraseña), `Presionable` |
+| `normal` | 250 ms | Cambios de estado: `BotonCarga`, `Pildora`, `IndicadorPasos`, pestañas, estrellas, mensajes nuevos del chat |
+| `lento` | 500 ms | Éxito: `CheckAnimado` y el rebote de `EstadoMensaje` |
+| `entrada` | `easeOutCubic` | Curva general |
+| `rebote` | `easeOutBack` | "Pop" de lo positivo |
+
+La duración se pide siempre con `Movimiento.de(context, Movimiento.normal)`: devuelve cero si el sistema tiene activado "reducir animaciones".
+
+Dónde hay animación:
+
+- **Botones y tarjetas:** `BotonCarga` y las `TarjetaApp` con `onTap` se encogen un poco al presionarlas (`Presionable`).
+- **Errores al enviar un formulario:** el botón principal se sacude (`Sacudir`) si falla la validación o el servidor responde con error. Está en login, registro, completar perfil, recuperar y restablecer contraseña. Patrón: un contador `_fallos` en el `State`, que se incrementa al fallar `validate()` y desde `ref.listen` del provider cuando queda en error.
+- **Éxito:** `EstadoMensaje` de tipo éxito (rebote y `CheckAnimado`).
+- **Pestañas:** el ícono de la pestaña elegida rebota (móvil) y la pestaña de escritorio cambia de color con una transición.
+- **Reseña:** las estrellas que se llenan rebotan y la etiqueta ("Muy bueno") cambia con un fundido.
+- **Chat:** los mensajes que llegan con la pantalla abierta entran desde abajo; los que ya estaban al abrirla, no.
+
 ### Tipografía (`Tipografia`)
 
 - Familia: **Plus Jakarta Sans**, cargada con `google_fonts`.
@@ -85,18 +108,21 @@ Las pantallas se arman con estos componentes. No se crean versiones propias de l
 
 | Componente | Archivo | Para qué |
 | --- | --- | --- |
-| `TarjetaApp` | `tarjeta_app.dart` | La única tarjeta: blanca, radio 16, sombra suave, `onTap`, borde de color opcional |
+| `TarjetaApp` | `tarjeta_app.dart` | La única tarjeta: blanca, radio 16, sombra suave, `onTap` (se encoge al presionarla), borde de color opcional |
 | `BloqueTarjeta` | `tarjeta_app.dart` | Tarjeta con encabezado (número de paso o ícono, título y subtítulo) para agrupar partes de un formulario |
 | `IconoRecuadro` | `tarjeta_app.dart` | Ícono azul en un recuadro celeste |
 | `EncabezadoPantalla` | `encabezado_pantalla.dart` | Título y subtítulo de una pantalla o una hoja, con ícono opcional |
 | `CampoEtiquetado` | `campos.dart` | Etiqueta en negrita arriba del campo, con ayuda azul opcional ("Opcional", "Ecuador (10 dígitos)") |
 | `CampoContrasena` | `campos.dart` | Campo de contraseña con candado y ojo para mostrarla u ocultarla |
-| `BotonCarga` | `boton_carga.dart` | Botón principal con carga, ícono opcional (al inicio o al final) |
+| `BotonCarga` | `boton_carga.dart` | Botón principal con carga (cambio animado entre texto e indicador), ícono opcional (al inicio o al final) |
 | `BarraAccion` | `barra_accion.dart` | Barra blanca fija abajo con la acción principal (móvil) |
 | `AvisoBanner` | `aviso_banner.dart` | Aviso dentro de la pantalla: `info`, `exito`, `aviso` o `error`. Versión `compacto` para etiquetas |
-| `EstadoMensaje` | `estado_mensaje.dart` | Hueco de la pantalla: lista vacía, error o éxito (`TipoEstado`), centrado o `compacto`, con botón opcional |
-| `IndicadorPasos` | `indicador_pasos.dart` | Barras de progreso con "Paso X de Y" o etiquetas bajo cada paso |
-| `Pildora` | `pildora.dart` | Estados y datos cortos (estado de solicitud o cotización, distancia, "Ya cotizaste") |
+| `EstadoMensaje` | `estado_mensaje.dart` | Hueco de la pantalla: lista vacía, error o éxito (`TipoEstado`), centrado o `compacto`, con botón opcional. En éxito, el ícono aparece con rebote y lleva un `CheckAnimado` |
+| `Sacudir` | `sacudir.dart` | Sacude a su hijo cada vez que cambia `senal` (contador de fallos). Para el botón de un formulario que falló |
+| `Presionable` | `presionable.dart` | Encoge a su hijo mientras se presiona, sin competir con sus gestos. Ya lo usan `BotonCarga` y `TarjetaApp` |
+| `CheckAnimado` | `check_animado.dart` | Check verde que se dibuja una vez (círculo con rebote y tilde). Decorativo, o con `etiqueta` para lectores de pantalla |
+| `IndicadorPasos` | `indicador_pasos.dart` | Barras de progreso con "Paso X de Y" o etiquetas bajo cada paso; la barra se llena con animación al avanzar |
+| `Pildora` | `pildora.dart` | Estados y datos cortos (estado de solicitud o cotización, distancia, "Ya cotizaste"); anima el cambio de color y texto |
 | `CuadriculaAdaptable` | `cuadricula_adaptable.dart` | Lista que pasa a dos columnas con 640 px o más |
 | `Marca` / `Marca.vertical` | `marca.dart` | Logo y nombre en fila (barras) o apilados con el lema (login, registro, splash) |
 | `AsyncValueView` | `async_value_view.dart` | Carga, error (con `EstadoMensaje` y "Reintentar") o datos |
@@ -120,6 +146,7 @@ Las pantallas se arman con estos componentes. No se crean versiones propias de l
 - **Contraste (WCAG AA):** blanco sobre `primario` da 4.6:1, `tinta` sobre `fondo` 13:1 y `tintaSuave` sobre `fondo` 5.1:1. El azul exacto de la referencia (`#2196F3`) da 3.1:1 con texto blanco, así que se usa solo como decoración (`primarioVivo`).
 - **Píldoras:** el texto usa una versión oscurecida del color del estado, para que se lea sobre su fondo suave.
 - **Texto grande:** todas las pantallas se revisaron a 360 px y a 1280 px, con texto al 100 % y al 130 %, sin desbordes.
+- **Animaciones:** respetan "reducir animaciones" del sistema (`Movimiento.de`). El check de éxito es decorativo: el mensaje ya dice lo que pasó.
 - **Pendiente:** revisar los tamaños mínimos de toque con el equipo.
 
 ## Decisiones pendientes
