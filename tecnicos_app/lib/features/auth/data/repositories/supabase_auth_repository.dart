@@ -55,7 +55,49 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     });
   }
+  @override
+  String? get correoActual => _auth.currentUser?.email;
 
+  @override
+  bool get usaContrasena =>
+      (_auth.currentUser?.appMetadata['provider'] ?? 'email') == 'email';
+
+  Future<void> _verificarContrasena(String contrasena) async {
+    final correo = correoActual;
+    if (correo == null) {
+      throw const AppFailure('Tu sesión expiró. Inicia sesión de nuevo.');
+    }
+    try {
+      await _auth.signInWithPassword(email: correo, password: contrasena);
+    } on AuthException {
+      throw const AppFailure('La contraseña actual no es correcta.');
+    }
+  }
+
+  @override
+  Future<void> cambiarContrasenaConActual({
+    required String actual,
+    required String nueva,
+  }) {
+    return supabaseGuard(() async {
+      await _verificarContrasena(actual);
+      await _auth.updateUser(UserAttributes(password: nueva));
+    });
+  }
+
+  @override
+  Future<void> cambiarCorreo({
+    required String contrasena,
+    required String nuevo,
+  }) {
+    return supabaseGuard(() async {
+      await _verificarContrasena(contrasena);
+      await _auth.updateUser(
+        UserAttributes(email: nuevo.trim()),
+        emailRedirectTo: AuthRedirect.url,
+      );
+    });
+  }
   @override
   Future<void> cambiarContrasena(String nueva) {
     return supabaseGuard(() async {
@@ -73,6 +115,10 @@ class SupabaseAuthRepository implements AuthRepository {
     });
   }
 
+  @override
+  Future<void> cerrarSesionEnTodos() =>
+      supabaseGuard(() => _auth.signOut(scope: SignOutScope.global));
+      
   @override
   Future<RegistroResultado> registrar(RegistroDatos datos) {
     return supabaseGuard(() async {

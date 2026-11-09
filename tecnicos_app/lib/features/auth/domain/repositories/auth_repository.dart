@@ -21,4 +21,18 @@ abstract interface class AuthRepository {
   Future<void> reenviarConfirmacion(String email);
 
   Future<void> cambiarContrasena(String nueva);
+    String? get correoActual;
+
+  bool get usaContrasena;
+
+  Future<void> cambiarContrasenaConActual({
+    required String actual,
+    required String nueva,
+  });
+
+  Future<void> cambiarCorreo({
+    required String contrasena,
+    required String nuevo,
+  });
+  Future<void> cerrarSesionEnTodos();
 }

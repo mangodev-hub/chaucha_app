@@ -48,8 +48,30 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
     });
   }
 
-  // OJO: inserta la solicitud y después sube las fotos. Si falla una foto,
-  // la solicitud ya quedó creada (y reintentar la duplica). Candidato a RPC.
+  @override
+  Future<void> editar(
+    String id, {
+    required String descripcion,
+    required int oficioId,
+    String? direccion,
+  }) {
+    return supabaseGuard(() async {
+      await _client.rpc('editar_solicitud', params: {
+        'p_id': id,
+        'p_descripcion': descripcion,
+        'p_oficio_id': oficioId,
+        'p_direccion': direccion,
+      });
+    });
+  }
+
+  @override
+  Future<void> eliminar(String id) {
+    return supabaseGuard(() async {
+      await _client.rpc('eliminar_solicitud', params: {'p_id': id});
+    });
+  }
+  
   @override
   Future<String> crear(NuevaSolicitud nueva) {
     return supabaseGuard(() async {

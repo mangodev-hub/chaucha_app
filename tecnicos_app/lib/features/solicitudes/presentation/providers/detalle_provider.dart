@@ -60,8 +60,23 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
         .cambiarEstado(solicitudId, EstadoSolicitud.cancelada),
   );
 
-  /// El técnico ofrece sus servicios: precio base y cómo lo resolvería. El
-  /// precio final se acuerda después por chat.
+  Future<bool> editar({
+    required String descripcion,
+    required int oficioId,
+    String? direccion,
+  }) => _ejecutar(
+    () => ref.read(solicitudRepositoryProvider).editar(
+          solicitudId,
+          descripcion: descripcion,
+          oficioId: oficioId,
+          direccion: direccion,
+        ),
+  );
+
+  Future<bool> eliminar() => _ejecutar(
+    () => ref.read(solicitudRepositoryProvider).eliminar(solicitudId),
+    recargar: false,
+  );
   Future<bool> enviarOferta({
     required double precioBase,
     required String solucion,

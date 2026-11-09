@@ -53,11 +53,14 @@ class SolicitudCard extends StatelessWidget {
     required this.onTap,
     this.distancia,
     this.yaCotice = false,
+    this.onEditar,
+    this.onEliminar,
   });
 
   final Solicitud solicitud;
   final VoidCallback onTap;
-
+  final VoidCallback? onEditar;
+  final VoidCallback? onEliminar;
   /// Distancia ya formateada ("1.2 km"), solo en el feed del técnico.
   final String? distancia;
   final bool yaCotice;
@@ -96,6 +99,40 @@ class SolicitudCard extends StatelessWidget {
               ),
               const SizedBox(width: Espacios.s),
               Flexible(child: EstadoChip(solicitud.estado)),
+                            if (onEditar != null || onEliminar != null)
+                PopupMenuButton<String>(
+                  tooltip: 'Opciones',
+                  onSelected: (v) =>
+                      v == 'editar' ? onEditar?.call() : onEliminar?.call(),
+                  itemBuilder: (_) => [
+                    if (onEditar != null)
+                      const PopupMenuItem(
+                        value: 'editar',
+                        child: ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.edit_outlined),
+                          title: Text('Editar'),
+                        ),
+                      ),
+                    if (onEliminar != null)
+                      const PopupMenuItem(
+                        value: 'eliminar',
+                        child: ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            Icons.delete_outline,
+                            color: Colores.error,
+                          ),
+                          title: Text(
+                            'Eliminar',
+                            style: TextStyle(color: Colores.error),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: Espacios.m),
