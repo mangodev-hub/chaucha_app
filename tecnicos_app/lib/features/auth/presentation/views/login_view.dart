@@ -11,6 +11,7 @@ import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/boton_google.dart';
 import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/sacudir.dart';
 import '../../domain/entities/sesion_estado.dart';
 import '../providers/login_provider.dart';
 import '../providers/sesion_provider.dart';
@@ -25,6 +26,12 @@ class LoginView extends ConsumerStatefulWidget {
 
 class _LoginViewState extends ConsumerState<LoginView> {
   final _formKey = GlobalKey<FormState>();
+
+  /// Intentos de envío fallidos: cada uno sacude el botón.
+  int _fallos = 0;
+
+  void _avisarFallo() => setState(() => _fallos++);
+
   final _email = TextEditingController();
   final _password = TextEditingController();
 
@@ -36,7 +43,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   Future<void> _enviar() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _avisarFallo();
+      return;
+    }
     await ref
         .read(loginProvider.notifier)
         .iniciarSesion(email: _email.text, password: _password.text);
@@ -45,6 +55,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
   @override
   Widget build(BuildContext context) {
     final estadoLogin = ref.watch(loginProvider);
+    // Si el servidor responde con error, el botón también se sacude.
+    ref.listen(loginProvider, (_, siguiente) {
+      if (siguiente.hasError && !siguiente.isLoading) _avisarFallo();
+    });
     final cargando = estadoLogin.isLoading;
     final error = cargando || !estadoLogin.hasError
         ? null
@@ -103,12 +117,15 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 ),
               ),
               const SizedBox(height: Espacios.l),
-              BotonCarga(
-                texto: 'Iniciar sesión',
-                icono: Icons.arrow_forward,
-                iconoAlFinal: true,
-                cargando: cargando,
-                onPressed: _enviar,
+              Sacudir(
+                senal: _fallos,
+                child: BotonCarga(
+                  texto: 'Iniciar sesión',
+                  icono: Icons.arrow_forward,
+                  iconoAlFinal: true,
+                  cargando: cargando,
+                  onPressed: _enviar,
+                ),
               ),
               const SizedBox(height: Espacios.xxl),
               BotonGoogle(

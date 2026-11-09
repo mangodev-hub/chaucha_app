@@ -1,4 +1,5 @@
 // Diálogo de calificación de 1 a 5 estrellas, con comentario opcional.
+// Las estrellas que se llenan aparecen con un rebote.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
@@ -47,6 +48,7 @@ class _DialogoResenaState extends State<_DialogoResena> {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
+    final duracion = Movimiento.de(context, Movimiento.normal);
     return AlertDialog(
       icon: const Icon(Icons.star_rounded, color: Colores.estrella, size: 36),
       title: Text('Califica a ${widget.nombre}'),
@@ -70,22 +72,35 @@ class _DialogoResenaState extends State<_DialogoResena> {
                         minHeight: 48,
                       ),
                       onPressed: () => setState(() => _estrellas = i),
-                      icon: Icon(
-                        i <= _estrellas
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
-                        color: Colores.estrella,
-                        size: 34,
+                      // La estrella que se llena aparece con un "pop".
+                      icon: AnimatedSwitcher(
+                        duration: duracion,
+                        switchInCurve: Movimiento.rebote,
+                        switchOutCurve: Movimiento.entrada,
+                        transitionBuilder: (child, animacion) =>
+                            ScaleTransition(scale: animacion, child: child),
+                        child: Icon(
+                          i <= _estrellas
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          key: ValueKey(i <= _estrellas),
+                          color: Colores.estrella,
+                          size: 34,
+                        ),
                       ),
                     ),
                   ),
               ],
             ),
-            Text(
-              _etiquetas[_estrellas],
-              textAlign: TextAlign.center,
-              style: textos.titleSmall?.copyWith(
-                color: _estrellas == 0 ? Colores.tintaSuave : Colores.tinta,
+            AnimatedSwitcher(
+              duration: duracion,
+              child: Text(
+                _etiquetas[_estrellas],
+                key: ValueKey(_estrellas),
+                textAlign: TextAlign.center,
+                style: textos.titleSmall?.copyWith(
+                  color: _estrellas == 0 ? Colores.tintaSuave : Colores.tinta,
+                ),
               ),
             ),
             const SizedBox(height: Espacios.l),

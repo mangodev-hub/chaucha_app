@@ -1,6 +1,8 @@
 // Chat en tiempo real entre cliente y técnico. Solo el cliente inicia la
 // conversación. Cuando acuerdan el precio, el técnico envía el ticket de
 // trabajo ("Empezar trabajo") y el cliente lo confirma o lo rechaza.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -231,38 +233,125 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 }
 
-/// Lista de mensajes, el más nuevo abajo, con separadores por día.
-class _Mensajes extends StatelessWidget {
+/// Lista de mensajes, el más nuevo abajo, con separadores por día. Los
+/// mensajes que llegan con la pantalla abierta entran con una animación; los
+/// que ya estaban al abrirla, no.
+class _Mensajes extends StatefulWidget {
   const _Mensajes({required this.mensajes, required this.miId});
 
   final List<Mensaje> mensajes;
   final String? miId;
 
   @override
+  State<_Mensajes> createState() => _MensajesState();
+}
+
+class _MensajesState extends State<_Mensajes> {
+  /// Ids ya mostrados. Null hasta la primera carga, que no se anima.
+  Set<String>? _vistos;
+
+  @override
   Widget build(BuildContext context) {
+    final vistos = _vistos;
     // Se arma en orden cronológico y se muestra invertido (reverse: true)
-    // para que el más nuevo quede junto al campo de texto.
+    // para que el más nuevo quede junto al campo de texto. Cada elemento
+    // lleva su clave para que la lista conserve su estado (y su animación)
+    // cuando llegan mensajes nuevos.
     final elementos = <Widget>[];
     String? diaAnterior;
-    for (final m in mensajes) {
+    for (final m in widget.mensajes) {
       final dia = Formatos.dia(m.enviadoEn);
       if (dia != diaAnterior) {
-        elementos.add(_SeparadorDia(dia));
+        elementos.add(_SeparadorDia(dia, key: ValueKey('dia-$dia')));
         diaAnterior = dia;
       }
-      elementos.add(_Burbuja(mensaje: m, esMio: m.autorId == miId));
+      elementos.add(
+        _EntradaMensaje(
+          key: ValueKey(m.id),
+          animar: vistos != null && !vistos.contains(m.id),
+          child: _Burbuja(mensaje: m, esMio: m.autorId == widget.miId),
+        ),
+      );
     }
+    _vistos = {...?vistos, for (final m in widget.mensajes) m.id};
+
+    final indices = {
+      for (var i = 0; i < elementos.length; i++)
+        elementos[i].key!: elementos.length - 1 - i,
+    };
     return ListView.builder(
       reverse: true,
       padding: const EdgeInsets.all(Espacios.m),
       itemCount: elementos.length,
       itemBuilder: (context, i) => elementos[elementos.length - 1 - i],
+      findChildIndexCallback: (clave) => indices[clave],
+    );
+  }
+}
+
+/// Si [animar] al montarse, [child] crece desde abajo con un fundido. Solo
+/// cuenta el valor inicial: no se repite al volver a construirse.
+class _EntradaMensaje extends StatefulWidget {
+  const _EntradaMensaje({super.key, required this.animar, required this.child});
+
+  final bool animar;
+  final Widget child;
+
+  @override
+  State<_EntradaMensaje> createState() => _EntradaMensajeState();
+}
+
+class _EntradaMensajeState extends State<_EntradaMensaje>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controlador = AnimationController(
+    vsync: this,
+    value: widget.animar ? 0 : 1,
+  );
+  late final Animation<double> _curva = CurvedAnimation(
+    parent: _controlador,
+    curve: Movimiento.entrada,
+  );
+  bool _iniciado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_iniciado) {
+      _iniciado = true;
+      if (widget.animar) {
+        _controlador.duration = Movimiento.de(context, Movimiento.normal);
+        unawaited(_controlador.forward());
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controlador.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizeTransition(
+      sizeFactor: _curva,
+      alignment: Alignment.topCenter,
+      child: FadeTransition(
+        opacity: _curva,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.3),
+            end: Offset.zero,
+          ).animate(_curva),
+          child: widget.child,
+        ),
+      ),
     );
   }
 }
 
 class _SeparadorDia extends StatelessWidget {
-  const _SeparadorDia(this.dia);
+  const _SeparadorDia(this.dia, {super.key});
 
   final String dia;
 

@@ -16,6 +16,7 @@ import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/campos.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/sacudir.dart';
 import '../../domain/entities/registro_resultado.dart';
 import '../../domain/entities/rol.dart';
 import '../providers/recuperacion_providers.dart';
@@ -33,6 +34,12 @@ class RegistroView extends ConsumerStatefulWidget {
 
 class _RegistroViewState extends ConsumerState<RegistroView> {
   final _formKey = GlobalKey<FormState>();
+
+  /// Intentos de envío fallidos: cada uno sacude el botón.
+  int _fallos = 0;
+
+  void _avisarFallo() => setState(() => _fallos++);
+
   final _nombres = TextEditingController();
   final _apellidos = TextEditingController();
   final _cedula = TextEditingController();
@@ -65,7 +72,10 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
       valor == _password.text ? null : 'Las contraseñas no coinciden.';
 
   Future<void> _enviar() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _avisarFallo();
+      return;
+    }
     await ref.read(registroProvider.notifier).registrar(
           email: _email.text,
           password: _password.text,
@@ -111,6 +121,10 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(registroProvider);
+    // Si el servidor responde con error, el botón también se sacude.
+    ref.listen(registroProvider, (_, siguiente) {
+      if (siguiente.hasError && !siguiente.isLoading) _avisarFallo();
+    });
     final reenvio = ref.watch(reenviarConfirmacionProvider);
     final error = estado.isLoading || !estado.hasError
         ? null
@@ -334,12 +348,15 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
               confirmacion,
             ],
             const SizedBox(height: Espacios.xl),
-            BotonCarga(
-              texto: 'Registrarse',
-              icono: Icons.arrow_forward,
-              iconoAlFinal: true,
-              cargando: cargando,
-              onPressed: _enviar,
+            Sacudir(
+              senal: _fallos,
+              child: BotonCarga(
+                texto: 'Registrarse',
+                icono: Icons.arrow_forward,
+                iconoAlFinal: true,
+                cargando: cargando,
+                onPressed: _enviar,
+              ),
             ),
             const SizedBox(height: Espacios.l),
             EnlaceAuth(

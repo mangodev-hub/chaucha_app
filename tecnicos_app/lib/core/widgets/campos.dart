@@ -1,5 +1,5 @@
 // Piezas de formulario: etiqueta arriba del campo (como en la referencia) y
-// campo de contraseña con botón de mostrar u ocultar.
+// campo de contraseña con botón (animado) de mostrar u ocultar.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
@@ -94,8 +94,24 @@ class _CampoContrasenaState extends State<CampoContrasena> {
         prefixIcon: Icon(widget.icono),
         suffixIcon: IconButton(
           tooltip: _oculta ? 'Mostrar contraseña' : 'Ocultar contraseña',
-          icon: Icon(
-            _oculta ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          // El ojo cambia con un giro corto, escala y fundido.
+          icon: AnimatedSwitcher(
+            duration: Movimiento.de(context, Movimiento.rapido),
+            switchInCurve: Movimiento.entrada,
+            switchOutCurve: Movimiento.entrada,
+            transitionBuilder: (child, animacion) => RotationTransition(
+              turns: Tween<double>(begin: -0.1, end: 0).animate(animacion),
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.6, end: 1).animate(animacion),
+                child: FadeTransition(opacity: animacion, child: child),
+              ),
+            ),
+            child: Icon(
+              _oculta
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              key: ValueKey(_oculta),
+            ),
           ),
           onPressed: () => setState(() => _oculta = !_oculta),
         ),

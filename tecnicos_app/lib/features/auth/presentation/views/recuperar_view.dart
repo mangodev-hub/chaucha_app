@@ -10,6 +10,7 @@ import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/campos.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/sacudir.dart';
 import '../providers/recuperacion_providers.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/enlace_auth.dart';
@@ -23,6 +24,12 @@ class RecuperarView extends ConsumerStatefulWidget {
 
 class _RecuperarViewState extends ConsumerState<RecuperarView> {
   final _formKey = GlobalKey<FormState>();
+
+  /// Intentos de envío fallidos: cada uno sacude el botón.
+  int _fallos = 0;
+
+  void _avisarFallo() => setState(() => _fallos++);
+
   final _email = TextEditingController();
 
   @override
@@ -32,13 +39,20 @@ class _RecuperarViewState extends ConsumerState<RecuperarView> {
   }
 
   Future<void> _enviar() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _avisarFallo();
+      return;
+    }
     await ref.read(recuperarProvider.notifier).enviar(_email.text);
   }
 
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(recuperarProvider);
+    // Si el servidor responde con error, el botón también se sacude.
+    ref.listen(recuperarProvider, (_, siguiente) {
+      if (siguiente.hasError && !siguiente.isLoading) _avisarFallo();
+    });
     final cargando = estado.isLoading;
     final error = cargando || !estado.hasError
         ? null
@@ -89,12 +103,15 @@ class _RecuperarViewState extends ConsumerState<RecuperarView> {
               ),
             ),
             const SizedBox(height: Espacios.xl),
-            BotonCarga(
-              texto: 'Enviar enlace',
-              icono: Icons.arrow_forward,
-              iconoAlFinal: true,
-              cargando: cargando,
-              onPressed: _enviar,
+            Sacudir(
+              senal: _fallos,
+              child: BotonCarga(
+                texto: 'Enviar enlace',
+                icono: Icons.arrow_forward,
+                iconoAlFinal: true,
+                cargando: cargando,
+                onPressed: _enviar,
+              ),
             ),
             const SizedBox(height: Espacios.l),
             EnlaceAuth(

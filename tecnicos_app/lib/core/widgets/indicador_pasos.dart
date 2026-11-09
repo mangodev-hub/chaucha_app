@@ -1,5 +1,6 @@
 // Progreso por pasos: barras horizontales, con encabezado ("Paso 2 de 3")
-// y etiquetas bajo cada paso, ambos opcionales.
+// y etiquetas bajo cada paso, ambos opcionales. Al avanzar, la barra se
+// llena con una animación y la etiqueta del paso actual pasa a negrita.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
@@ -37,6 +38,7 @@ class IndicadorPasos extends StatelessWidget {
     final detalle = this.detalle;
     final etiquetas = this.etiquetas;
     final actual = completados - 1;
+    final duracion = Movimiento.de(context, Movimiento.normal);
 
     return Semantics(
       label:
@@ -87,28 +89,44 @@ class IndicadorPasos extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Fondo claro con el relleno encima, que crece de
+                        // izquierda a derecha al completar el paso.
                         Container(
                           height: 5,
                           decoration: BoxDecoration(
-                            color: i < completados
-                                ? color
-                                : Colores.primarioClaro,
+                            color: Colores.primarioClaro,
                             borderRadius: BorderRadius.circular(Radios.pildora),
+                          ),
+                          child: AnimatedFractionallySizedBox(
+                            duration: duracion,
+                            curve: Movimiento.entrada,
+                            alignment: AlignmentDirectional.centerStart,
+                            widthFactor: i < completados ? 1 : 0,
+                            heightFactor: 1,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: color,
+                                borderRadius: BorderRadius.circular(
+                                  Radios.pildora,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                         if (etiquetas != null) ...[
                           const SizedBox(height: Espacios.xs),
-                          Text(
-                            etiquetas[i],
-                            maxLines: 2,
-                            style: textos.labelSmall?.copyWith(
-                              color: i == actual
-                                  ? Colores.tinta
-                                  : Colores.tintaSuave,
-                              fontWeight: i == actual
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                            ),
+                          AnimatedDefaultTextStyle(
+                            duration: duracion,
+                            style: (textos.labelSmall ?? const TextStyle())
+                                .copyWith(
+                                  color: i == actual
+                                      ? Colores.tinta
+                                      : Colores.tintaSuave,
+                                  fontWeight: i == actual
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
+                            child: Text(etiquetas[i], maxLines: 2),
                           ),
                         ],
                       ],
