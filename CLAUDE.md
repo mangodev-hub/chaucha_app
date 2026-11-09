@@ -40,7 +40,7 @@ lib/
   main.dart            # solo arranca: Env → SupabaseBootstrap → ProviderContainer (lee sesionProvider desde el inicio) → App
   app/                 # routerProvider, guardia de redirección (route_guard.dart), TecnicoShell (pestañas del técnico)
   core/                # transversal: providers base, errores, utilidades de Supabase, storage, geo, validadores, widgets compartidos
-  features/            # auth, catalogo, chat, cotizaciones, perfil_puntos, solicitudes
+  features/            # admin, auth, catalogo, chat, cotizaciones, perfil_puntos, solicitudes
     <feature>/
       domain/        entities/ (Dart puro, sin JSON)  repositories/ (interfaces)  usecases/
       data/          models/ (fromJson + aEntidad(), mapeo de enums a la base)  repositories/ (implementación Supabase + su Provider)
@@ -64,6 +64,7 @@ Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiemp
 - Los notifiers usan `asyncGuard` (`core/errors/async_guard.dart`) en lugar de `AsyncValue.guard`: además imprime en consola los errores inesperados (los que no son `AppFailure`).
 - `AsyncValueView.mensajeDe(error)` convierte cualquier error en el mensaje para el usuario.
 - `client.uidActual` (`core/supabase/supabase_extensions.dart`) devuelve el id del usuario conectado o lanza `AppFailure` si la sesión expiró.
+- **Reintentos:** `main.dart` usa `Reintento.decidir` (`core/providers/reintento.dart`) como `retry` del contenedor. Los `AppFailure` no se reintentan (se muestran al instante); los demás errores se reintentan hasta 3 veces, y la causa técnica se imprime en consola. Sin esto, Riverpod 3 reintentaba 10 veces y la pantalla quedaba ~38 s en "cargando".
 - Para cargas en paralelo que deben conservar el `AppFailure` original, usar `Future.wait` y no el `.wait` de records, que envuelve los errores en `ParallelWaitError`.
 
 ### Patrones de presentación
@@ -94,7 +95,7 @@ Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiemp
   - `redirect` delega en la función pura `resolverRedireccion` (`app/route_guard.dart`): mientras verifica va a `/`; sin sesión va a `/login` salvo en rutas públicas; con sesión queda dentro de la zona de su rol (`/cliente/...` o `/tecnico/...`).
   - Las pantallas reciben solo parámetros de ruta (`SolicitudDetalleView(solicitudId: ...)`) y leen todo lo demás de providers.
 - Las rutas están en `core/router/app_routes.dart`. Usar sus helpers (`AppRoutes.detalleSolicitud(id, esCliente: ...)`, `AppRoutes.chat(...)`), porque el detalle y el chat existen tanto bajo `/cliente` como bajo `/tecnico`.
-- El rol `admin` redirige a `/admin`, pero esa ruta todavía no existe.
+- El rol `admin` va a `/admin` (panel con pestañas Resumen, Solicitudes, Usuarios y Verificaciones, en `features/admin/`). No tiene cédula, así que `resolverRedireccion` nunca lo manda a completar el perfil.
 - El inicio del técnico es `TecnicoShell`, un `IndexedStack` con tres pestañas (feed, mis trabajos, perfil) que se mantienen montadas.
 
 ### Lo que la app espera de Supabase
@@ -102,6 +103,8 @@ Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiemp
 - Configuración por dart-defines `SUPABASE_URL` y `SUPABASE_ANON_KEY` (`core/config/env.dart`). Los providers de infraestructura compartida están en `core/providers/core_providers.dart`: `supabaseClientProvider` (se sobrescribe en `main.dart`), `storageServiceProvider` y `ubicacionServiceProvider`.
 - Tablas usadas: `usuarios`, `perfiles_tecnicos`, `tecnico_oficios`, `niveles_gamificacion`, `oficios`, `solicitudes_servicio`, `solicitud_archivos`, `cotizaciones`, `conversaciones`, `mensajes`, `resenas` y `documentos_tecnico`. Los permisos dependen de RLS; un permiso denegado llega como código `42501`.
 - El esquema completo (tablas, políticas RLS, funciones) exportado con el CLI de Supabase está en `tecnicos_app/supabase/migrations/`.
+- **Panel admin** (`20261109150000_panel_admin.sql`): funciones `security definer` que exigen `mi_rol() = 'admin'` y no tocan a otros admins: `admin_resumen`, `admin_usuarios` (incluye correo y suspensión desde `auth.users`), `admin_actualizar_usuario`, `admin_suspender_usuario` (`banned_until`) y `admin_eliminar_usuario` (solo cuentas sin historial). La cuenta admin se crea una vez con [`base_de_datos/crear_admin.sql`](base_de_datos/crear_admin.sql) (`raw_app_meta_data.rol = admin`, que signUp no puede escribir) y entra por el login normal. **Nunca** poner su contraseña en `env.json` ni en el repo: en web los dart-defines quedan en el JavaScript público.
+- El panel crea usuarios con `RegistroSinSesion` (POST directo a `/auth/v1/signup`), no con un segundo `SupabaseClient`: en web, el cliente avisa los inicios de sesión por un `BroadcastChannel` y reemplazaría la sesión del admin.
 - Buckets de Storage (`core/storage/storage_service.dart`): `solicitudes` y `cedulas`, ambos **privados**. Las imágenes se leen con URLs firmadas (válidas 1 hora), nunca con URLs públicas.
 
 ### Operaciones con varias escrituras
@@ -115,7 +118,7 @@ Features de referencia: `catalogo` (la mínima), `auth` (sesión), `chat` (tiemp
 
 El estilo sigue la skill `diseno-chauchaapp` (`.claude/skills/diseno-chauchaapp/SKILL.md`): blanco y azul (`Colores.primario`), fondo celeste suave, tarjetas blancas con sombra sutil, campos azulados, y el verde (`Colores.acento`) solo para lo positivo. La paleta quedó definida el 2026-11-07; la tipografía y la marca siguen siendo provisionales. Todo lo documenta [`tecnicos_app/docs/DISENO.md`](tecnicos_app/docs/DISENO.md). Colores, radios, espacios y fuente viven en `core/theme/tokens.dart`, y el tema global en `core/theme/app_theme.dart`. **No escribir colores sueltos** (`Colors.green`, `Color(0xFF...)`) en las pantallas: usar `Colores.*` o `Theme.of(context).colorScheme`. `google_fonts` está fijado en `^8.0.0`, porque la 9.x usa el paquete separado `material_ui` y sus tipos no son compatibles con `flutter/material`.
 
-**Componentes visuales compartidos** (`core/widgets/`): las pantallas se arman con ellos y no con versiones propias. Son `TarjetaApp`, `BloqueTarjeta` e `IconoRecuadro` (tarjetas), `EncabezadoPantalla`, `CampoEtiquetado` y `CampoContrasena` (formularios), `AvisoBanner` (avisos dentro de la pantalla), `EstadoMensaje` (lista vacía, error o éxito), `IndicadorPasos`, `Pildora` (estados), `BarraAccion` (acción principal fija abajo en móvil), `CuadriculaAdaptable` (listas en dos columnas en escritorio), `BotonCarga`, `CheckAnimado` (check de éxito), `Sacudir` (sacude el botón de un formulario que falló, con un contador `_fallos`) y `Presionable` (encoge al presionar). Las animaciones usan los tokens `Movimiento` y piden la duración con `Movimiento.de(context, ...)`, que respeta "reducir animaciones". Para avisos inferiores se usa `context.mostrarMensaje(texto, tipo: TipoMensaje.exito | error)`. El catálogo completo está en `DISENO.md`.
+**Componentes visuales compartidos** (`core/widgets/`): las pantallas se arman con ellos y no con versiones propias. Son `TarjetaApp`, `BloqueTarjeta` e `IconoRecuadro` (tarjetas), `TarjetaPortada` (portada con degradado azul arriba de cada inicio), `EncabezadoPantalla`, `CampoEtiquetado` y `CampoContrasena` (formularios), `AvisoBanner` (avisos dentro de la pantalla), `EstadoMensaje` (lista vacía, error o éxito, con acción secundaria opcional), `EsqueletoCarga` y `BloqueEsqueleto` (carga con la forma de la pantalla, vía `AsyncValueView(cargando: ...)`), `IndicadorPasos`, `Pildora` (estados), `BarraAccion` (acción principal fija abajo en móvil), `CuadriculaAdaptable` (listas en dos columnas en escritorio), `BotonCarga`, `CheckAnimado` (check de éxito), `Sacudir` (sacude el botón de un formulario que falló, con un contador `_fallos`) y `Presionable` (encoge al presionar). Las animaciones usan los tokens `Movimiento` y piden la duración con `Movimiento.de(context, ...)`, que respeta "reducir animaciones". Para avisos inferiores se usa `context.mostrarMensaje(texto, tipo: TipoMensaje.exito | error)`. El catálogo completo está en `DISENO.md`.
 
 ### Tests
 

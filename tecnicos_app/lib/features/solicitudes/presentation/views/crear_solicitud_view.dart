@@ -25,6 +25,7 @@ import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
 import '../../domain/entities/nueva_solicitud.dart';
 import '../providers/crear_solicitud_provider.dart';
+import '../widgets/solicitud_publicada.dart';
 
 class CrearSolicitudView extends ConsumerStatefulWidget {
   const CrearSolicitudView({super.key, this.oficioId, this.descripcion});
@@ -45,6 +46,9 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
   LatLng _ubicacion = GeoMapper.quito;
   bool _buscandoGps = false;
   List<Uint8List> _fotos = const [];
+
+  /// Id de la solicitud recién publicada: con él se muestra el éxito.
+  String? _creadaId;
 
   @override
   void initState() {
@@ -113,12 +117,7 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
         );
     if (!mounted) return;
     if (id != null) {
-      context
-        ..mostrarMensaje(
-          'Solicitud publicada. Los técnicos ya pueden verla.',
-          tipo: TipoMensaje.exito,
-        )
-        ..pop(id);
+      setState(() => _creadaId = id);
     } else if (ref.read(crearSolicitudProvider) case AsyncError(:final error)) {
       context.mostrarMensaje(
         AsyncValueView.mensajeDe(error),
@@ -129,6 +128,19 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
 
   @override
   Widget build(BuildContext context) {
+    // Ya publicada: éxito en lugar del formulario. "Ver mi solicitud"
+    // devuelve el id (quien abrió el formulario abre el detalle); "Volver" y
+    // la flecha devuelven null.
+    if (_creadaId case final id?) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Solicitud publicada')),
+        body: SolicitudPublicada(
+          onVerSolicitud: () => context.pop(id),
+          onVolver: () => context.pop(),
+        ),
+      );
+    }
+
     final publicando = ref.watch(crearSolicitudProvider).isLoading;
     final escritorio = ResponsiveLayout.isDesktop(context);
     final boton = BotonCarga(

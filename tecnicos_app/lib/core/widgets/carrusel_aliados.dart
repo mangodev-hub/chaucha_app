@@ -3,26 +3,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../publicidad/anuncio.dart';
+import '../aliados/oferta_aliado.dart';
 import '../theme/tokens.dart';
 import 'tarjeta_app.dart';
 
-/// Carrusel de publicidad externa: cambia solo cada 7 s y abre el enlace.
-class EspacioPublicitario extends StatefulWidget {
-  const EspacioPublicitario({
+/// Carrusel de ofertas de aliados (publicidad externa): cambia solo cada 7 s y abre el enlace.
+class CarruselAliados extends StatefulWidget {
+  const CarruselAliados({
     super.key,
-    this.anuncios = anunciosDemo,
+    this.ofertas = ofertasAliadosDemo,
     this.alto = 240,
   });
 
-  final List<Anuncio> anuncios;
+  final List<OfertaAliado> ofertas;
   final double alto;
 
   @override
-  State<EspacioPublicitario> createState() => _EspacioPublicitarioState();
+  State<CarruselAliados> createState() => _CarruselAliadosState();
 }
 
-class _EspacioPublicitarioState extends State<EspacioPublicitario> {
+class _CarruselAliadosState extends State<CarruselAliados> {
   final _pagina = PageController();
   Timer? _reloj;
   int _actual = 0;
@@ -30,11 +30,11 @@ class _EspacioPublicitarioState extends State<EspacioPublicitario> {
   @override
   void initState() {
     super.initState();
-    if (widget.anuncios.length > 1) {
+    if (widget.ofertas.length > 1) {
       _reloj = Timer.periodic(const Duration(seconds: 7), (_) {
         if (!_pagina.hasClients) return;
         _pagina.animateToPage(
-          (_actual + 1) % widget.anuncios.length,
+          (_actual + 1) % widget.ofertas.length,
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOut,
         );
@@ -49,11 +49,11 @@ class _EspacioPublicitarioState extends State<EspacioPublicitario> {
     super.dispose();
   }
 
-  Future<void> _abrir(Anuncio anuncio) async {
+  Future<void> _abrir(OfertaAliado oferta) async {
     var abierto = false;
     try {
       abierto = await launchUrl(
-        Uri.parse(anuncio.url),
+        Uri.parse(oferta.url),
         mode: LaunchMode.externalApplication,
       );
     } catch (_) {
@@ -67,8 +67,8 @@ class _EspacioPublicitarioState extends State<EspacioPublicitario> {
 
   @override
   Widget build(BuildContext context) {
-    final anuncios = widget.anuncios;
-    if (anuncios.isEmpty) return const SizedBox.shrink();
+    final ofertas = widget.ofertas;
+    if (ofertas.isEmpty) return const SizedBox.shrink();
     final textos = Theme.of(context).textTheme;
     return TarjetaApp(
       child: Column(
@@ -87,20 +87,20 @@ class _EspacioPublicitarioState extends State<EspacioPublicitario> {
             height: widget.alto,
             child: PageView.builder(
               controller: _pagina,
-              itemCount: anuncios.length,
+              itemCount: ofertas.length,
               onPageChanged: (i) => setState(() => _actual = i),
               itemBuilder: (context, i) => _Slide(
-                anuncio: anuncios[i],
-                onTap: () => _abrir(anuncios[i]),
+                oferta: ofertas[i],
+                onTap: () => _abrir(ofertas[i]),
               ),
             ),
           ),
-          if (anuncios.length > 1) ...[
+          if (ofertas.length > 1) ...[
             const SizedBox(height: Espacios.m),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                for (var i = 0; i < anuncios.length; i++)
+                for (var i = 0; i < ofertas.length; i++)
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -123,9 +123,9 @@ class _EspacioPublicitarioState extends State<EspacioPublicitario> {
 }
 
 class _Slide extends StatelessWidget {
-  const _Slide({required this.anuncio, required this.onTap});
+  const _Slide({required this.oferta, required this.onTap});
 
-  final Anuncio anuncio;
+  final OfertaAliado oferta;
   final VoidCallback onTap;
 
   @override
@@ -139,8 +139,8 @@ class _Slide extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            anuncio.color,
-            Color.lerp(anuncio.color, Colors.black, 0.3)!,
+            oferta.color,
+            Color.lerp(oferta.color, Colors.black, 0.3)!,
           ],
         ),
       ),
@@ -156,12 +156,12 @@ class _Slide extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(anuncio.icono, color: Colors.white, size: 20),
+                child: Icon(oferta.icono, color: Colors.white, size: 20),
               ),
               const SizedBox(width: Espacios.m),
               Expanded(
                 child: Text(
-                  anuncio.patrocinador,
+                  oferta.patrocinador,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textos.labelLarge?.copyWith(
@@ -174,7 +174,7 @@ class _Slide extends StatelessWidget {
           ),
           const SizedBox(height: Espacios.m),
           Text(
-            anuncio.titulo,
+            oferta.titulo,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: textos.titleMedium?.copyWith(
@@ -184,7 +184,7 @@ class _Slide extends StatelessWidget {
           ),
           const SizedBox(height: Espacios.xs),
           Text(
-            anuncio.descripcion,
+            oferta.descripcion,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: textos.bodyMedium?.copyWith(
@@ -195,11 +195,11 @@ class _Slide extends StatelessWidget {
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Colors.white,
-              foregroundColor: anuncio.color,
+              foregroundColor: oferta.color,
               minimumSize: const Size(0, 40),
             ),
             onPressed: onTap,
-            child: Text(anuncio.accion),
+            child: Text(oferta.accion),
           ),
         ],
       ),

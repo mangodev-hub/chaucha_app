@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 
-class Anuncio {
-  const Anuncio({
+class OfertaAliado {
+  const OfertaAliado({
     required this.patrocinador,
     required this.titulo,
     required this.descripcion,
@@ -22,9 +22,9 @@ class Anuncio {
   final Color color;
 }
 
-/// Anuncios de ejemplo. Más adelante pueden venir de una tabla `anuncios`.
-const anunciosDemo = <Anuncio>[
-  Anuncio(
+/// Ofertas de aliados de ejemplo. Más adelante pueden venir de una tabla en Supabase.
+const ofertasAliadosDemo = <OfertaAliado>[
+  OfertaAliado(
     patrocinador: 'Ferretería El Constructor',
     titulo: '10% de descuento en materiales',
     descripcion: 'Tuberías, cables y pintura para tu trabajo. Presenta tu cotización.',
@@ -32,7 +32,7 @@ const anunciosDemo = <Anuncio>[
     icono: Icons.hardware,
     color: Colores.primarioProfundo,
   ),
-  Anuncio(
+  OfertaAliado(
     patrocinador: 'Pinturas del Valle',
     titulo: 'Renueva tus paredes',
     descripcion: 'Galón de pintura interior con envío gratis en Quito.',
@@ -40,7 +40,7 @@ const anunciosDemo = <Anuncio>[
     icono: Icons.format_paint,
     color: Colores.acentoOscuro,
   ),
-  Anuncio(
+  OfertaAliado(
     patrocinador: 'Seguros Hogar Seguro',
     titulo: 'Protege tu casa desde \$3 al mes',
     descripcion: 'Cobertura contra daños eléctricos y fugas de agua.',

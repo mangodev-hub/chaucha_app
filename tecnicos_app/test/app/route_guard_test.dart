@@ -65,6 +65,40 @@ void main() {
       expect(_redirigir(sesion, AppRoutes.splash), AppRoutes.completarPerfil);
       expect(_redirigir(sesion, AppRoutes.completarPerfil), isNull);
     });
+    test('el admin sin cédula va directo a su panel', () {
+      final sesion = ConSesion(
+        Usuario(
+          id: 'a1',
+          rol: Rol.admin,
+          nombres: 'Administrador',
+          apellidos: '',
+          creadoEn: DateTime(2026),
+          perfilCompleto: false,
+        ),
+      );
+      expect(_redirigir(sesion, AppRoutes.splash), AppRoutes.adminInicio);
+      expect(_redirigir(sesion, AppRoutes.adminInicio), isNull);
+      expect(
+        _redirigir(sesion, AppRoutes.completarPerfil),
+        AppRoutes.adminInicio,
+      );
+      expect(
+        _redirigir(sesion, AppRoutes.clienteInicio),
+        AppRoutes.adminInicio,
+      );
+    });
+
+    test('cliente y técnico no entran al panel', () {
+      expect(
+        _redirigir(_con(Rol.cliente), AppRoutes.adminInicio),
+        AppRoutes.clienteInicio,
+      );
+      expect(
+        _redirigir(_con(Rol.tecnico), AppRoutes.adminInicio),
+        AppRoutes.tecnicoInicio,
+      );
+    });
+
     group('recuperando contraseña', () {
       const sesion = SesionRecuperando();
 
