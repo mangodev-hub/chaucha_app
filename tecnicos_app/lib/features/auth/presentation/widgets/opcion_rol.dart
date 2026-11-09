@@ -4,7 +4,7 @@ import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 
 class OpcionRol extends StatelessWidget {
-  const OpcionRol({
+  const OpcionRol({super.key, 
     required this.icono,
     required this.titulo,
     required this.descripcion,

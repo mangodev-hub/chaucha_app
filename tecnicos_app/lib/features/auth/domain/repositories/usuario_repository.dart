@@ -1,6 +1,6 @@
 // Contrato de lectura de perfiles de usuario. Lanza [AppFailure] si falla.
-import '../entities/usuario.dart';
 import '../entities/rol.dart';
+import '../entities/usuario.dart';
 
 abstract interface class UsuarioRepository {
   /// Devuelve null si el usuario no tiene perfil registrado.

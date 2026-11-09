@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/auth_redirect.dart';
 import '../../../../core/errors/app_failure.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_usuario_repository.dart';
@@ -10,7 +11,6 @@ import '../../domain/entities/sesion_estado.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/usuario_repository.dart';
-import '../../../../core/config/auth_redirect.dart';
 
 final sesionProvider =
     NotifierProvider<SesionNotifier, SesionEstado>(SesionNotifier.new);
@@ -124,6 +124,8 @@ void _alFallarEnlace() {
     try {
       await _auth.cerrarSesion();
     } on AppFailure {
+      // La sesión ya quedó cerrada en la app (SinSesion con el aviso); si
+      // cerrarla también en Supabase falla, no hay nada más que hacer.
     }
   }
 

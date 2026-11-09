@@ -109,24 +109,22 @@ class _Tarjeta extends StatelessWidget {
 }
 
 class _Etiqueta extends StatelessWidget {
-  const _Etiqueta(this.texto, {this.fondo = _hielo, this.color = _azulOscuro});
+  const _Etiqueta(this.texto);
 
   final String texto;
-  final Color fondo;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: fondo,
+        color: _hielo,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         texto,
-        style: TextStyle(
-          color: color,
+        style: const TextStyle(
+          color: _azulOscuro,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
