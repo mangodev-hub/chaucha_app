@@ -1,10 +1,10 @@
 // Implementación de [SolicitudRepository] con Supabase (tablas + Storage).
 // Ruta de fotos en Storage: `{solicitudId}/{tipo}_{marcaDeTiempo}_{n}.jpg`.
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/errors/app_failure.dart';
 import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/storage/storage_service.dart';
@@ -157,15 +157,27 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
           .select('tipo, ruta')
           .eq('solicitud_id', solicitudId)
           .order('creado_en');
-      return Future.wait(
+      final fotos = await Future.wait(
         filas.map((fila) async {
-          final url = await _storage.urlFirmada(
-            bucket: Buckets.solicitudes,
-            ruta: fila['ruta'] as String,
-          );
-          return FotoSolicitud(tipo: TipoArchivoDb.desdeDb(fila['tipo']), url: url);
+          final ruta = fila['ruta'] as String;
+          try {
+            final url = await _storage.urlFirmada(
+              bucket: Buckets.solicitudes,
+              ruta: ruta,
+            );
+            return FotoSolicitud(
+              tipo: TipoArchivoDb.desdeDb(fila['tipo']),
+              url: url,
+            );
+          } on AppFailure catch (e) {
+            // Una foto que no se puede firmar (por ejemplo, el archivo ya no
+            // existe) no debe tumbar todo el detalle: se omite.
+            debugPrint('No se pudo firmar la foto $ruta: ${e.cause ?? e}');
+            return null;
+          }
         }),
       );
+      return fotos.nonNulls.toList();
     });
   }
 

@@ -68,6 +68,11 @@ Todo vive en [`lib/core/theme/tokens.dart`](../lib/core/theme/tokens.dart).
 
 - `Sombras.suave`: sombra azulada al 8 %, desenfoque 18, desplazamiento vertical 6. Para tarjetas.
 - `Sombras.boton`: color de la sombra del botón principal.
+- `Sombras.azul`: sombra azul más marcada para las tarjetas con fondo azul (`TarjetaPortada`).
+
+### Degradados (`Degradados`)
+
+- `Degradados.portada`: de `primario` a `primarioProfundo`, en diagonal. Fondo de `TarjetaPortada`; con texto blanco cumple AA en todo el recorrido. No se usan degradados de otros colores.
 
 ### Radios (`Radios`) y espacios (`Espacios`)
 
@@ -115,9 +120,11 @@ Las pantallas se arman con estos componentes. No se crean versiones propias de l
 | `CampoEtiquetado` | `campos.dart` | Etiqueta en negrita arriba del campo, con ayuda azul opcional ("Opcional", "Ecuador (10 dígitos)") |
 | `CampoContrasena` | `campos.dart` | Campo de contraseña con candado y ojo para mostrarla u ocultarla |
 | `BotonCarga` | `boton_carga.dart` | Botón principal con carga (cambio animado entre texto e indicador), ícono opcional (al inicio o al final) |
+| `TarjetaPortada` | `tarjeta_portada.dart` | Portada del inicio: degradado azul, título grande en blanco (el signo final va en celeste como acento), subtítulo, dato en una píldora blanca y una ilustración con formas a la derecha (se oculta con menos de 300 px) |
 | `BarraAccion` | `barra_accion.dart` | Barra blanca fija abajo con la acción principal (móvil) |
 | `AvisoBanner` | `aviso_banner.dart` | Aviso dentro de la pantalla: `info`, `exito`, `aviso` o `error`. Versión `compacto` para etiquetas |
-| `EstadoMensaje` | `estado_mensaje.dart` | Hueco de la pantalla: lista vacía, error o éxito (`TipoEstado`), centrado o `compacto`, con botón opcional. En éxito, el ícono aparece con rebote y lleva un `CheckAnimado` |
+| `EstadoMensaje` | `estado_mensaje.dart` | Hueco de la pantalla: lista vacía, error o éxito (`TipoEstado`), centrado o `compacto`, con botón opcional y, en la versión grande, una acción secundaria debajo ("Regresar", "Volver al inicio"). En éxito, el ícono aparece con rebote y lleva un `CheckAnimado` |
+| `EsqueletoCarga` / `BloqueEsqueleto` | `esqueleto_carga.dart` | Carga con la forma de la pantalla: bloques celestes que laten (quietos con "reducir animaciones"). Se pasa a `AsyncValueView` con `cargando:`. Lo usa el detalle de solicitud |
 | `Sacudir` | `sacudir.dart` | Sacude a su hijo cada vez que cambia `senal` (contador de fallos). Para el botón de un formulario que falló |
 | `Presionable` | `presionable.dart` | Encoge a su hijo mientras se presiona, sin competir con sus gestos. Ya lo usan `BotonCarga` y `TarjetaApp` |
 | `CheckAnimado` | `check_animado.dart` | Check verde que se dibuja una vez (círculo con rebote y tilde). Decorativo, o con `etiqueta` para lectores de pantalla |
@@ -125,7 +132,7 @@ Las pantallas se arman con estos componentes. No se crean versiones propias de l
 | `Pildora` | `pildora.dart` | Estados y datos cortos (estado de solicitud o cotización, distancia, "Ya cotizaste"); anima el cambio de color y texto |
 | `CuadriculaAdaptable` | `cuadricula_adaptable.dart` | Lista que pasa a dos columnas con 640 px o más |
 | `Marca` / `Marca.vertical` | `marca.dart` | Logo y nombre en fila (barras) o apilados con el lema (login, registro, splash) |
-| `AsyncValueView` | `async_value_view.dart` | Carga, error (con `EstadoMensaje` y "Reintentar") o datos |
+| `AsyncValueView` | `async_value_view.dart` | Carga (spinner, o la propia con `cargando:`), error (con `EstadoMensaje` y "Reintentar") o datos |
 | `mostrarMensaje` / `confirmar` | `mensajes.dart` | Avisos inferiores con tipo (`info`, `exito`, `error`) y diálogo de confirmación (con ícono y versión `destructivo`) |
 
 ## Pantallas
@@ -135,10 +142,14 @@ Las pantallas se arman con estos componentes. No se crean versiones propias de l
 | Login y registro | `features/auth/presentation/` | Tarjeta sobre degradado celeste. En escritorio, panel azul con la marca y tres beneficios |
 | Verificación de identidad | `features/perfil_puntos/presentation/views/verificacion_view.dart` | Hoja inferior en móvil y diálogo en escritorio (`mostrarVerificacion`). Se abre desde el perfil |
 | Perfil del técnico | `features/perfil_puntos/presentation/views/perfil_tecnico_view.dart` | Encabezado azul con puntos, banner de verificación y bloques. Dos columnas en escritorio |
-| Inicio del cliente | `features/solicitudes/presentation/views/mis_solicitudes_view.dart` | Bienvenida azul con "Pedir un técnico" y filtros Activas / Finalizadas |
-| Nueva solicitud | `features/solicitudes/presentation/views/crear_solicitud_view.dart` | Cuatro bloques numerados, oficios en chips, "Publicar" fijo abajo |
+| Pestañas (shell) | `app/inicio_shell.dart` | En móvil, barra flotante en forma de píldora blanca con sombra, separada de los bordes; el contenido no pasa por detrás. Cada `Destino` puede tener `iconoActivo` (relleno) y `corto` (etiqueta para la píldora). En escritorio, pestañas en la barra superior |
+| Inicio del cliente | `features/auth/presentation/views/inicio_view.dart` | `TarjetaPortada` ("¿Qué arreglamos hoy?" y técnicos cerca), buscador con frecuentes, especialidades, mapa y técnicos destacados |
+| Inicio del técnico | `features/solicitudes/presentation/views/inicio_tecnico_view.dart` | `TarjetaPortada` con saludo y pendientes del día, luego "Para empezar", pendientes, solicitudes cerca, actividad y reputación |
+| Mis solicitudes | `features/solicitudes/presentation/views/mis_solicitudes_view.dart` | Bienvenida azul con "Pedir un técnico" y filtros Activas / Finalizadas |
+| Nueva solicitud | `features/solicitudes/presentation/views/crear_solicitud_view.dart` | Cuatro bloques numerados, oficios en chips, "Publicar" fijo abajo. Al publicar, pantalla de éxito (`SolicitudPublicada`) con "Ver mi solicitud" y "Volver al inicio" |
 | Feed y mis trabajos | `features/solicitudes/presentation/views/` | Resumen de la zona, tarjetas con píldoras y grupos "En curso" y "Finalizados" |
-| Detalle de solicitud | `features/solicitudes/presentation/views/solicitud_detalle_view.dart` | Guía "Qué sigue", progreso y acción fija abajo. Dos columnas en escritorio |
+| Panel de administrador | `features/admin/presentation/views/` | Mismo shell (píldora flotante en móvil, pestañas arriba en escritorio). Resumen con `TarjetaPortada` y cifras; Solicitudes, Usuarios y Verificaciones con `PantallaAdmin` (título, buscador, filtros en chips y lista). Crear y editar usuarios en hojas inferiores; suspender y eliminar con `confirmar(destructivo: true)`. Verificaciones: miniaturas de cédula y selfie con estado en `Pildora`, zoom al tocar, "Rechazar" y "Aprobar" |
+| Detalle de solicitud | `features/solicitudes/presentation/views/solicitud_detalle_view.dart` | Guía "Qué sigue", progreso y acción fija abajo. Dos columnas en escritorio. Mientras carga, `EsqueletoCarga`; si falla, "Reintentar" y "Regresar" |
 | Chat | `features/chat/presentation/views/chat_view.dart` | Separadores por día, mis burbujas en azul, barra de envío redondeada |
 
 ## Accesibilidad

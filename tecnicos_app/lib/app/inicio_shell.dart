@@ -6,11 +6,26 @@ import '../core/widgets/responsive_layout.dart';
 import 'menu_cuenta.dart';
 
 class Destino {
-  const Destino(this.titulo, this.icono, this.vista);
+  const Destino(
+    this.titulo,
+    this.icono,
+    this.vista, {
+    this.iconoActivo,
+    this.corto,
+  });
 
+  /// Título completo: barra superior y pestañas de escritorio.
   final String titulo;
   final IconData icono;
+
+  /// Versión rellena del ícono para la pestaña elegida.
+  final IconData? iconoActivo;
+
+  /// Etiqueta corta para la barra flotante del móvil (si no, [titulo]).
+  final String? corto;
   final Widget vista;
+
+  String get etiqueta => corto ?? titulo;
 }
 
 class InicioShell extends ConsumerStatefulWidget {
@@ -18,13 +33,10 @@ class InicioShell extends ConsumerStatefulWidget {
     super.key,
     required this.destinos,
     required this.onCerrarSesion,
-    this.accion,
   });
 
   final List<Destino> destinos;
   final VoidCallback onCerrarSesion;
-
-  final Widget? accion;
 
   @override
   ConsumerState<InicioShell> createState() => _InicioShellState();
@@ -35,7 +47,12 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   void _cambiar(int indice) => setState(() => _indice = indice);
 
-  void _irAPerfil() => _cambiar(widget.destinos.length - 1);
+  // Solo hay "Mi perfil" para cliente y técnico (el admin no tiene).
+  int get _indicePerfil =>
+      widget.destinos.indexWhere((d) => d.titulo == 'Mi perfil');
+
+  VoidCallback? get _alPerfil =>
+      _indicePerfil < 0 ? null : () => _cambiar(_indicePerfil);
 
   @override
   Widget build(BuildContext context) {
@@ -62,24 +79,17 @@ class _InicioShellState extends ConsumerState<InicioShell> {
         actions: [
           MenuCuenta(
             compacto: true,
-            onPerfil: _irAPerfil,
+            onPerfil: _alPerfil,
             onCerrarSesion: widget.onCerrarSesion,
           ),
           const SizedBox(width: Espacios.s),
         ],
       ),
       body: contenido,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _indice,
-        onDestinationSelected: _cambiar,
-        destinations: [
-          for (final d in destinos)
-            NavigationDestination(
-              icon: Icon(d.icono),
-              selectedIcon: _IconoActivo(d.icono),
-              label: d.titulo,
-            ),
-        ],
+      bottomNavigationBar: _BarraFlotante(
+        destinos: destinos,
+        indice: _indice,
+        onCambio: _cambiar,
       ),
     );
   }
@@ -148,17 +158,13 @@ class _InicioShellState extends ConsumerState<InicioShell> {
                       ),
                     ),
                   const Spacer(),
-                  if (widget.accion != null) ...[
-                    widget.accion!,
-                    const SizedBox(width: Espacios.l),
-                  ],
                   Container(
                     padding: const EdgeInsets.only(left: Espacios.m),
                     decoration: const BoxDecoration(
                       border: Border(left: BorderSide(color: Colores.linea)),
                     ),
                     child: MenuCuenta(
-                      onPerfil: _irAPerfil,
+                      onPerfil: _alPerfil,
                       onCerrarSesion: widget.onCerrarSesion,
                     ),
                   ),
@@ -187,6 +193,7 @@ class _Pestana extends StatelessWidget {
   Widget build(BuildContext context) {
     final duracion = Movimiento.de(context, Movimiento.normal);
     final borde = BorderRadius.circular(Radios.pequeno);
+    // El fondo y el color del texto cambian con una transición.
     return AnimatedContainer(
       duration: duracion,
       curve: Movimiento.entrada,
@@ -208,12 +215,12 @@ class _Pestana extends StatelessWidget {
             ),
             child: AnimatedDefaultTextStyle(
               duration: duracion,
-              style: (Theme.of(context).textTheme.labelLarge ??
-                      const TextStyle())
-                  .copyWith(
-                    color: activa ? Colores.primario : Colores.tintaSuave,
-                    fontWeight: FontWeight.w700,
-                  ),
+              style:
+                  (Theme.of(context).textTheme.labelLarge ?? const TextStyle())
+                      .copyWith(
+                        color: activa ? Colores.primario : Colores.tintaSuave,
+                        fontWeight: FontWeight.w700,
+                      ),
               child: Text(titulo),
             ),
           ),
@@ -223,10 +230,133 @@ class _Pestana extends StatelessWidget {
   }
 }
 
+/// Barra de pestañas del móvil: una píldora blanca que flota sobre el fondo
+/// celeste, separada de los bordes. El contenido no pasa por detrás, así que
+/// ninguna lista queda tapada.
+class _BarraFlotante extends StatelessWidget {
+  const _BarraFlotante({
+    required this.destinos,
+    required this.indice,
+    required this.onCambio,
+  });
+
+  final List<Destino> destinos;
+  final int indice;
+  final ValueChanged<int> onCambio;
+
+  @override
+  Widget build(BuildContext context) {
+    // Con textos muy grandes la píldora crecería demasiado: se limita la
+    // escala, como hace la barra de Material.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: Espacios.m),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Espacios.l,
+            Espacios.xs,
+            Espacios.l,
+            0,
+          ),
+          child: Center(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Espacios.s,
+                  vertical: Espacios.s - 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Colores.tarjeta,
+                  borderRadius: BorderRadius.circular(Radios.pildora),
+                  boxShadow: Sombras.suave,
+                ),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < destinos.length; i++)
+                      Expanded(
+                        child: _ItemBarra(
+                          destino: destinos[i],
+                          activo: i == indice,
+                          onTap: () => onCambio(i),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ItemBarra extends StatelessWidget {
+  const _ItemBarra({
+    required this.destino,
+    required this.activo,
+    required this.onTap,
+  });
+
+  final Destino destino;
+  final bool activo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = activo ? Colores.primario : Colores.tintaSuave;
+    return Semantics(
+      container: true,
+      button: true,
+      selected: activo,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Espacios.s),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (activo)
+                _IconoActivo(destino.iconoActivo ?? destino.icono, color: color)
+              else
+                Icon(destino.icono, color: color),
+              const SizedBox(height: Espacios.xs),
+              AnimatedDefaultTextStyle(
+                duration: Movimiento.de(context, Movimiento.normal),
+                curve: Movimiento.entrada,
+                style:
+                    (Theme.of(context).textTheme.labelMedium ??
+                            const TextStyle())
+                        .copyWith(
+                          color: color,
+                          fontWeight: activo
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                child: Text(
+                  destino.etiqueta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _IconoActivo extends StatelessWidget {
-  const _IconoActivo(this.icono);
+  const _IconoActivo(this.icono, {required this.color});
 
   final IconData icono;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +366,7 @@ class _IconoActivo extends StatelessWidget {
       curve: Movimiento.rebote,
       builder: (context, escala, child) =>
           Transform.scale(scale: escala, child: child),
-      child: Icon(icono),
+      child: Icon(icono, color: color),
     );
   }
 }
