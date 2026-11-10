@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/responsive_layout.dart';
+import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../providers/tarifa_chat_provider.dart';
@@ -67,7 +68,6 @@ class _VentanaState extends ConsumerState<_Ventana> {
     final altura = _minimizada
         ? 52.0
         : (alto - 96).clamp(320.0, 520.0).toDouble();
-    final blanco = Theme.of(context).colorScheme.onPrimary;
 
     return Positioned(
       right: 96,
@@ -86,6 +86,7 @@ class _VentanaState extends ConsumerState<_Ventana> {
             color: Colores.fondo,
             clipBehavior: Clip.antiAlias,
             shape: const RoundedRectangleBorder(
+              side: BorderSide(color: Colores.linea),
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(Radios.grande),
               ),
@@ -95,16 +96,24 @@ class _VentanaState extends ConsumerState<_Ventana> {
               height: altura,
               child: Column(
                 children: [
+                  // Cabecera blanca, como las tarjetas: el azul sólido
+                  // competía con los botones principales de la pantalla.
                   Container(
                     height: 52,
-                    padding: const EdgeInsets.only(left: Espacios.l),
-                    color: Colores.primario,
+                    padding: const EdgeInsets.only(left: Espacios.m),
+                    decoration: BoxDecoration(
+                      color: Colores.tarjeta,
+                      border: _minimizada
+                          ? null
+                          : const Border(
+                              bottom: BorderSide(color: Colores.linea),
+                            ),
+                    ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.chat_bubble_rounded,
-                          color: blanco,
-                          size: 20,
+                        const IconoRecuadro(
+                          icono: Icons.chat_bubble_rounded,
+                          lado: 32,
                         ),
                         const SizedBox(width: Espacios.s),
                         Expanded(
@@ -113,12 +122,12 @@ class _VentanaState extends ConsumerState<_Ventana> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(color: blanco),
+                                ?.copyWith(color: Colores.tinta),
                           ),
                         ),
                         IconButton(
                           tooltip: _minimizada ? 'Expandir' : 'Minimizar',
-                          color: blanco,
+                          color: Colores.tintaSuave,
                           icon: Icon(
                             _minimizada
                                 ? Icons.keyboard_arrow_up_rounded
@@ -127,10 +136,10 @@ class _VentanaState extends ConsumerState<_Ventana> {
                           onPressed: () =>
                               setState(() => _minimizada = !_minimizada),
                         ),
-                        IconButton(
+                        const IconButton(
                           tooltip: 'Cerrar',
-                          color: blanco,
-                          icon: const Icon(Icons.close_rounded),
+                          color: Colores.tintaSuave,
+                          icon: Icon(Icons.close_rounded),
                           onPressed: _ChatFlotante.cerrar,
                         ),
                       ],
