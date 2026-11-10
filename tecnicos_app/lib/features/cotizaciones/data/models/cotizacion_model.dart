@@ -21,8 +21,9 @@ abstract final class CotizacionModel {
   static const String columnas =
       'id, solicitud_id, tecnico_id, precio_base, detalle, mano_obra, '
       'materiales, total, tarifa_enviada, fecha_servicio, estado, creado_en, '
-      'perfiles_tecnicos(calificacion_promedio, usuarios(nombres, apellidos))';
-
+      'perfiles_tecnicos!fk_cotizaciones_tecnico(calificacion_promedio, '
+      'usuarios!fk_perfiles_usuario(nombres, apellidos))';
+      
   static Cotizacion desdeFila(Map<String, dynamic> json) {
     // El join puede llegar como objeto o como lista de un elemento.
     final perfil = anidado(json['perfiles_tecnicos']);
