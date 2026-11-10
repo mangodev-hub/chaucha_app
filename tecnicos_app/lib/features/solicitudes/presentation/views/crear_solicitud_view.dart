@@ -21,11 +21,14 @@ import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
+import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
 import '../../domain/entities/nueva_solicitud.dart';
 import '../providers/crear_solicitud_provider.dart';
 import '../widgets/solicitud_publicada.dart';
+import '../../../auth/presentation/providers/sesion_provider.dart';
 
 class CrearSolicitudView extends ConsumerStatefulWidget {
   const CrearSolicitudView({super.key, this.oficioId, this.descripcion});
@@ -56,6 +59,7 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
     _oficioId = widget.oficioId;
     _descripcion.text = widget.descripcion ?? '';
     unawaited(_buscarUbicacion());
+    unawaited(refrescarVerificacion(ref));
   }
 
   @override
@@ -105,6 +109,7 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
   }
 
   Future<void> _enviar() async {
+    if (!await exigirVerificado(context, ref)) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final id = await ref
         .read(crearSolicitudProvider.notifier)
@@ -142,6 +147,13 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
     }
 
     final publicando = ref.watch(crearSolicitudProvider).isLoading;
+    final verificado = ref.watch(usuarioActualProvider)?.verificado ?? true;
+    final aviso = verificado
+        ? const SizedBox.shrink()
+        : const Padding(
+            padding: EdgeInsets.only(bottom: Espacios.l),
+            child: AvisoVerificacionCliente(),
+          );
     final escritorio = ResponsiveLayout.isDesktop(context);
     final boton = BotonCarga(
       texto: 'Publicar solicitud',
@@ -224,6 +236,7 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      aviso,
                       intro,
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,7 +260,14 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
                   )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [intro, servicio, problema, ubicacion, fotos],
+                    children: [
+                      aviso,
+                      intro,
+                      servicio,
+                      problema,
+                      ubicacion,
+                      fotos,
+                    ],
                   ),
           ),
         ),

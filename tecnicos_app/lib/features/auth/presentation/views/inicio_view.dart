@@ -18,6 +18,7 @@ import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
 import '../../../chat/data/repositories/supabase_chat_repository.dart';
 import '../../../chat/presentation/widgets/chat_flotante.dart';
+import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
 import '../../../solicitudes/domain/entities/solicitud.dart';
 import '../../../solicitudes/presentation/providers/listas_provider.dart';
 import '../../domain/entities/tecnico_cercano.dart';
@@ -31,6 +32,8 @@ Future<void> _pedir(
   int? oficioId,
   String? descripcion,
 }) async {
+  if (!await exigirVerificado(context, ref)) return;
+  if (!context.mounted) return;
   final id = await context.push<String>(
     AppRoutes.clienteNuevaSolicitud,
     extra: (oficioId: oficioId, descripcion: descripcion),

@@ -205,9 +205,7 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
         if (verificado)
           const _Aviso(
             tipo: TipoAviso.exito,
-            mensaje:
-                'Tu identidad está verificada. Los clientes verán tu '
-                'insignia de técnico verificado.',
+            mensaje: 'Tu identidad está verificada.',
           )
         else if (hayRechazo)
           const _Aviso(
