@@ -69,7 +69,7 @@ class _EditarDialogState extends ConsumerState<_EditarDialog> {
                 if (widget.solicitud.estado.oficioEditable)
                   ref.watch(oficiosProvider).when(
                         data: (lista) => DropdownButtonFormField<int>(
-                          value: _oficioId,
+                          initialValue: _oficioId,
                           decoration: const InputDecoration(
                             labelText: 'Tipo de servicio',
                           ),
