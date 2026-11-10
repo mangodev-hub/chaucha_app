@@ -2,12 +2,10 @@
 class NuevaCotizacion {
   const NuevaCotizacion({
     required this.solicitudId,
-    required this.precioBase,
     required this.solucion,
   });
 
   final String solicitudId;
-  final double precioBase;
 
   /// Cómo resolvería el problema.
   final String solucion;

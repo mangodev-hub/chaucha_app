@@ -23,17 +23,32 @@ import '../../domain/entities/reglas_chat.dart';
 import '../providers/enviar_mensaje_provider.dart';
 import '../providers/mensajes_provider.dart';
 import '../providers/tarifa_chat_provider.dart';
+import '../widgets/mensaje_ticket.dart';
 
-class ChatView extends ConsumerStatefulWidget {
+class ChatView extends StatelessWidget {
   const ChatView({super.key, required this.conversacionId});
 
   final String conversacionId;
 
   @override
-  ConsumerState<ChatView> createState() => _ChatViewState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Chat')),
+      body: ChatPanel(conversacionId: conversacionId),
+    );
+  }
 }
 
-class _ChatViewState extends ConsumerState<ChatView> {
+class ChatPanel extends ConsumerStatefulWidget {
+  const ChatPanel({super.key, required this.conversacionId});
+
+  final String conversacionId;
+
+  @override
+  ConsumerState<ChatPanel> createState() => _ChatPanelState();
+}
+
+class _ChatPanelState extends ConsumerState<ChatPanel> {
   static const double _anchoMaximo = 720;
 
   final _texto = TextEditingController();
@@ -109,34 +124,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
-  Future<void> _confirmar(Cotizacion oferta) async {
-    final total = oferta.tarifa?.total ?? oferta.precioBase;
-    final ok = await context.confirmar(
-      'Confirmar ticket',
-      '¿Contratar este trabajo por ${Formatos.dinero(total)}? '
-          'Las demás ofertas no se elegirán.',
-      textoConfirmar: 'Confirmar',
-      icono: Icons.handshake_outlined,
-    );
-    if (ok) {
-      await _resultado(
-        _tarifa.confirmar(),
-        'Ticket confirmado. El trabajo está en curso.',
-      );
-    }
-  }
+  Future<void> _confirmar() => _resultado(
+    _tarifa.confirmar(),
+    'Ticket aceptado. El trabajo está en curso.',
+  );
 
-  Future<void> _rechazar() async {
-    final ok = await context.confirmar(
-      'Rechazar ticket',
-      'Pueden seguir conversando y el técnico podrá enviarte otro.',
-      textoConfirmar: 'Sí, rechazar',
-      textoCancelar: 'Volver',
-      destructivo: true,
-      icono: Icons.cancel_outlined,
-    );
-    if (ok) await _resultado(_tarifa.rechazar(), 'Ticket rechazado.');
-  }
+  Future<void> _rechazar() =>
+      _resultado(_tarifa.rechazar(), 'Ticket rechazado.');
 
   @override
   Widget build(BuildContext context) {
@@ -184,80 +178,82 @@ class _ChatViewState extends ConsumerState<ChatView> {
           estadoSolicitud: estadoSolicitud,
         );
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
-      body: Column(
-        children: [
-          FranjaTarifa(
-            soyCliente: soyCliente,
-            oferta: oferta,
-            cargando: procesando,
-            error: contexto.hasError
-                ? AsyncValueView.mensajeDe(contexto.error!)
-                : null,
-            onEmpezar: puedeEnviarTicket
-                ? () => _empezarTrabajo(oferta!.precioBase)
-                : null,
-            onVerTicket: oferta?.tarifa == null
-                ? null
-                : () => mostrarDetalleTarifa(
-                    context,
-                    oferta: oferta!,
-                    onConfirmar: puedeResponder && !procesando
-                        ? () => _confirmar(oferta)
-                        : null,
-                    onRechazar: puedeResponder && !procesando
-                        ? _rechazar
-                        : null,
-                  ),
-          ),
-          Expanded(
-            child: AnchoMaximo(
-              ancho: _anchoMaximo,
-              child: AsyncValueView<List<Mensaje>>(
-                value: mensajes,
-                onRetry: () => ref.invalidate(mensajesProvider(id)),
-                onData: (context, mensajes) => mensajes.isEmpty
-                    ? soyCliente
-                          ? const EstadoMensaje(
-                              icono: Icons.chat_bubble_outline,
-                              titulo: 'Inicia la conversación',
-                              mensaje:
-                                  'Pregunta lo que necesites y acuerden el '
-                                  'precio del trabajo.',
-                            )
-                          : const EstadoMensaje(
-                              icono: Icons.mark_chat_unread_outlined,
-                              titulo: 'Esperando al cliente',
-                              mensaje:
-                                  'Cuando el cliente te escriba, podrás '
-                                  'responderle aquí.',
-                            )
-                    : _Mensajes(mensajes: mensajes, miId: miId),
-              ),
+    final panel = Column(
+      children: [
+        FranjaTarifa(
+          soyCliente: soyCliente,
+          oferta: oferta?.tarifa == null ? oferta : null,
+          cargando: procesando,
+          error: contexto.hasError
+              ? AsyncValueView.mensajeDe(contexto.error!)
+              : null,
+          onEmpezar: puedeEnviarTicket
+              ? () => _empezarTrabajo(oferta!.precioBase)
+              : null,
+        ),
+        Expanded(
+          child: AnchoMaximo(
+            ancho: _anchoMaximo,
+            child: AsyncValueView<List<Mensaje>>(
+              value: mensajes,
+              onRetry: () => ref.invalidate(mensajesProvider(id)),
+              onData: (context, mensajes) => mensajes.isEmpty
+                  ? soyCliente
+                        ? const EstadoMensaje(
+                            icono: Icons.chat_bubble_outline,
+                            titulo: 'Inicia la conversación',
+                            mensaje:
+                                'Pregunta lo que necesites y acuerden el '
+                                'precio del trabajo.',
+                          )
+                        : const EstadoMensaje(
+                            icono: Icons.mark_chat_unread_outlined,
+                            titulo: 'Esperando al cliente',
+                            mensaje:
+                                'Cuando el cliente te escriba, podrás '
+                                'responderle aquí.',
+                          )
+                  : _Mensajes(
+                      mensajes: mensajes,
+                      miId: miId,
+                      oferta: oferta,
+                      puedeResponder: puedeResponder && !procesando,
+                      onAceptar: _confirmar,
+                      onRechazar: _rechazar,
+                    ),
             ),
           ),
-          _BarraEnvio(
-            controller: _texto,
-            enviando: enviando,
-            habilitada: puedeEscribir,
-            onEnviar: _enviar,
-            anchoMaximo: _anchoMaximo,
-          ),
-        ],
-      ),
+        ),
+        _BarraEnvio(
+          controller: _texto,
+          enviando: enviando,
+          habilitada: puedeEscribir,
+          onEnviar: _enviar,
+          anchoMaximo: _anchoMaximo,
+        ),
+      ],
     );
+
+    return panel;
   }
 }
 
-/// Lista de mensajes, el más nuevo abajo, con separadores por día. Los
-/// mensajes que llegan con la pantalla abierta entran con una animación; los
-/// que ya estaban al abrirla, no.
 class _Mensajes extends StatefulWidget {
-  const _Mensajes({required this.mensajes, required this.miId});
+  const _Mensajes({
+    required this.mensajes,
+    required this.miId,
+    required this.oferta,
+    required this.puedeResponder,
+    required this.onAceptar,
+    required this.onRechazar,
+  });
 
   final List<Mensaje> mensajes;
   final String? miId;
+  final Cotizacion? oferta;
+  final bool puedeResponder;
+  final VoidCallback onAceptar;
+  final VoidCallback onRechazar;
 
   @override
   State<_Mensajes> createState() => _MensajesState();
@@ -266,6 +262,23 @@ class _Mensajes extends StatefulWidget {
 class _MensajesState extends State<_Mensajes> {
   /// Ids ya mostrados. Null hasta la primera carga, que no se anima.
   Set<String>? _vistos;
+    Widget _contenido(Mensaje m, String? idUltimoTicket) {
+    final esMio = m.autorId == widget.miId;
+    if (m.accion == 'tarifa_enviada') {
+      final pendiente =
+          m.id == idUltimoTicket && widget.oferta?.tarifaPendiente == true;
+      return MensajeTicket(
+        mensaje: m,
+        esMio: esMio,
+        pendiente: pendiente,
+        puedeResponder: pendiente && widget.puedeResponder,
+        onAceptar: widget.onAceptar,
+        onRechazar: widget.onRechazar,
+      );
+    }
+    if (m.esSistema) return NotaSistema(m.contenido);
+    return _Burbuja(mensaje: m, esMio: esMio);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -276,6 +289,10 @@ class _MensajesState extends State<_Mensajes> {
     // cuando llegan mensajes nuevos.
     final elementos = <Widget>[];
     String? diaAnterior;
+        String? idUltimoTicket;
+    for (final m in widget.mensajes) {
+      if (m.accion == 'tarifa_enviada') idUltimoTicket = m.id;
+    }
     for (final m in widget.mensajes) {
       final dia = Formatos.dia(m.enviadoEn);
       if (dia != diaAnterior) {
@@ -286,7 +303,7 @@ class _MensajesState extends State<_Mensajes> {
         _EntradaMensaje(
           key: ValueKey(m.id),
           animar: vistos != null && !vistos.contains(m.id),
-          child: _Burbuja(mensaje: m, esMio: m.autorId == widget.miId),
+          child: _contenido(m, idUltimoTicket),
         ),
       );
     }

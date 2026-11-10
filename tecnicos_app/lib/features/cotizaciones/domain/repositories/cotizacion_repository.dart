@@ -28,4 +28,6 @@ abstract interface class CotizacionRepository {
 
   /// El cliente rechaza el ticket; el técnico puede enviar otro.
   Future<void> rechazarTarifa(String cotizacionId);
+
+  Future<List<Cotizacion>> deSolicitudes(List<String> solicitudIds);
 }

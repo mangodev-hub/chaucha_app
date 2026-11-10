@@ -1,4 +1,3 @@
-// Mensaje de una conversación entre cliente y técnico.
 class Mensaje {
   const Mensaje({
     required this.id,
@@ -6,6 +5,8 @@ class Mensaje {
     required this.autorId,
     required this.contenido,
     required this.enviadoEn,
+    this.tipo = 'texto',
+    this.datos,
   });
 
   final String id;
@@ -13,4 +14,9 @@ class Mensaje {
   final String autorId;
   final String contenido;
   final DateTime enviadoEn;
+  final String tipo;
+  final Map<String, dynamic>? datos;
+
+  bool get esSistema => tipo == 'sistema';
+  String? get accion => datos?['accion'] as String?;
 }
