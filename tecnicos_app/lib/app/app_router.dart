@@ -21,6 +21,7 @@ import '../features/auth/presentation/views/restablecer_view.dart';
 import '../features/chat/presentation/views/chat_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_publico_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_tecnico_view.dart';
+import '../features/solicitudes/presentation/views/agenda_view.dart';
 import '../features/solicitudes/presentation/views/crear_solicitud_view.dart';
 import '../features/solicitudes/presentation/views/feed_view.dart';
 import '../features/solicitudes/presentation/views/inicio_tecnico_view.dart';
@@ -29,7 +30,6 @@ import '../features/solicitudes/presentation/views/mis_trabajos_view.dart';
 import '../features/solicitudes/presentation/views/solicitud_detalle_view.dart';
 import 'inicio_shell.dart';
 import 'route_guard.dart';
-import '../features/solicitudes/presentation/views/agenda_view.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final cambiosDeSesion = ValueNotifier<SesionEstado>(ref.read(sesionProvider));
@@ -86,7 +86,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.clienteInicio,
         builder: (context, state) => InicioShell(
           onCerrarSesion: cerrarSesion,
-          conChats: true, esCliente: true,
+          conChats: true,
+          esCliente: true,
           destinos: const [
             Destino(
               'Inicio',
@@ -101,7 +102,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               iconoActivo: Icons.assignment_rounded,
               tiposNotificacion: ['cotizacion', 'tarifa', 'mensaje'],
             ),
-                        Destino(
+            Destino(
               'Agenda',
               Icons.event_outlined,
               AgendaView(esCliente: true),
@@ -171,7 +172,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 'cierre',
               ],
             ),
-              Destino(
+            Destino(
               'Agenda',
               Icons.event_outlined,
               AgendaView(esCliente: false),

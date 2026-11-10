@@ -61,7 +61,9 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
     final datos = await mostrarEditarSolicitud(context, s);
     if (datos == null || !mounted) return;
     await _ejecutar(
-      () => ref.read(solicitudRepositoryProvider).editar(
+      () => ref
+          .read(solicitudRepositoryProvider)
+          .editar(
             s.id,
             descripcion: datos.descripcion,
             oficioId: datos.oficioId,
@@ -134,8 +136,14 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
   }
 
   Widget _contenido(List<Solicitud> solicitudes) {
-    final activas = [for (final s in solicitudes) if (s.estado.activa) s];
-    final finalizadas = [for (final s in solicitudes) if (!s.estado.activa) s];
+    final activas = [
+      for (final s in solicitudes)
+        if (s.estado.activa) s,
+    ];
+    final finalizadas = [
+      for (final s in solicitudes)
+        if (!s.estado.activa) s,
+    ];
     final visibles = _verActivas ? activas : finalizadas;
 
     final principal = Column(
@@ -327,12 +335,21 @@ class _ComoFunciona extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('¿Cómo funciona?', style: textos.titleMedium),
-          paso(1, 'Publica tu solicitud',
-              'Describe el problema y marca tu ubicación.'),
-          paso(2, 'Recibe propuestas',
-              'Los técnicos de tu zona te escriben con un precio base.'),
-          paso(3, 'Chatea y acuerda',
-              'Habla con el técnico y acuerden el precio.'),
+          paso(
+            1,
+            'Publica tu solicitud',
+            'Describe el problema y marca tu ubicación.',
+          ),
+          paso(
+            2,
+            'Recibe propuestas',
+            'Los técnicos de tu zona te escriben con un precio base.',
+          ),
+          paso(
+            3,
+            'Chatea y acuerda',
+            'Habla con el técnico y acuerden el precio.',
+          ),
           const SizedBox(height: Espacios.l),
           Text(
             'Puedes editar o eliminar tu solicitud mientras no hayas '

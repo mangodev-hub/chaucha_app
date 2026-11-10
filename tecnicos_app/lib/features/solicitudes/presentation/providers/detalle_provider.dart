@@ -65,7 +65,9 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
     required int oficioId,
     String? direccion,
   }) => _ejecutar(
-    () => ref.read(solicitudRepositoryProvider).editar(
+    () => ref
+        .read(solicitudRepositoryProvider)
+        .editar(
           solicitudId,
           descripcion: descripcion,
           oficioId: oficioId,

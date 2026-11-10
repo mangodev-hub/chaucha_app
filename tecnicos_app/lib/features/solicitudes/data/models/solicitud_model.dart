@@ -24,8 +24,7 @@ class SolicitudModel {
       id: json['id'] as String,
       clienteId: json['cliente_id'] as String,
       oficioId: aInt(json['oficio_id']),
-      oficioNombre:
-          anidado(json['oficios'])?['nombre'] as String? ?? 'Oficio',
+      oficioNombre: anidado(json['oficios'])?['nombre'] as String? ?? 'Oficio',
       descripcion: json['descripcion'] as String,
       ubicacion: GeoMapper.fromDb(json['ubicacion']),
       direccionReferencia: json['direccion_referencia'] as String?,
@@ -35,7 +34,8 @@ class SolicitudModel {
   }
 
   /// Columnas que se piden en el `select`, con el join al oficio.
-  static const String columnas = 'id, cliente_id, oficio_id, descripcion, '
+  static const String columnas =
+      'id, cliente_id, oficio_id, descripcion, '
       'ubicacion, direccion_referencia, estado, creado_en, oficios(nombre)';
 
   final String id;
@@ -49,14 +49,14 @@ class SolicitudModel {
   final DateTime creadoEn;
 
   Solicitud aEntidad() => Solicitud(
-        id: id,
-        clienteId: clienteId,
-        oficioId: oficioId,
-        oficioNombre: oficioNombre,
-        descripcion: descripcion,
-        ubicacion: ubicacion,
-        direccionReferencia: direccionReferencia,
-        estado: estado,
-        creadoEn: creadoEn,
-      );
+    id: id,
+    clienteId: clienteId,
+    oficioId: oficioId,
+    oficioNombre: oficioNombre,
+    descripcion: descripcion,
+    ubicacion: ubicacion,
+    direccionReferencia: direccionReferencia,
+    estado: estado,
+    creadoEn: creadoEn,
+  );
 }

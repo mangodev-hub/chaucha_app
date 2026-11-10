@@ -6,11 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/core_providers.dart';
 import '../core/theme/tokens.dart';
 import '../core/widgets/responsive_layout.dart';
+import '../features/chat/presentation/widgets/boton_chats.dart';
 import '../features/notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
 import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
 import 'menu_cuenta.dart';
-import '../features/chat/presentation/widgets/boton_chats.dart';
 
 class Destino {
   const Destino(
@@ -31,7 +31,7 @@ class Destino {
 
   /// Etiqueta corta para la barra flotante del móvil (si no, [titulo]).
   final String? corto;
-    final List<String> tiposNotificacion;
+  final List<String> tiposNotificacion;
   final Widget vista;
 
   String get etiqueta => corto ?? titulo;
@@ -42,7 +42,8 @@ class InicioShell extends ConsumerStatefulWidget {
     super.key,
     required this.destinos,
     required this.onCerrarSesion,
-    this.conChats = false, this.esCliente = false,
+    this.conChats = false,
+    this.esCliente = false,
   });
 
   final List<Destino> destinos;
@@ -94,8 +95,9 @@ class _InicioShellState extends ConsumerState<InicioShell> {
             Expanded(child: contenido),
           ],
         ),
-        floatingActionButton:
-            widget.conChats ? BotonChats(esCliente: widget.esCliente) : null,
+        floatingActionButton: widget.conChats
+            ? BotonChats(esCliente: widget.esCliente)
+            : null,
       );
     }
 
@@ -112,8 +114,9 @@ class _InicioShellState extends ConsumerState<InicioShell> {
         ],
       ),
       body: contenido,
-      floatingActionButton:
-          widget.conChats ? BotonChats(esCliente: widget.esCliente) : null,
+      floatingActionButton: widget.conChats
+          ? BotonChats(esCliente: widget.esCliente)
+          : null,
       bottomNavigationBar: _BarraFlotante(
         destinos: destinos,
         indice: _indice,

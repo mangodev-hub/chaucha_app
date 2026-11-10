@@ -6,8 +6,9 @@ import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../data/repositories/supabase_solicitud_repository.dart';
 import '../../domain/entities/solicitud.dart';
 
-final misSolicitudesProvider =
-    FutureProvider.autoDispose<List<Solicitud>>((ref) {
+final misSolicitudesProvider = FutureProvider.autoDispose<List<Solicitud>>((
+  ref,
+) {
   ref.watch(usuarioActualProvider.select((usuario) => usuario?.id));
   return ref.watch(solicitudRepositoryProvider).misSolicitudes();
 });

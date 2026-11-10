@@ -61,6 +61,7 @@ class SolicitudCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onEditar;
   final VoidCallback? onEliminar;
+
   /// Distancia ya formateada ("1.2 km"), solo en el feed del técnico.
   final String? distancia;
   final bool yaCotice;
@@ -99,7 +100,7 @@ class SolicitudCard extends StatelessWidget {
               ),
               const SizedBox(width: Espacios.s),
               Flexible(child: EstadoChip(solicitud.estado)),
-                            if (onEditar != null || onEliminar != null)
+              if (onEditar != null || onEliminar != null)
                 PopupMenuButton<String>(
                   tooltip: 'Opciones',
                   onSelected: (v) =>

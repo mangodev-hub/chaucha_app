@@ -30,8 +30,10 @@ import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
+import '../../../chat/presentation/widgets/chat_flotante.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/presentation/widgets/cotizacion_widgets.dart';
+import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_dialog.dart';
 import '../../domain/entities/detalle_solicitud.dart';
 import '../../domain/entities/foto_solicitud.dart';
@@ -40,8 +42,6 @@ import '../providers/detalle_provider.dart';
 import '../widgets/detalle_widgets.dart';
 import '../widgets/editar_solicitud_dialog.dart';
 import '../widgets/solicitud_widgets.dart';
-import '../../../chat/presentation/widgets/chat_flotante.dart';
-import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 
 /// Acción principal del detalle según el rol y el estado.
 typedef _Accion = ({String texto, IconData icono, VoidCallback alPulsar});
@@ -108,7 +108,7 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     );
     if (ok) await _resultado(_acciones.cancelar(), 'Solicitud cancelada.');
   }
-  
+
   Future<void> _ofrecer() async {
     final perfil = await ref.read(perfilTecnicoProvider.future);
     if (!mounted) return;
@@ -130,7 +130,7 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     );
   }
 
-    Future<void> _editar(Solicitud solicitud) async {
+  Future<void> _editar(Solicitud solicitud) async {
     final datos = await mostrarEditarSolicitud(context, solicitud);
     if (datos == null) return;
     await _resultado(
@@ -157,13 +157,13 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     final hecho = await _acciones.eliminar();
     if (!mounted) return;
     if (hecho) {
-context
-  ..mostrarMensaje(
-    'La solicitud y sus propuestas se borraron.',
-    tipo: TipoMensaje.eliminado,
-    titulo: 'Eliminado correctamente',
-  )
-  ..pop();
+      context
+        ..mostrarMensaje(
+          'La solicitud y sus propuestas se borraron.',
+          tipo: TipoMensaje.eliminado,
+          titulo: 'Eliminado correctamente',
+        )
+        ..pop();
     } else {
       _mostrarErrorDeAccion();
     }
@@ -252,7 +252,7 @@ context
         title: const Text('Detalle de la solicitud'),
         actions: [
           if (datos != null && _puedeCancelar(datos))
-              _MenuOpciones(
+            _MenuOpciones(
               habilitado: !procesando,
               onEditar: () => _editar(datos.solicitud),
               onEliminar: _eliminar,
@@ -655,10 +655,18 @@ class _MenuOpciones extends StatelessWidget {
       },
       itemBuilder: (context) => [
         item(_Opcion.editar, Icons.edit_outlined, 'Editar solicitud'),
-        item(_Opcion.cancelar, Icons.cancel_outlined, 'Cancelar solicitud',
-            color: error),
-        item(_Opcion.eliminar, Icons.delete_outline, 'Eliminar solicitud',
-            color: error),
+        item(
+          _Opcion.cancelar,
+          Icons.cancel_outlined,
+          'Cancelar solicitud',
+          color: error,
+        ),
+        item(
+          _Opcion.eliminar,
+          Icons.delete_outline,
+          'Eliminar solicitud',
+          color: error,
+        ),
       ],
     );
   }
