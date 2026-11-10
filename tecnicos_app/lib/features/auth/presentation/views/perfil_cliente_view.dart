@@ -12,6 +12,10 @@ import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
 import '../providers/resenas_cliente_provider.dart';
 import '../providers/sesion_provider.dart';
 
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
 const _azul = Colores.primarioVivo;
 const _azulOscuro = Colores.primarioProfundo;
 const _hielo = Colores.primarioSuave;
@@ -519,15 +523,6 @@ class _Ubicacion extends StatelessWidget {
             'Se usa para encontrar técnicos cercanos sin exponer tu domicilio particular.',
             style: TextStyle(color: _gris, fontSize: 13),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
-              label: const Text('Cambiar ubicación'),
-            ),
-          ),
         ],
       ),
     );
@@ -544,6 +539,9 @@ class _MapaZona extends StatefulWidget {
 class _MapaZonaState extends State<_MapaZona> {
   final _controlador = MapController();
   LatLng _centro = const LatLng(-0.1807, -78.4678);
+  String? _lugar;
+  bool _buscando = false;
+  String? _aviso;
 
   @override
   void initState() {
@@ -551,7 +549,8 @@ class _MapaZonaState extends State<_MapaZona> {
     unawaited(_detectar());
   }
 
-  Future<void> _detectar() async {
+  Future<void> _detectar({bool manual = false}) async {
+    if (manual) setState(() => _buscando = true);
     try {
       var permiso = await Geolocator.checkPermission();
       if (permiso == LocationPermission.denied) {
@@ -559,6 +558,12 @@ class _MapaZonaState extends State<_MapaZona> {
       }
       if (permiso == LocationPermission.denied ||
           permiso == LocationPermission.deniedForever) {
+        if (manual && mounted) {
+          setState(
+            () => _aviso =
+                'Activa el permiso de ubicación para usar esta opción.',
+          );
+        }
         return;
       }
       final p = await Geolocator.getCurrentPosition(
@@ -567,12 +572,65 @@ class _MapaZonaState extends State<_MapaZona> {
         ),
       );
       if (!mounted) return;
-      final punto = LatLng(
-        (p.latitude * 200).round() / 200,
-        (p.longitude * 200).round() / 200,
+      _fijar(_redondear(LatLng(p.latitude, p.longitude)));
+    } catch (_) {
+      if (manual && mounted) {
+        setState(() => _aviso = 'No pudimos obtener tu ubicación actual.');
+      }
+    } finally {
+      if (manual && mounted) setState(() => _buscando = false);
+    }
+  }
+
+  LatLng _redondear(LatLng p) => LatLng(
+    (p.latitude * 200).round() / 200,
+    (p.longitude * 200).round() / 200,
+  );
+
+  void _fijar(LatLng punto) {
+    setState(() {
+      _centro = punto;
+      _lugar = null;
+      _aviso = null;
+    });
+    _controlador.move(punto, 14);
+    unawaited(_resolverLugar(punto));
+  }
+
+  Future<void> _elegir() async {
+    final punto = await showDialog<LatLng>(
+      context: context,
+      builder: (_) => _SelectorUbicacion(inicial: _centro),
+    );
+    if (punto == null || !mounted) return;
+    _fijar(_redondear(punto));
+  }
+
+  Future<void> _resolverLugar(LatLng p) async {
+    try {
+      final r = await http.get(
+        Uri.https('nominatim.openstreetmap.org', '/reverse', {
+          'lat': '${p.latitude}',
+          'lon': '${p.longitude}',
+          'format': 'jsonv2',
+          'zoom': '17',
+          'addressdetails': '1',
+        }),
+        headers: {'Accept-Language': 'es'},
       );
-      setState(() => _centro = punto);
-      _controlador.move(punto, 14);
+      if (r.statusCode != 200) return;
+      final a = (jsonDecode(r.body)['address'] as Map?) ?? const {};
+      final calle = a['road'] as String?;
+      final calleValida =
+          calle != null && !RegExp(r'^[A-Za-z]?\d+[A-Za-z]?$').hasMatch(calle)
+          ? calle
+          : null;
+      final texto = [
+        calleValida,
+        a['neighbourhood'] ?? a['suburb'],
+      ].whereType<String>().join(', ');
+      if (!mounted || texto.isEmpty) return;
+      setState(() => _lugar = texto);
     } catch (_) {
       return;
     }
@@ -580,37 +638,198 @@ class _MapaZonaState extends State<_MapaZona> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        height: 150,
-        child: FlutterMap(
-          mapController: _controlador,
-          options: MapOptions(
-            initialCenter: _centro,
-            initialZoom: 14,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.drag | InteractiveFlag.pinchZoom,
-            ),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.eagledev.tecnicosapp',
-            ),
-            CircleLayer(
-              circles: [
-                CircleMarker(
-                  point: _centro,
-                  radius: 500,
-                  useRadiusInMeter: true,
-                  color: _azul.withValues(alpha: 0.25),
-                  borderColor: _azul,
-                  borderStrokeWidth: 2,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            height: 150,
+            child: FlutterMap(
+              mapController: _controlador,
+              options: MapOptions(
+                initialCenter: _centro,
+                initialZoom: 14,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.drag | InteractiveFlag.pinchZoom,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.eagledev.tecnicosapp',
+                ),
+                CircleLayer(
+                  circles: [
+                    CircleMarker(
+                      point: _centro,
+                      radius: 500,
+                      useRadiusInMeter: true,
+                      color: _azul.withValues(alpha: 0.25),
+                      borderColor: _azul,
+                      borderStrokeWidth: 2,
+                    ),
+                  ],
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _centro,
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.topCenter,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: _rojo,
+                        size: 40,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            const Icon(Icons.place_outlined, size: 16, color: _azul),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                _lugar ?? 'Quito, Ecuador',
+                style: const TextStyle(
+                  color: _texto,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
+        ),
+        const SizedBox(height: 12),
+        if (_aviso != null) ...[
+          const SizedBox(height: 8),
+          Text(_aviso!, style: const TextStyle(color: _rojo, fontSize: 12)),
+        ],
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _buscando ? null : () => _detectar(manual: true),
+            icon: _buscando
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.my_location, size: 18),
+            label: const Text('Usar mi ubicación actual'),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _elegir,
+            icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+            label: const Text('Seleccionar en el mapa'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SelectorUbicacion extends StatefulWidget {
+  const _SelectorUbicacion({required this.inicial});
+
+  final LatLng inicial;
+
+  @override
+  State<_SelectorUbicacion> createState() => _SelectorUbicacionState();
+}
+
+class _SelectorUbicacionState extends State<_SelectorUbicacion> {
+  late LatLng _punto = widget.inicial;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: _blanco,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 560),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Selecciona tu ubicación',
+                style: TextStyle(
+                  color: _texto,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Toca el mapa para mover el pin.',
+                style: TextStyle(color: _gris, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: widget.inicial,
+                      initialZoom: 15,
+                      onTap: (_, p) => setState(() => _punto = p),
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.eagledev.tecnicosapp',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _punto,
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.topCenter,
+                            child: const Icon(
+                              Icons.location_on,
+                              color: _rojo,
+                              size: 40,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () => Navigator.of(context).pop(_punto),
+                    child: const Text('Confirmar'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
