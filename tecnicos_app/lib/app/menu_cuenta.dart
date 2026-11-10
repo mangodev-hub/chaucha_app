@@ -22,10 +22,9 @@ class MenuCuenta extends ConsumerWidget {
     this.compacto = false,
   });
 
-  final VoidCallback onPerfil;
   final VoidCallback onCerrarSesion;
   final bool compacto;
-
+  final VoidCallback? onPerfil;
   static PopupMenuItem<_Op> _item(
     _Op valor,
     IconData icono,
@@ -45,7 +44,7 @@ class MenuCuenta extends ConsumerWidget {
   void _elegir(BuildContext context, _Op op) {
     switch (op) {
       case _Op.perfil:
-        onPerfil();
+        onPerfil?.call();
       case _Op.configuracion:
         showDialog<void>(
           context: context,
@@ -128,7 +127,8 @@ class MenuCuenta extends ConsumerWidget {
           ),
         ),
         const PopupMenuDivider(),
-        _item(_Op.perfil, Icons.person_outline, 'Mi perfil'),
+        if (onPerfil != null)
+          _item(_Op.perfil, Icons.person_outline, 'Mi perfil'),
         _item(
           _Op.configuracion,
           Icons.settings_outlined,
