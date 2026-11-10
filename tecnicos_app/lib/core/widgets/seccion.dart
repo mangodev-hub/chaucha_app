@@ -25,7 +25,6 @@ class Seccion extends StatelessWidget {
   }
 }
 
-
 class AnchoMaximo extends StatelessWidget {
   const AnchoMaximo({super.key, required this.child, this.ancho = 900});
 

@@ -3,10 +3,6 @@ import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 
-
-
-
-
 abstract final class SelectorFotos {
   static const int _anchoMaximo = 1280;
   static const int _calidad = 70;

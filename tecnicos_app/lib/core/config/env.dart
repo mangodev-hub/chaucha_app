@@ -4,9 +4,6 @@ class Env {
 
   final String supabaseUrl;
 
-
-
-
   final String supabaseAnonKey;
 
   factory Env.fromDartDefines() {
