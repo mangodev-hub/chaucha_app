@@ -38,6 +38,9 @@ import '../providers/feed_provider.dart';
 import '../providers/inicio_tecnico_provider.dart';
 import '../providers/listas_provider.dart';
 import '../widgets/solicitud_widgets.dart';
+import '../widgets/mapa_zona_tecnico.dart';
+import '../../../../core/widgets/mensajes.dart';
+import '../../../perfil_puntos/domain/entities/cambios_perfil.dart';
 
 class InicioTecnicoView extends ConsumerWidget {
   const InicioTecnicoView({super.key});
@@ -48,69 +51,68 @@ class InicioTecnicoView extends ConsumerWidget {
       ..invalidate(perfilTecnicoProvider)
       ..invalidate(misTrabajosProvider)
       ..invalidate(misOfertasProvider)
-      ..invalidate(chatsPorResponderProvider)
+      ..invalidate(chatsPendientesProvider)
       ..invalidate(feedProvider);
     final id = ref.read(usuarioActualProvider)?.id;
     if (id != null) ref.invalidate(perfilPublicoProvider(id));
     return esperarSinError(ref.read(resumenTecnicoProvider.future));
   }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final escritorio = ResponsiveLayout.isDesktop(context);
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final escritorio = ResponsiveLayout.isDesktop(context);
 
-    const urgente = [_ParaEmpezar(), _Pendientes(), _NuevasCerca()];
-    const progreso = [_Actividad(), _Reputacion()];
+  const urgente = [_ParaEmpezar(), _Pendientes(), _NuevasCerca()];
+  const progreso = [_Actividad(), _Reputacion()];
+  const derecha = [_MapaZona(), ...progreso];
 
-    return RefreshIndicator(
-      onRefresh: () => _recargar(ref),
-      child: ListView(
-        padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
-        children: [
-          AnchoMaximo(
-            ancho: escritorio ? 1100 : 900,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _Portada(),
-                if (escritorio)
-                  const Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: urgente,
-                        ),
+  return RefreshIndicator(
+    onRefresh: () => _recargar(ref),
+    child: ListView(
+      padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
+      children: [
+        AnchoMaximo(
+          ancho: escritorio ? 1100 : 900,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _Portada(),
+              if (escritorio)
+                const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: urgente,
                       ),
-                      SizedBox(width: Espacios.xl),
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: progreso,
-                        ),
+                    ),
+                    SizedBox(width: Espacios.xl),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: derecha,
                       ),
-                    ],
-                  )
-                else ...[
-                  ...urgente,
-                  ...progreso,
-                ],
-                const SizedBox(height: Espacios.xl),
+                    ),
+                  ],
+                )
+              else ...[
+                const _MapaZona(),
+                ...urgente,
+                ...progreso,
               ],
-            ),
+              const SizedBox(height: Espacios.xl),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
-
-// ---------------------------------------------------------------------------
+}
 // Portada
-// ---------------------------------------------------------------------------
 
 /// Saludo con el total de pendientes del día (chats por responder y trabajos
 /// en curso) en la píldora, cuando ya cargaron.
@@ -120,7 +122,7 @@ class _Portada extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nombre = ref.watch(usuarioActualProvider)?.nombres;
-    final chats = ref.watch(chatsPorResponderProvider).value?.length;
+    final chats = ref.watch(chatsPendientesProvider).value?.length;
     final trabajos = ref
         .watch(resumenTecnicoProvider)
         .value
@@ -146,11 +148,57 @@ class _Portada extends ConsumerWidget {
     );
   }
 }
+class _MapaZona extends ConsumerWidget {
+  const _MapaZona();
 
-// ---------------------------------------------------------------------------
+  Future<void> _cambiarRadio(
+    BuildContext context,
+    WidgetRef ref,
+    PerfilTecnico perfil,
+    int metros,
+  ) async {
+    final centro = perfil.ubicacionActual;
+    if (centro == null) return;
+    final ok = await ref
+        .read(guardarPerfilProvider.notifier)
+        .guardar(
+          CambiosPerfil(
+            tarifaBase: perfil.tarifaBase,
+            rangoCoberturaM: metros,
+            ubicacion: centro,
+            oficioIds: perfil.oficioIds.toSet(),
+          ),
+        );
+    if (!context.mounted) return;
+    if (ok) {
+      ref.invalidate(feedProvider);
+    } else {
+      context.mostrarMensaje(
+        'No se pudo guardar el radio.',
+        tipo: TipoMensaje.error,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(guardarPerfilProvider);
+    final perfil = ref.watch(perfilTecnicoProvider).value;
+    final centro = perfil?.ubicacionActual;
+    if (perfil == null || centro == null) return const SizedBox.shrink();
+    final items = ref.watch(feedProvider).value?.items ?? const <ItemFeed>[];
+    return Seccion(
+      titulo: 'Tu zona de trabajo',
+      child: MapaZonaTecnico(
+        centro: centro,
+        radioM: perfil.rangoCoberturaM,
+        solicitudes: [for (final i in items) i.solicitud],
+        onCambiarRadio: (m) => _cambiarRadio(context, ref, perfil, m),
+      ),
+    );
+  }
+}
 // Para empezar a trabajar
-// ---------------------------------------------------------------------------
-
 /// Lo que le falta al perfil para recibir solicitudes. Desaparece cuando
 /// todo está listo.
 class _ParaEmpezar extends ConsumerWidget {
@@ -226,17 +274,14 @@ class _ParaEmpezar extends ConsumerWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Pendientes de hoy
-// ---------------------------------------------------------------------------
-
 /// Chats donde el cliente espera respuesta y trabajos en curso.
 class _Pendientes extends ConsumerWidget {
   const _Pendientes();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chats = ref.watch(chatsPorResponderProvider);
+    final chats = ref.watch(chatsPendientesProvider);
     final resumen = ref.watch(resumenTecnicoProvider);
 
     final sinPendientes =
@@ -356,10 +401,7 @@ class _ChatPendiente extends ConsumerWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Solicitudes nuevas cerca
-// ---------------------------------------------------------------------------
-
 /// Las tres solicitudes más recientes de sus oficios en su zona.
 class _NuevasCerca extends ConsumerWidget {
   const _NuevasCerca();
@@ -420,9 +462,7 @@ class _NuevasCerca extends ConsumerWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Tu actividad
-// ---------------------------------------------------------------------------
 
 class _Actividad extends ConsumerWidget {
   const _Actividad();
@@ -506,9 +546,7 @@ class _Dato extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Tu reputación
-// ---------------------------------------------------------------------------
 
 class _Reputacion extends ConsumerWidget {
   const _Reputacion();
@@ -660,10 +698,7 @@ class _UltimasResenas extends ConsumerWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
 // Piezas comunes
-// ---------------------------------------------------------------------------
 
 /// Una sección que carga sola: un indicador pequeño mientras carga, un aviso
 /// compacto con "Reintentar" si falla, y el contenido cuando llegan los
