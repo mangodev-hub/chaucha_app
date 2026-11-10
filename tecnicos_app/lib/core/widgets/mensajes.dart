@@ -16,10 +16,30 @@ extension Mensajes on BuildContext {
     IconData? icono,
   }) {
     final (color, suave, iconoBase, tituloBase) = switch (tipo) {
-      TipoMensaje.info => (Colores.primario, Colores.primarioSuave, Icons.info_outline_rounded, 'Aviso'),
-      TipoMensaje.exito => (Colores.acento, Colores.acentoSuave, Icons.check_rounded, 'Listo'),
-      TipoMensaje.error => (Colores.error, Colores.errorSuave, Icons.error_outline_rounded, 'Algo salió mal'),
-      TipoMensaje.eliminado => (Colores.error, Colores.errorSuave, Icons.delete_outline_rounded, 'Eliminado'),
+      TipoMensaje.info => (
+        Colores.primario,
+        Colores.primarioSuave,
+        Icons.info_outline_rounded,
+        'Aviso',
+      ),
+      TipoMensaje.exito => (
+        Colores.acento,
+        Colores.acentoSuave,
+        Icons.check_rounded,
+        'Listo',
+      ),
+      TipoMensaje.error => (
+        Colores.error,
+        Colores.errorSuave,
+        Icons.error_outline_rounded,
+        'Algo salió mal',
+      ),
+      TipoMensaje.eliminado => (
+        Colores.error,
+        Colores.errorSuave,
+        Icons.delete_outline_rounded,
+        'Eliminado',
+      ),
     };
     final overlay = Overlay.of(this, rootOverlay: true);
     if (_avisoActual?.mounted ?? false) _avisoActual!.remove();
@@ -47,7 +67,9 @@ extension Mensajes on BuildContext {
                 color: color,
                 suave: suave,
                 icono: icono ?? iconoBase,
-                duracion: Duration(milliseconds: tipo == TipoMensaje.error ? 5000 : 3500),
+                duracion: Duration(
+                  milliseconds: tipo == TipoMensaje.error ? 5000 : 3500,
+                ),
                 onCerrar: cerrar,
               ),
             ),
@@ -125,12 +147,11 @@ class _Aviso extends StatefulWidget {
 }
 
 class _AvisoState extends State<_Aviso> with SingleTickerProviderStateMixin {
-  late final AnimationController _progreso = AnimationController(
-    vsync: this,
-    duration: widget.duracion,
-  )..addStatusListener((s) {
-      if (s == AnimationStatus.completed) widget.onCerrar();
-    });
+  late final AnimationController _progreso =
+      AnimationController(vsync: this, duration: widget.duracion)
+        ..addStatusListener((s) {
+          if (s == AnimationStatus.completed) widget.onCerrar();
+        });
 
   @override
   void initState() {
@@ -153,7 +174,10 @@ class _AvisoState extends State<_Aviso> with SingleTickerProviderStateMixin {
       curve: Movimiento.rebote,
       builder: (context, t, hijo) => Opacity(
         opacity: t.clamp(0.0, 1.0),
-        child: Transform.translate(offset: Offset(0, -24 * (1 - t)), child: hijo),
+        child: Transform.translate(
+          offset: Offset(0, -24 * (1 - t)),
+          child: hijo,
+        ),
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -161,7 +185,10 @@ class _AvisoState extends State<_Aviso> with SingleTickerProviderStateMixin {
           decoration: BoxDecoration(
             color: Colores.tarjeta,
             borderRadius: BorderRadius.circular(Radios.grande),
-            border: Border.all(color: widget.color.withValues(alpha: 0.35), width: 1.5),
+            border: Border.all(
+              color: widget.color.withValues(alpha: 0.35),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
                 color: widget.color.withValues(alpha: 0.22),
@@ -175,7 +202,12 @@ class _AvisoState extends State<_Aviso> with SingleTickerProviderStateMixin {
               ),
             ],
           ),
-          padding: const EdgeInsets.fromLTRB(Espacios.l, Espacios.l, Espacios.s, Espacios.l),
+          padding: const EdgeInsets.fromLTRB(
+            Espacios.l,
+            Espacios.l,
+            Espacios.s,
+            Espacios.l,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -206,7 +238,9 @@ class _AvisoState extends State<_Aviso> with SingleTickerProviderStateMixin {
                         const SizedBox(height: 2),
                         Text(
                           widget.texto,
-                          style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
+                          style: textos.bodyMedium?.copyWith(
+                            color: Colores.tintaSuave,
+                          ),
                         ),
                       ],
                     ),

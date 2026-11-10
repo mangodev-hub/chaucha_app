@@ -18,8 +18,8 @@ final verificacionProvider = FutureProvider.autoDispose<Verificacion>((ref) {
 
 final subirDocumentoProvider =
     AsyncNotifierProvider.autoDispose<SubirDocumentoNotifier, void>(
-  SubirDocumentoNotifier.new,
-);
+      SubirDocumentoNotifier.new,
+    );
 
 class SubirDocumentoNotifier extends AsyncNotifier<void> {
   @override

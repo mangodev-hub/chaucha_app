@@ -4,10 +4,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
-
 abstract interface class UbicacionService {
-
-
   Future<LatLng?> obtenerActual();
 }
 
@@ -28,13 +25,13 @@ class GeolocatorUbicacionService implements UbicacionService {
         return null;
       }
 
-      final posicion =
-          await Geolocator.getCurrentPosition().timeout(_tiempoMaximo);
+      final posicion = await Geolocator.getCurrentPosition().timeout(
+        _tiempoMaximo,
+      );
       return LatLng(posicion.latitude, posicion.longitude);
     } on TimeoutException {
       return null;
     } catch (_) {
-
       return null;
     }
   }

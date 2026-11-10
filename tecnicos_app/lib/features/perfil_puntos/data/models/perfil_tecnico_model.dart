@@ -42,7 +42,8 @@ class PerfilTecnicoModel {
   }
 
   /// Columnas que se piden en el `select`, con los joins a nivel y oficios.
-  static const String columnas = 'usuario_id, tarifa_base, rango_cobertura_m, '
+  static const String columnas =
+      'usuario_id, tarifa_base, rango_cobertura_m, '
       'ubicacion_actual, puntos, calificacion_promedio, total_resenas, '
       'verificado, niveles_gamificacion(nombre, comision_porcentaje), '
       'tecnico_oficios(oficio_id)';
@@ -60,16 +61,16 @@ class PerfilTecnicoModel {
   final List<int> oficioIds;
 
   PerfilTecnico aEntidad() => PerfilTecnico(
-        usuarioId: usuarioId,
-        tarifaBase: tarifaBase,
-        rangoCoberturaM: rangoCoberturaM,
-        ubicacionActual: ubicacionActual,
-        puntos: puntos,
-        calificacionPromedio: calificacionPromedio,
-        totalResenas: totalResenas,
-        verificado: verificado,
-        nivelNombre: nivelNombre,
-        comisionPorcentaje: comisionPorcentaje,
-        oficioIds: oficioIds,
-      );
+    usuarioId: usuarioId,
+    tarifaBase: tarifaBase,
+    rangoCoberturaM: rangoCoberturaM,
+    ubicacionActual: ubicacionActual,
+    puntos: puntos,
+    calificacionPromedio: calificacionPromedio,
+    totalResenas: totalResenas,
+    verificado: verificado,
+    nivelNombre: nivelNombre,
+    comisionPorcentaje: comisionPorcentaje,
+    oficioIds: oficioIds,
+  );
 }

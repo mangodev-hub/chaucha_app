@@ -3,11 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-
-
-
-
-
 class MapaUbicacion extends StatefulWidget {
   const MapaUbicacion({
     super.key,
@@ -97,7 +92,11 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
                   width: 44,
                   height: 44,
                   alignment: Alignment.topCenter,
-                  child: Icon(Icons.location_pin, color: colores.error, size: 44),
+                  child: Icon(
+                    Icons.location_pin,
+                    color: colores.error,
+                    size: 44,
+                  ),
                 ),
               ],
             ),

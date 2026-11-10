@@ -5,12 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../supabase/supabase_guard.dart';
 
-
 abstract final class Buckets {
   static const String solicitudes = 'solicitudes';
   static const String documentos = 'cedulas';
 }
-
 
 abstract interface class StorageService {
   Future<void> subirImagen({
@@ -18,7 +16,6 @@ abstract interface class StorageService {
     required String ruta,
     required Uint8List bytes,
   });
-
 
   Future<String> urlFirmada({required String bucket, required String ruta});
 }
@@ -37,7 +34,9 @@ class SupabaseStorageService implements StorageService {
     required Uint8List bytes,
   }) {
     return supabaseGuard(() async {
-      await _client.storage.from(bucket).uploadBinary(
+      await _client.storage
+          .from(bucket)
+          .uploadBinary(
             ruta,
             bytes,
             fileOptions: const FileOptions(contentType: 'image/jpeg'),
@@ -48,7 +47,8 @@ class SupabaseStorageService implements StorageService {
   @override
   Future<String> urlFirmada({required String bucket, required String ruta}) {
     return supabaseGuard(
-      () => _client.storage.from(bucket).createSignedUrl(ruta, _segundosValidez),
+      () =>
+          _client.storage.from(bucket).createSignedUrl(ruta, _segundosValidez),
     );
   }
 }

@@ -22,6 +22,11 @@ class DocumentoTecnico {
   /// URL firmada para mostrar la imagen (el bucket es privado).
   final String? url;
 
-  DocumentoTecnico conUrl(String url) =>
-      DocumentoTecnico(id: id, tipo: tipo, estado: estado, ruta: ruta, url: url);
+  DocumentoTecnico conUrl(String url) => DocumentoTecnico(
+    id: id,
+    tipo: tipo,
+    estado: estado,
+    ruta: ruta,
+    url: url,
+  );
 }

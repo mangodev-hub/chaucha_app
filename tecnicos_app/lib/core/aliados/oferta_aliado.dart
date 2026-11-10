@@ -27,7 +27,8 @@ const ofertasAliadosDemo = <OfertaAliado>[
   OfertaAliado(
     patrocinador: 'Ferretería El Constructor',
     titulo: '10% de descuento en materiales',
-    descripcion: 'Tuberías, cables y pintura para tu trabajo. Presenta tu cotización.',
+    descripcion:
+        'Tuberías, cables y pintura para tu trabajo. Presenta tu cotización.',
     url: 'https://example.com/ferreteria',
     icono: Icons.hardware,
     color: Colores.primarioProfundo,

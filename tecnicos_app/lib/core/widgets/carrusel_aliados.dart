@@ -89,10 +89,8 @@ class _CarruselAliadosState extends State<CarruselAliados> {
               controller: _pagina,
               itemCount: ofertas.length,
               onPageChanged: (i) => setState(() => _actual = i),
-              itemBuilder: (context, i) => _Slide(
-                oferta: ofertas[i],
-                onTap: () => _abrir(ofertas[i]),
-              ),
+              itemBuilder: (context, i) =>
+                  _Slide(oferta: ofertas[i], onTap: () => _abrir(ofertas[i])),
             ),
           ),
           if (ofertas.length > 1) ...[
@@ -138,10 +136,7 @@ class _Slide extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            oferta.color,
-            Color.lerp(oferta.color, Colors.black, 0.3)!,
-          ],
+          colors: [oferta.color, Color.lerp(oferta.color, Colors.black, 0.3)!],
         ),
       ),
       child: Column(
