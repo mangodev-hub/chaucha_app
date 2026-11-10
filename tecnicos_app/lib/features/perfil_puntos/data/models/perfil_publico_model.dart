@@ -7,7 +7,7 @@ abstract final class PerfilPublicoModel {
   /// Columnas de `perfiles_tecnicos` con los joins a nivel, usuario y oficios.
   static const String columnasPerfil =
       'usuario_id, verificado, calificacion_promedio, total_resenas, '
-      'niveles_gamificacion(nombre), usuarios(nombres, apellidos), '
+      'niveles_gamificacion(nombre), usuarios!fk_perfiles_usuario(nombres, apellidos), '
       'tecnico_oficios(oficios(nombre))';
 
   /// Columnas de `resenas` con el autor. `resenas` tiene dos claves hacia
