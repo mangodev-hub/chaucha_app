@@ -2,7 +2,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/errors/app_failure.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/supabase/supabase_extensions.dart';
 import '../../../../core/supabase/supabase_guard.dart';
@@ -11,7 +10,6 @@ import '../../domain/entities/nueva_cotizacion.dart';
 import '../../domain/entities/tarifa.dart';
 import '../../domain/repositories/cotizacion_repository.dart';
 import '../models/cotizacion_model.dart';
-import '../models/estado_cotizacion_db.dart';
 
 final cotizacionRepositoryProvider = Provider<CotizacionRepository>(
   (ref) => SupabaseCotizacionRepository(ref.watch(supabaseClientProvider)),
@@ -75,17 +73,20 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
     });
   }
 
-@override
-Future<void> enviarTarifa(String cotizacionId, NuevaTarifa tarifa) {
-  return supabaseGuard(() async {
-    await _client.rpc('enviar_tarifa', params: {
-      'p_cotizacion_id': cotizacionId,
-      'p_mano_obra': tarifa.precioAcordado,
-      'p_materiales': tarifa.materiales,
-      'p_fecha_servicio': tarifa.fechaServicio?.toUtc().toIso8601String(),
+  @override
+  Future<void> enviarTarifa(String cotizacionId, NuevaTarifa tarifa) {
+    return supabaseGuard(() async {
+      await _client.rpc(
+        'enviar_tarifa',
+        params: {
+          'p_cotizacion_id': cotizacionId,
+          'p_mano_obra': tarifa.precioAcordado,
+          'p_materiales': tarifa.materiales,
+          'p_fecha_servicio': tarifa.fechaServicio?.toUtc().toIso8601String(),
+        },
+      );
     });
-  });
-}
+  }
 
   @override
   Future<void> rechazarTarifa(String cotizacionId) {

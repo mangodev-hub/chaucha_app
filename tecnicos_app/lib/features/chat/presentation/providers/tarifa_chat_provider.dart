@@ -106,7 +106,6 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
   Future<ContextoChat> _contexto() =>
       ref.refresh(contextoChatProvider(conversacionId).future);
 
-
   Future<bool> _ejecutar(Future<void> Function() accion) async {
     if (state.isLoading) return false;
 

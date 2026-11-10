@@ -23,7 +23,7 @@ abstract final class CotizacionModel {
       'materiales, total, tarifa_enviada, fecha_servicio, estado, creado_en, '
       'perfiles_tecnicos!fk_cotizaciones_tecnico(calificacion_promedio, '
       'usuarios!fk_perfiles_usuario(nombres, apellidos))';
-      
+
   static Cotizacion desdeFila(Map<String, dynamic> json) {
     // El join puede llegar como objeto o como lista de un elemento.
     final perfil = anidado(json['perfiles_tecnicos']);
@@ -66,7 +66,6 @@ abstract final class CotizacionModel {
     'detalle': solucion.trim(),
     'materiales': 0,
   };
-
 
   /// Cambios cuando el cliente rechaza el ticket.
   static const Map<String, dynamic> cambiosRechazo = {'tarifa_enviada': false};
