@@ -25,10 +25,16 @@ void main() {
   group('Verificacion.puedeSubir / todoEnviado', () {
     test('puede subir si no hay documento o si fue rechazado', () {
       final verificacion = Verificacion({
-        TipoDocumento.cedulaFrontal:
-            _doc('1', TipoDocumento.cedulaFrontal, EstadoDocumento.pendiente),
-        TipoDocumento.selfie:
-            _doc('2', TipoDocumento.selfie, EstadoDocumento.rechazada),
+        TipoDocumento.cedulaFrontal: _doc(
+          '1',
+          TipoDocumento.cedulaFrontal,
+          EstadoDocumento.pendiente,
+        ),
+        TipoDocumento.selfie: _doc(
+          '2',
+          TipoDocumento.selfie,
+          EstadoDocumento.rechazada,
+        ),
       });
 
       expect(verificacion.puedeSubir(TipoDocumento.cedulaFrontal), isFalse);

@@ -11,23 +11,23 @@ PerfilTecnico _perfil({
   List<int> oficioIds = const [1],
   LatLng? ubicacion = _centro,
   int rango = 5000,
-}) =>
-    PerfilTecnico(
-      usuarioId: 't1',
-      tarifaBase: 10,
-      rangoCoberturaM: rango,
-      puntos: 0,
-      calificacionPromedio: 0,
-      totalResenas: 0,
-      verificado: false,
-      nivelNombre: 'Bronce',
-      comisionPorcentaje: 12,
-      oficioIds: oficioIds,
-      ubicacionActual: ubicacion,
-    );
+}) => PerfilTecnico(
+  usuarioId: 't1',
+  tarifaBase: 10,
+  rangoCoberturaM: rango,
+  puntos: 0,
+  calificacionPromedio: 0,
+  totalResenas: 0,
+  verificado: false,
+  nivelNombre: 'Bronce',
+  comisionPorcentaje: 12,
+  oficioIds: oficioIds,
+  ubicacionActual: ubicacion,
+);
 
 /// Punto a [grados] de latitud al norte del centro (0,009° ≈ 1 km).
-LatLng _alNorte(double grados) => LatLng(_centro.latitude + grados, _centro.longitude);
+LatLng _alNorte(double grados) =>
+    LatLng(_centro.latitude + grados, _centro.longitude);
 
 void main() {
   late SolicitudesFalsas solicitudes;

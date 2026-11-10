@@ -8,18 +8,26 @@ import 'package:tecnicos_app/features/solicitudes/domain/entities/foto_solicitud
 import 'falsos.dart';
 
 DetalleSolicitud _detalle(Usuario usuario) => DetalleSolicitud(
-      solicitud: solicitudDePrueba(),
-      fotos: const [
-        FotoSolicitud(tipo: TipoArchivo.problema, url: 'p1'),
-        FotoSolicitud(tipo: TipoArchivo.evidencia, url: 'e1'),
-        FotoSolicitud(tipo: TipoArchivo.problema, url: 'p2'),
-      ],
-      cotizaciones: [
-        cotizacionDePrueba(id: 'q1', tecnicoId: 't1', estado: EstadoCotizacion.aceptada),
-        cotizacionDePrueba(id: 'q2', tecnicoId: 't2', estado: EstadoCotizacion.rechazada),
-      ],
-      usuario: usuario,
-    );
+  solicitud: solicitudDePrueba(),
+  fotos: const [
+    FotoSolicitud(tipo: TipoArchivo.problema, url: 'p1'),
+    FotoSolicitud(tipo: TipoArchivo.evidencia, url: 'e1'),
+    FotoSolicitud(tipo: TipoArchivo.problema, url: 'p2'),
+  ],
+  cotizaciones: [
+    cotizacionDePrueba(
+      id: 'q1',
+      tecnicoId: 't1',
+      estado: EstadoCotizacion.aceptada,
+    ),
+    cotizacionDePrueba(
+      id: 'q2',
+      tecnicoId: 't2',
+      estado: EstadoCotizacion.rechazada,
+    ),
+  ],
+  usuario: usuario,
+);
 
 void main() {
   test('el cliente ve la cotización aceptada y no es técnico asignado', () {
@@ -49,7 +57,10 @@ void main() {
   test('separa las fotos del problema y la evidencia', () {
     final detalle = _detalle(usuarioDePrueba('c1', Rol.cliente));
 
-    expect(detalle.fotosDe(TipoArchivo.problema).map((f) => f.url), ['p1', 'p2']);
+    expect(detalle.fotosDe(TipoArchivo.problema).map((f) => f.url), [
+      'p1',
+      'p2',
+    ]);
     expect(detalle.fotosDe(TipoArchivo.evidencia).map((f) => f.url), ['e1']);
   });
 }
