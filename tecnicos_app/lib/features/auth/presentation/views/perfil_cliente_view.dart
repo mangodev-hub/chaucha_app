@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/carrusel_aliados.dart';
-import '../../../solicitudes/domain/entities/solicitud.dart';
-import '../../../solicitudes/presentation/providers/listas_provider.dart';
+import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
+import '../providers/resenas_cliente_provider.dart';
 import '../providers/sesion_provider.dart';
 
 const _azul = Colores.primarioVivo;
@@ -42,11 +40,6 @@ String _mesAnio(DateTime f) {
   return '${m[f.month - 1]} ${f.year}';
 }
 
-String _fecha(DateTime f) {
-  final d = f.toLocal();
-  return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-}
-
 class PerfilClienteView extends ConsumerWidget {
   const PerfilClienteView({super.key});
 
@@ -54,17 +47,7 @@ class PerfilClienteView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final usuario = ref.watch(usuarioActualProvider);
     if (usuario == null) return const SizedBox.shrink();
-    final todas =
-        ref.watch(misSolicitudesProvider).value ?? const <Solicitud>[];
-    final completadas = [
-      for (final s in todas)
-        if (s.estado == EstadoSolicitud.completada) s,
-    ];
-    final pendientes = [
-      for (final s in todas)
-        if (s.estado.recibeCotizaciones) s,
-    ];
-    final activas = pendientes.length;
+    final resumen = ref.watch(resenasRecibidasProvider).value;
 
     return ColoredBox(
       color: _fondo,
@@ -76,13 +59,7 @@ class PerfilClienteView extends ConsumerWidget {
             child: LayoutBuilder(
               builder: (context, c) {
                 final ancho = c.maxWidth >= 900;
-                final izquierda = Column(
-                  children: [
-                    _Activas(pendientes),
-                    const SizedBox(height: 24),
-                    _Historial(completadas),
-                  ],
-                );
+                const izquierda = _Resenas();
                 const derecha = Column(
                   children: [
                     _Ubicacion(),
@@ -97,18 +74,18 @@ class PerfilClienteView extends ConsumerWidget {
                     _Cabecera(usuario.nombreCompleto),
                     const SizedBox(height: 24),
                     _Estadisticas(
-                      completadas: completadas.length,
-                      activas: activas,
+                      promedio: resumen?.promedio ?? 0,
+                      total: resumen?.total ?? 0,
                       desde: usuario.creadoEn.toLocal(),
                     ),
                     const SizedBox(height: 24),
                     if (ancho)
-                      Row(
+                      const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(flex: 8, child: izquierda),
-                          const SizedBox(width: 24),
-                          const Expanded(flex: 4, child: derecha),
+                          SizedBox(width: 24),
+                          Expanded(flex: 4, child: derecha),
                         ],
                       )
                     else ...[
@@ -362,13 +339,13 @@ Future<void> _mostrarBaja(BuildContext context) {
 
 class _Estadisticas extends StatelessWidget {
   const _Estadisticas({
-    required this.completadas,
-    required this.activas,
+    required this.promedio,
+    required this.total,
     required this.desde,
   });
 
-  final int completadas;
-  final int activas;
+  final double promedio;
+  final int total;
   final DateTime desde;
 
   @override
@@ -376,19 +353,19 @@ class _Estadisticas extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, c) {
         final a = _Estadistica(
-          Icons.check_circle_outline,
-          '$completadas',
-          'Solicitudes completadas',
+          Icons.star_outline_rounded,
+          total == 0 ? '—' : promedio.toStringAsFixed(1),
+          'Calificación promedio',
         );
         final b = _Estadistica(
+          Icons.rate_review_outlined,
+          '$total',
+          'Reseñas recibidas',
+        );
+        final d = _Estadistica(
           Icons.calendar_month_outlined,
           _mesAnio(desde),
           'Miembro desde',
-        );
-        final d = _Estadistica(
-          Icons.pending_actions_outlined,
-          '$activas',
-          'Solicitudes activas',
         );
         if (c.maxWidth >= 900) {
           return Row(
@@ -461,13 +438,12 @@ class _Estadistica extends StatelessWidget {
   }
 }
 
-class _Historial extends StatelessWidget {
-  const _Historial(this.solicitudes);
-
-  final List<Solicitud> solicitudes;
+class _Resenas extends ConsumerWidget {
+  const _Resenas();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final datos = ref.watch(resenasRecibidasProvider);
     return _Tarjeta(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -476,7 +452,7 @@ class _Historial extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  'Historial de servicios',
+                  'Reseñas de técnicos',
                   style: TextStyle(
                     color: _texto,
                     fontSize: 20,
@@ -484,112 +460,28 @@ class _Historial extends StatelessWidget {
                   ),
                 ),
               ),
-              _Etiqueta('${solicitudes.length} servicios'),
+              if (datos.value case final r? when r.total > 0)
+                _Etiqueta('${r.promedio.toStringAsFixed(1)} ★'),
             ],
           ),
           const SizedBox(height: 16),
-          if (solicitudes.isEmpty)
-            const Text(
-              'Aún no tienes servicios completados.',
+          datos.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => const Text(
+              'No pudimos cargar tus reseñas.',
               style: TextStyle(color: _gris, fontSize: 14),
-            )
-          else
-            for (final s in solicitudes) ...[
-              _FilaTrabajo(s),
-              const SizedBox(height: 12),
-            ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Activas extends StatelessWidget {
-  const _Activas(this.solicitudes);
-
-  final List<Solicitud> solicitudes;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Tarjeta(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Solicitudes activas',
-                  style: TextStyle(
-                    color: _texto,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              _Etiqueta('${solicitudes.length} en curso'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (solicitudes.isEmpty)
-            const Text(
-              'No tienes solicitudes en curso.',
-              style: TextStyle(color: _gris, fontSize: 14),
-            )
-          else
-            for (final s in solicitudes) ...[
-              InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => context.push(
-                  AppRoutes.detalleSolicitud(s.id, esCliente: true),
-                ),
-                child: _FilaTrabajo(s),
-              ),
-              const SizedBox(height: 12),
-            ],
-        ],
-      ),
-    );
-  }
-}
-
-class _FilaTrabajo extends StatelessWidget {
-  const _FilaTrabajo(this.s);
-
-  final Solicitud s;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _borde),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _Etiqueta(s.oficioNombre),
-              const SizedBox(width: 12),
-              Text(
-                _fecha(s.creadoEn),
-                style: const TextStyle(color: _gris, fontSize: 13),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            s.descripcion,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _texto,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
             ),
+            data: (r) => r.resenas.isEmpty
+                ? const Text(
+                    'Aún no tienes reseñas. Aparecerán cuando un técnico '
+                    'califique un trabajo contigo.',
+                    style: TextStyle(color: _gris, fontSize: 14),
+                  )
+                : Column(
+                    children: [
+                      for (final res in r.resenas) TarjetaResena(resena: res),
+                    ],
+                  ),
           ),
         ],
       ),
