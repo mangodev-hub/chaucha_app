@@ -58,7 +58,7 @@ abstract final class SolicitudAdminModel {
 abstract final class RevisionTecnicoModel {
   static const String columnas =
       '${DocumentoTecnicoModel.columnas}, tecnico_id, '
-      'perfiles_tecnicos(usuarios(nombres, apellidos, identidades(cedula)))';
+      'perfiles_tecnicos(usuarios!fk_perfiles_usuario(nombres, apellidos, identidades(cedula)))';
 
   /// Agrupa las filas por técnico, conservando el orden de llegada.
   static List<RevisionTecnico> agrupar(
