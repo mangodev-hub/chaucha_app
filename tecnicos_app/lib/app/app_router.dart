@@ -97,6 +97,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               Icons.assignment_outlined,
               MisSolicitudesView(),
               iconoActivo: Icons.assignment_rounded,
+              tiposNotificacion: ['cotizacion', 'tarifa', 'mensaje'],
             ),
             Destino(
               'Mi perfil',
@@ -152,7 +153,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               Icons.work_outline,
               MisTrabajosView(),
               iconoActivo: Icons.work_rounded,
-              corto: 'Trabajos',
+              tiposNotificacion: [
+                'chat',
+                'mensaje',
+                'cotizacion_aceptada',
+                'tarifa_cancelada',
+                'cierre',
+              ],
             ),
             Destino(
               'Mi perfil',
