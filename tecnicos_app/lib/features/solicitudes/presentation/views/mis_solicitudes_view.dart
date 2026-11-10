@@ -13,6 +13,7 @@ import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
 import '../../data/repositories/supabase_solicitud_repository.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/listas_provider.dart';
@@ -30,9 +31,10 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
   bool _verActivas = true;
 
   Future<void> _nueva() async {
+    if (!await exigirVerificado(context, ref)) return;
+    if (!mounted) return;
     final creada = await context.push<String>(AppRoutes.clienteNuevaSolicitud);
     if (!mounted || creada == null) return;
-    // Eligió "Ver mi solicitud" en la pantalla de éxito.
     await context.push(AppRoutes.detalleSolicitud(creada, esCliente: true));
     if (!mounted) return;
     ref.invalidate(misSolicitudesProvider);

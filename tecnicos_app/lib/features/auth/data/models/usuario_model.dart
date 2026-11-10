@@ -1,4 +1,3 @@
-// Fila de `public.usuarios` (sin la columna geográfica).
 import '../../domain/entities/rol.dart';
 import '../../domain/entities/usuario.dart';
 import 'rol_db.dart';
@@ -12,6 +11,7 @@ class UsuarioModel {
     required this.creadoEn,
     this.fotoPerfilRuta,
     this.perfilCompleto = true,
+    this.verificado = false,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
@@ -26,12 +26,13 @@ class UsuarioModel {
       apellidos: (json['apellidos'] as String?) ?? '',
       fotoPerfilRuta: json['foto_perfil_ruta'] as String?,
       creadoEn: DateTime.parse(json['creado_en'] as String),
+      verificado: (json['verificado'] as bool?) ?? false,
     );
   }
 
   /// Columnas que se piden en el `select`.
   static const String columnas =
-      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, '
+      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, '
       'identidades(usuario_id)';
 
   final String id;
@@ -41,6 +42,7 @@ class UsuarioModel {
   final String? fotoPerfilRuta;
   final DateTime creadoEn;
   final bool perfilCompleto;
+  final bool verificado;
 
   Usuario aEntidad() => Usuario(
     id: id,
@@ -50,5 +52,6 @@ class UsuarioModel {
     fotoPerfilRuta: fotoPerfilRuta,
     creadoEn: creadoEn,
     perfilCompleto: perfilCompleto,
+    verificado: verificado,
   );
 }

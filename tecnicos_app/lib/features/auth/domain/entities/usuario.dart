@@ -1,4 +1,3 @@
-// Usuario de la app (perfil de `public.usuarios`).
 import 'rol.dart';
 
 class Usuario {
@@ -10,6 +9,7 @@ class Usuario {
     required this.creadoEn,
     this.fotoPerfilRuta,
     this.perfilCompleto = true,
+    this.verificado = false,
   });
 
   final String id;
@@ -17,8 +17,8 @@ class Usuario {
   final String nombres;
   final String apellidos;
   final bool perfilCompleto;
+  final bool verificado;
 
-  /// Ruta del archivo en Storage (no una URL).
   final String? fotoPerfilRuta;
   final DateTime creadoEn;
 
