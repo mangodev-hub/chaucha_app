@@ -11,6 +11,7 @@ import '../features/notificaciones/presentation/providers/notificaciones_provide
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
 import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
 import 'menu_cuenta.dart';
+import '../core/providers/sincronizacion_provider.dart';
 
 class Destino {
   const Destino(
@@ -77,8 +78,10 @@ class _InicioShellState extends ConsumerState<InicioShell> {
       _indicePerfil < 0 ? null : () => _cambiar(_indicePerfil);
 
   @override
-  Widget build(BuildContext context) =>
-      EscuchaNotificaciones(child: _contenido(context));
+  Widget build(BuildContext context) {
+    ref.watch(sincronizacionProvider);
+    return EscuchaNotificaciones(child: _contenido(context));
+  }
 
   Widget _contenido(BuildContext context) {
     final destinos = widget.destinos;
