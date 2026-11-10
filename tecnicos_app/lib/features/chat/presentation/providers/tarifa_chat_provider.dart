@@ -99,9 +99,6 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
         throw const AppFailure('Este ticket ya no se puede rechazar.');
       }
       await ref.read(cotizacionRepositoryProvider).rechazarTarifa(oferta!.id);
-      await _avisarEnElChat(
-        'Rechacé el ticket. Sigamos conversando para acordar el precio.',
-      );
     });
   }
 
@@ -109,17 +106,6 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
   Future<ContextoChat> _contexto() =>
       ref.refresh(contextoChatProvider(conversacionId).future);
 
-  /// El aviso en el chat es complementario: si falla, el cambio ya quedó
-  /// guardado, así que no se trata como error.
-  Future<void> _avisarEnElChat(String texto) async {
-    try {
-      await ref
-          .read(chatRepositoryProvider)
-          .enviar(conversacionId: conversacionId, texto: texto);
-    } on AppFailure {
-      // Ver comentario del método.
-    }
-  }
 
   Future<bool> _ejecutar(Future<void> Function() accion) async {
     if (state.isLoading) return false;

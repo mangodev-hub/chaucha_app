@@ -273,18 +273,23 @@ class _Tecnico extends StatelessWidget {
   }
 }
 
-typedef DatosOferta = ({double precioBase, String solucion});
 
 /// Formulario del técnico: precio base y cómo resolvería el problema.
-Future<DatosOferta?> mostrarFormularioOferta(BuildContext context) {
-  return showDialog<DatosOferta>(
+Future<String?> mostrarFormularioOferta(
+  BuildContext context, {
+  required double tarifaBase,
+}) {
+  return showDialog<String>(
     context: context,
-    builder: (context) => const _FormularioOferta(),
+    builder: (context) => _FormularioOferta(tarifaBase: tarifaBase),
   );
 }
 
 class _FormularioOferta extends StatefulWidget {
-  const _FormularioOferta();
+  const _FormularioOferta({required this.tarifaBase});
+
+  final double tarifaBase;
+
 
   @override
   State<_FormularioOferta> createState() => _FormularioOfertaState();
@@ -292,12 +297,10 @@ class _FormularioOferta extends StatefulWidget {
 
 class _FormularioOfertaState extends State<_FormularioOferta> {
   final _formKey = GlobalKey<FormState>();
-  final _precioBase = TextEditingController();
   final _solucion = TextEditingController();
 
   @override
   void dispose() {
-    _precioBase.dispose();
     _solucion.dispose();
     super.dispose();
   }
@@ -311,10 +314,7 @@ class _FormularioOfertaState extends State<_FormularioOferta> {
 
   void _enviar() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    Navigator.pop<DatosOferta>(context, (
-      precioBase: double.parse(_precioBase.text.trim().replaceAll(',', '.')),
-      solucion: _solucion.text.trim(),
-    ));
+    Navigator.pop<String>(context, _solucion.text.trim());
   }
 
   @override
@@ -329,19 +329,32 @@ class _FormularioOfertaState extends State<_FormularioOferta> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CampoEtiquetado(
-                etiqueta: 'Precio base',
-                ayuda: 'USD',
-                child: TextFormField(
-                  controller: _precioBase,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: '0.00',
-                    prefixIcon: Icon(Icons.attach_money),
-                  ),
-                  validator: _validarPrecio,
+              Container(
+                padding: const EdgeInsets.all(Espacios.m),
+                decoration: BoxDecoration(
+                  color: Colores.superficie,
+                  borderRadius: BorderRadius.circular(Radios.medio),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 18,
+                      color: Colores.tintaSuave,
+                    ),
+                    const SizedBox(width: Espacios.s),
+                    Expanded(
+                      child: Text(
+                        'Tu tarifa base (de tu perfil)',
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: Colores.tintaSuave),
+                      ),
+                    ),
+                    Text(
+                      Formatos.dinero(widget.tarifaBase),
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: Espacios.l),

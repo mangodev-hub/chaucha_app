@@ -49,6 +49,18 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
   }
 
   @override
+  Future<List<Cotizacion>> deSolicitudes(List<String> solicitudIds) {
+    if (solicitudIds.isEmpty) return Future.value(const <Cotizacion>[]);
+    return supabaseGuard(() async {
+      final filas = await _client
+          .from(_tabla)
+          .select(CotizacionModel.columnas)
+          .inFilter('solicitud_id', solicitudIds);
+      return filas.map(CotizacionModel.desdeFila).toList();
+    });
+  }
+
+  @override
   Future<void> enviar(NuevaCotizacion nueva) {
     return supabaseGuard(() async {
       await _client
@@ -57,7 +69,6 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
             CotizacionModel.filaNueva(
               solicitudId: nueva.solicitudId,
               tecnicoId: _client.uidActual,
-              precioBase: nueva.precioBase,
               solucion: nueva.solucion,
             ),
           );
@@ -67,14 +78,11 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
 @override
 Future<void> enviarTarifa(String cotizacionId, NuevaTarifa tarifa) {
   return supabaseGuard(() async {
-    final f = tarifa.fechaServicio;
     await _client.rpc('enviar_tarifa', params: {
       'p_cotizacion_id': cotizacionId,
       'p_mano_obra': tarifa.precioAcordado,
       'p_materiales': tarifa.materiales,
-      'p_fecha_servicio': f == null
-          ? null
-          : DateTime(f.year, f.month, f.day, 12).toUtc().toIso8601String(),
+      'p_fecha_servicio': tarifa.fechaServicio?.toUtc().toIso8601String(),
     });
   });
 }
@@ -82,17 +90,10 @@ Future<void> enviarTarifa(String cotizacionId, NuevaTarifa tarifa) {
   @override
   Future<void> rechazarTarifa(String cotizacionId) {
     return supabaseGuard(() async {
-      final filas = await _client
-          .from(_tabla)
-          .update(CotizacionModel.cambiosRechazo)
-          .eq('id', cotizacionId)
-          .eq('estado', EstadoCotizacion.pendiente.valorDb)
-          .select('id');
-      if (filas.isEmpty) {
-        throw const AppFailure(
-          'No se pudo rechazar el ticket. Puede que ya no esté pendiente.',
-        );
-      }
+      await _client.rpc(
+        'rechazar_tarifa',
+        params: {'p_cotizacion_id': cotizacionId},
+      );
     });
   }
 

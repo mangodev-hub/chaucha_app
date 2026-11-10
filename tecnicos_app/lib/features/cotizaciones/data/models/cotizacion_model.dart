@@ -48,7 +48,7 @@ abstract final class CotizacionModel {
           ? Tarifa(
               precioAcordado: manoObra,
               materiales: materiales,
-              fechaServicio: fecha is String ? aFecha(fecha) : null,
+              fechaServicio: fecha is String ? aFecha(fecha).toLocal() : null,
             )
           : null,
       estado: EstadoCotizacionDb.desdeDb(json['estado'] as String),
@@ -56,16 +56,13 @@ abstract final class CotizacionModel {
     );
   }
 
-  /// Fila para insertar una oferta nueva (todavía sin ticket).
   static Map<String, dynamic> filaNueva({
     required String solicitudId,
     required String tecnicoId,
-    required double precioBase,
     required String solucion,
   }) => {
     'solicitud_id': solicitudId,
     'tecnico_id': tecnicoId,
-    'precio_base': precioBase,
     'detalle': solucion.trim(),
     'materiales': 0,
   };

@@ -49,8 +49,8 @@ class DesgloseTarifa extends StatelessWidget {
           ),
         if (fecha != null)
           _Fila(
-            etiqueta: 'Fecha del servicio',
-            valor: Formatos.fechaCorta(fecha),
+            etiqueta: 'Fecha y hora',
+            valor: '${Formatos.fechaCorta(fecha)} · ${Formatos.hora(fecha)}',
           ),
         const Padding(
           padding: EdgeInsets.symmetric(vertical: Espacios.s),
@@ -391,21 +391,39 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
 
   Future<void> _elegirFecha() async {
     final hoy = DateUtils.dateOnly(DateTime.now());
-    final elegida = await showDatePicker(
+    final dia = await showDatePicker(
       context: context,
-      initialDate: _fecha ?? hoy.add(const Duration(days: 1)),
-      firstDate: hoy.add(const Duration(days: 1)),
+      initialDate: _fecha ?? hoy,
+      firstDate: hoy,
       lastDate: hoy.add(const Duration(days: 90)),
       helpText: 'Fecha del servicio',
     );
-    if (elegida != null && mounted) setState(() => _fecha = elegida);
+    if (dia == null || !mounted) return;
+    final hora = await showTimePicker(
+      context: context,
+      initialTime: _fecha == null
+          ? const TimeOfDay(hour: 9, minute: 0)
+          : TimeOfDay.fromDateTime(_fecha!),
+      helpText: 'Hora del servicio',
+    );
+    if (hora == null || !mounted) return;
+    setState(
+      () => _fecha = DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute),
+    );
   }
 
   void _enviar() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (_fecha == null) {
+      if (_fecha == null) {
+        context.mostrarMensaje(
+          'Elige la fecha del servicio.',
+          tipo: TipoMensaje.error,
+        );
+        return;
+      }
+        if (!_fecha!.isAfter(DateTime.now())) {
       context.mostrarMensaje(
-        'Elige la fecha del servicio.',
+        'Elige una fecha y hora futuras.',
         tipo: TipoMensaje.error,
       );
       return;
@@ -451,7 +469,7 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
                     const SizedBox(width: Espacios.s),
                     Expanded(
                       child: Text(
-                        'Tu precio base',
+                        'Tu precio base (solo referencia)',
                         style: textos.bodyMedium?.copyWith(
                           color: Colores.tintaSuave,
                         ),
@@ -466,8 +484,8 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
               ),
               const SizedBox(height: Espacios.l),
               CampoEtiquetado(
-                etiqueta: 'Precio acordado',
-                ayuda: 'USD',
+                etiqueta: 'Precio del trabajo',
+                ayuda: 'Mano de obra · USD',
                 child: TextFormField(
                   controller: _precio,
                   keyboardType: teclado,
@@ -476,6 +494,11 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
                   ),
                   validator: _validarPrecio,
                 ),
+              ),
+              const SizedBox(height: Espacios.s),
+              Text(
+                'Parte de tu precio base. Cámbialo si acordaron otro valor.',
+                style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
               ),
               const SizedBox(height: Espacios.l),
               CampoEtiquetado(
@@ -493,52 +516,68 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
               ),
               const SizedBox(height: Espacios.l),
               CampoEtiquetado(
-                etiqueta: 'Fecha del servicio',
+                etiqueta: 'Fecha y hora del servicio',
                 ayuda: 'Obligatoria',
                 child: OutlinedButton.icon(
                   onPressed: _elegirFecha,
                   icon: const Icon(Icons.event_outlined),
                   label: Text(
-                    fecha == null ? 'Elegir fecha' : Formatos.fechaCorta(fecha),
+                    fecha == null
+                        ? 'Elegir fecha y hora'
+                        : '${Formatos.fechaCorta(fecha)} · ${Formatos.hora(fecha)}',
                   ),
                 ),
               ),
               const SizedBox(height: Espacios.l),
-              // Total que verá el cliente, recalculado mientras se escribe.
               ListenableBuilder(
                 listenable: Listenable.merge([_precio, _materiales]),
-                builder: (context, _) => Container(
-                  padding: const EdgeInsets.all(Espacios.m + 2),
-                  decoration: BoxDecoration(
-                    color: Colores.primarioSuave,
-                    borderRadius: BorderRadius.circular(Radios.medio),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Total',
-                        style: textos.titleMedium?.copyWith(
-                          color: Colores.primarioOscuro,
+                builder: (context, _) {
+                  final trabajo = _leer(_precio) ?? 0;
+                  final materiales = _leer(_materiales) ?? 0;
+                  return Container(
+                    padding: const EdgeInsets.all(Espacios.m + 2),
+                    decoration: BoxDecoration(
+                      color: Colores.primarioSuave,
+                      borderRadius: BorderRadius.circular(Radios.medio),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Total',
+                              style: textos.titleMedium?.copyWith(
+                                color: Colores.primarioOscuro,
+                              ),
+                            ),
+                            const SizedBox(width: Espacios.s),
+                            Expanded(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  Formatos.dinero(trabajo + materiales),
+                                  style: textos.titleLarge?.copyWith(
+                                    color: Colores.primarioOscuro,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: Espacios.s),
-                      Expanded(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            Formatos.dinero(
-                              (_leer(_precio) ?? 0) + (_leer(_materiales) ?? 0),
-                            ),
-                            style: textos.titleLarge?.copyWith(
-                              color: Colores.primarioOscuro,
-                            ),
+                        const SizedBox(height: Espacios.s),
+                        Text(
+                          '${Formatos.dinero(trabajo)} trabajo + '
+                          '${Formatos.dinero(materiales)} materiales',
+                          style: textos.bodySmall?.copyWith(
+                            color: Colores.tintaSuave,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
+                      ],
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: Espacios.m),
               const AvisoBanner(

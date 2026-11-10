@@ -2,6 +2,7 @@
 import '../entities/conversacion.dart';
 import '../entities/conversacion_pendiente.dart';
 import '../entities/mensaje.dart';
+import '../entities/resumen_chat.dart';
 
 abstract interface class ChatRepository {
   /// Datos de una conversación (de qué solicitud y con qué técnico).
@@ -22,4 +23,6 @@ abstract interface class ChatRepository {
   Stream<List<Mensaje>> mensajes(String conversacionId);
 
   Future<void> enviar({required String conversacionId, required String texto});
+
+    Future<List<ResumenChat>> misChats();
 }
