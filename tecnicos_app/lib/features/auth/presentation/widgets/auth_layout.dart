@@ -263,7 +263,14 @@ class _PanelMarca extends StatelessWidget {
                     : _titular(textos.displaySmall),
               ),
             ),
-            SvgPicture.asset('assets/img/tecnicos.svg', width: double.infinity),
+              LayoutBuilder(
+                builder: (context, c) => SvgPicture.asset(
+                  'assets/img/tecnicos.svg',
+                  width: c.maxWidth,
+                  height: c.maxWidth * 160 / 460,
+                  fit: BoxFit.contain,
+                ),
+              ),
           ],
         ),
       ),
