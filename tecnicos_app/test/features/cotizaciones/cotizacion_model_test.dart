@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tecnicos_app/features/cotizaciones/data/models/cotizacion_model.dart';
 import 'package:tecnicos_app/features/cotizaciones/data/models/estado_cotizacion_db.dart';
 import 'package:tecnicos_app/features/cotizaciones/domain/entities/cotizacion.dart';
-import 'package:tecnicos_app/features/cotizaciones/domain/entities/tarifa.dart';
 
 Map<String, dynamic> _fila({
   Object? perfil,
@@ -125,31 +124,6 @@ void main() {
       'precio_base': 40.0,
       'detalle': 'Reviso la instalación.',
       'materiales': 0,
-    });
-  });
-
-  group('cambiosTarifa', () {
-    test('envía el precio acordado, los materiales y marca el ticket', () {
-      final cambios = CotizacionModel.cambiosTarifa(
-        const NuevaTarifa(precioAcordado: 45, materiales: 10),
-      );
-
-      expect(cambios, {
-        'mano_obra': 45.0,
-        'materiales': 10.0,
-        'fecha_servicio': null,
-        'tarifa_enviada': true,
-      });
-    });
-
-    test('la fecha del servicio se guarda sin cambiar de día', () {
-      final cambios = CotizacionModel.cambiosTarifa(
-        NuevaTarifa(precioAcordado: 45, fechaServicio: DateTime(2026, 11, 12)),
-      );
-
-      final guardada = DateTime.parse(cambios['fecha_servicio'] as String)
-          .toLocal();
-      expect((guardada.year, guardada.month, guardada.day), (2026, 11, 12));
     });
   });
 

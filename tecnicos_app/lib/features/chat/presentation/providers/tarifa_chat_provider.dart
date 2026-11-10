@@ -1,14 +1,13 @@
 // Contexto del chat (solicitud y oferta del técnico, con su ticket) y las
 // acciones del ticket de trabajo: el técnico lo envía; el cliente lo
-// confirma o lo rechaza. Cada acción deja un mensaje en el chat, y ese
-// mensaje hace que la otra persona vea el cambio (ver `ChatView`).
+// confirma o lo rechaza. El envío y la confirmación dejan su mensaje en el
+// chat desde la base de datos; el rechazo lo avisa la app.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/app_failure.dart';
 import '../../../../core/errors/async_guard.dart';
-import '../../../../core/utils/formatos.dart';
 import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
 import '../../../cotizaciones/domain/entities/reglas_tarifa.dart';
 import '../../../cotizaciones/domain/entities/tarifa.dart';
@@ -44,8 +43,8 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
-  /// El técnico envía el ticket con el precio acordado por chat y le avisa
-  /// al cliente. El precio base de su oferta no cambia.
+  /// El técnico envía el ticket con el precio acordado por chat. La base
+  /// avisa al cliente en el chat. El precio base de su oferta no cambia.
   Future<bool> enviar(NuevaTarifa tarifa) {
     return _ejecutar(() async {
       if (tarifa.precioAcordado <= 0) {
@@ -65,17 +64,12 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
       await ref
           .read(cotizacionRepositoryProvider)
           .enviarTarifa(contexto.oferta!.id, tarifa);
-      final total = tarifa.precioAcordado + tarifa.materiales;
-      await _avisarEnElChat(
-        'Te envié un ticket de trabajo por ${Formatos.dinero(total)}. '
-        'Revísalo y confírmalo para empezar.',
-      );
     });
   }
 
   /// El cliente confirma: se acepta la oferta con el ticket (la solicitud
   /// pasa a "En curso" y las demás ofertas no se eligen), en una sola
-  /// transacción (RPC `aceptar_cotizacion`).
+  /// transacción (RPC `aceptar_cotizacion`). La base avisa en el chat.
   Future<bool> confirmar() {
     return _ejecutar(() async {
       final contexto = await _contexto();
@@ -88,10 +82,6 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
         throw const AppFailure('Este ticket ya no se puede confirmar.');
       }
       await ref.read(cotizacionRepositoryProvider).aceptar(oferta!);
-      await _avisarEnElChat(
-        'Confirmé el ticket por ${Formatos.dinero(oferta.tarifa!.total)}. '
-        '¡Empecemos!',
-      );
     });
   }
 
@@ -119,7 +109,7 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
   Future<ContextoChat> _contexto() =>
       ref.refresh(contextoChatProvider(conversacionId).future);
 
-  /// El aviso en el chat es complementario: si falla, el ticket ya quedó
+  /// El aviso en el chat es complementario: si falla, el cambio ya quedó
   /// guardado, así que no se trata como error.
   Future<void> _avisarEnElChat(String texto) async {
     try {
