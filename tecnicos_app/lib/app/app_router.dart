@@ -35,8 +35,12 @@ final routerProvider = Provider<GoRouter>((ref) {
   final cambiosDeSesion = ValueNotifier<SesionEstado>(ref.read(sesionProvider));
   ref.listen(sesionProvider, (_, nuevo) => cambiosDeSesion.value = nuevo);
 
-  Future<void> cerrarSesion() =>
-      ref.read(sesionProvider.notifier).cerrarSesion();
+late final GoRouter router;
+
+Future<void> cerrarSesion() async {
+  await ref.read(sesionProvider.notifier).cerrarSesion();
+  router.go(AppRoutes.login);
+}
 
   // Detalle y chat existen bajo /cliente y bajo /tecnico.
   Widget detalle(GoRouterState state) =>
@@ -45,7 +49,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   Widget chat(GoRouterState state) =>
       ChatView(conversacionId: state.pathParameters['id']!);
 
-  final router = GoRouter(
+  router = GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: cambiosDeSesion,
     redirect: (context, state) => resolverRedireccion(
