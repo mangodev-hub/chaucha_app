@@ -37,6 +37,7 @@ import '../providers/feed_provider.dart';
 import '../providers/inicio_tecnico_provider.dart';
 import '../providers/listas_provider.dart';
 import '../widgets/solicitud_widgets.dart';
+import '../../../chat/presentation/widgets/chat_flotante.dart';
 
 class InicioTecnicoView extends ConsumerWidget {
   const InicioTecnicoView({super.key});
@@ -316,8 +317,10 @@ class _ChatPendiente extends ConsumerWidget {
     return TarjetaApp(
       margin: const EdgeInsets.only(bottom: Espacios.m),
       onTap: () async {
-        await context.push(
-          AppRoutes.chat(chat.conversacionId, esCliente: false),
+        await abrirChat(
+          context,
+          chat.conversacionId,
+          esCliente: false,
         );
         if (context.mounted) ref.invalidate(chatsPorResponderProvider);
       },

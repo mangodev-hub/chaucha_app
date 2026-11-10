@@ -18,7 +18,7 @@ abstract interface class SolicitudRepository {
   Future<Solicitud> obtener(String id);
 
   Future<List<FotoSolicitud>> fotos(String solicitudId);
-
+  Future<List<Solicitud>> porIds(List<String> ids);
   Future<void> cambiarEstado(String solicitudId, EstadoSolicitud estado);
   Future<void> editar(
     String id, {

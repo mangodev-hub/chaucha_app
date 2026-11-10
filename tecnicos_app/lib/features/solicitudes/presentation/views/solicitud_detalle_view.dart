@@ -40,6 +40,8 @@ import '../providers/detalle_provider.dart';
 import '../widgets/detalle_widgets.dart';
 import '../widgets/editar_solicitud_dialog.dart';
 import '../widgets/solicitud_widgets.dart';
+import '../../../chat/presentation/widgets/chat_flotante.dart';
+import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 
 /// Acción principal del detalle según el rol y el estado.
 typedef _Accion = ({String texto, IconData icono, VoidCallback alPulsar});
@@ -106,18 +108,28 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     );
     if (ok) await _resultado(_acciones.cancelar(), 'Solicitud cancelada.');
   }
-
+  
   Future<void> _ofrecer() async {
-    final datos = await mostrarFormularioOferta(context);
-    if (datos == null) return;
+    final perfil = await ref.read(perfilTecnicoProvider.future);
+    if (!mounted) return;
+    if (perfil.tarifaBase <= 0) {
+      context.mostrarMensaje(
+        'Configura tu tarifa base en Mi perfil antes de ofertar.',
+        tipo: TipoMensaje.error,
+      );
+      return;
+    }
+    final solucion = await mostrarFormularioOferta(
+      context,
+      tarifaBase: perfil.tarifaBase,
+    );
+    if (solucion == null) return;
     await _resultado(
-      _acciones.enviarOferta(
-        precioBase: datos.precioBase,
-        solucion: datos.solucion,
-      ),
+      _acciones.enviarOferta(solucion: solucion),
       'Oferta enviada. Si al cliente le interesa, te escribirá.',
     );
   }
+
     Future<void> _editar(Solicitud solicitud) async {
     final datos = await mostrarEditarSolicitud(context, solicitud);
     if (datos == null) return;
@@ -194,7 +206,7 @@ context
       return;
     }
     final esCliente = ref.read(usuarioActualProvider)?.id != tecnicoId;
-    await context.push(AppRoutes.chat(id, esCliente: esCliente));
+    await abrirChat(context, id, esCliente: esCliente);
     if (!mounted) return;
     // En el chat se pudo confirmar un ticket (la solicitud pasa a "En curso").
     ref.invalidate(detalleSolicitudProvider(widget.solicitudId));
