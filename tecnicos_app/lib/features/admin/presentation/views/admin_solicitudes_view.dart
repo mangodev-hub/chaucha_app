@@ -11,6 +11,7 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/filtro_chips.dart';
 import '../../../solicitudes/domain/entities/solicitud.dart';
 import '../../../solicitudes/presentation/widgets/solicitud_widgets.dart';
 import '../../domain/entities/solicitud_admin.dart';
@@ -44,7 +45,7 @@ class _AdminSolicitudesViewState extends ConsumerState<AdminSolicitudesView> {
           hint: 'Buscar por oficio, descripción o cliente',
           onCambio: (texto) => setState(() => _busqueda = texto),
         ),
-        FiltrosAdmin<EstadoSolicitud?>(
+        FiltroChips<EstadoSolicitud?>(
           opciones: [
             (null, 'Todas'),
             for (final e in EstadoSolicitud.values) (e, e.etiqueta),

@@ -11,6 +11,7 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/filtro_chips.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
@@ -51,7 +52,7 @@ class _AdminUsuariosViewState extends ConsumerState<AdminUsuariosView> {
           hint: 'Buscar por nombre, correo o cédula',
           onCambio: (texto) => setState(() => _busqueda = texto),
         ),
-        FiltrosAdmin<Rol?>(
+        FiltroChips<Rol?>(
           opciones: const [
             (null, 'Todos'),
             (Rol.cliente, 'Clientes'),
