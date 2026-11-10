@@ -37,10 +37,8 @@ import '../../domain/entities/solicitud.dart';
 import '../providers/feed_provider.dart';
 import '../providers/inicio_tecnico_provider.dart';
 import '../providers/listas_provider.dart';
+import '../widgets/mapa_zona_perfil.dart';
 import '../widgets/solicitud_widgets.dart';
-import '../widgets/mapa_zona_tecnico.dart';
-import '../../../../core/widgets/mensajes.dart';
-import '../../../perfil_puntos/domain/entities/cambios_perfil.dart';
 
 class InicioTecnicoView extends ConsumerWidget {
   const InicioTecnicoView({super.key});
@@ -58,59 +56,59 @@ class InicioTecnicoView extends ConsumerWidget {
     return esperarSinError(ref.read(resumenTecnicoProvider.future));
   }
 
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final escritorio = ResponsiveLayout.isDesktop(context);
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final escritorio = ResponsiveLayout.isDesktop(context);
 
-  const urgente = [_ParaEmpezar(), _Pendientes(), _NuevasCerca()];
-  const progreso = [_Actividad(), _Reputacion()];
-  const derecha = [_MapaZona(), ...progreso];
+    const urgente = [_ParaEmpezar(), _Pendientes(), _NuevasCerca()];
+    const progreso = [_Actividad(), _Reputacion()];
+    const derecha = [_MapaZona(), ...progreso];
 
-  return RefreshIndicator(
-    onRefresh: () => _recargar(ref),
-    child: ListView(
-      padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
-      children: [
-        AnchoMaximo(
-          ancho: escritorio ? 1100 : 900,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const _Portada(),
-              if (escritorio)
-                const Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: urgente,
+    return RefreshIndicator(
+      onRefresh: () => _recargar(ref),
+      child: ListView(
+        padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
+        children: [
+          AnchoMaximo(
+            ancho: escritorio ? 1100 : 900,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _Portada(),
+                if (escritorio)
+                  const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: urgente,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: Espacios.xl),
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: derecha,
+                      SizedBox(width: Espacios.xl),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: derecha,
+                        ),
                       ),
-                    ),
-                  ],
-                )
-              else ...[
-                const _MapaZona(),
-                ...urgente,
-                ...progreso,
+                    ],
+                  )
+                else ...[
+                  const _MapaZona(),
+                  ...urgente,
+                  ...progreso,
+                ],
+                const SizedBox(height: Espacios.xl),
               ],
-              const SizedBox(height: Espacios.xl),
-            ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 }
 // Portada
 
@@ -148,56 +146,26 @@ class _Portada extends ConsumerWidget {
     );
   }
 }
+
 class _MapaZona extends ConsumerWidget {
   const _MapaZona();
 
-  Future<void> _cambiarRadio(
-    BuildContext context,
-    WidgetRef ref,
-    PerfilTecnico perfil,
-    int metros,
-  ) async {
-    final centro = perfil.ubicacionActual;
-    if (centro == null) return;
-    final ok = await ref
-        .read(guardarPerfilProvider.notifier)
-        .guardar(
-          CambiosPerfil(
-            tarifaBase: perfil.tarifaBase,
-            rangoCoberturaM: metros,
-            ubicacion: centro,
-            oficioIds: perfil.oficioIds.toSet(),
-          ),
-        );
-    if (!context.mounted) return;
-    if (ok) {
-      ref.invalidate(feedProvider);
-    } else {
-      context.mostrarMensaje(
-        'No se pudo guardar el radio.',
-        tipo: TipoMensaje.error,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(guardarPerfilProvider);
-    final perfil = ref.watch(perfilTecnicoProvider).value;
-    final centro = perfil?.ubicacionActual;
-    if (perfil == null || centro == null) return const SizedBox.shrink();
-    final items = ref.watch(feedProvider).value?.items ?? const <ItemFeed>[];
+    // Sin ubicación no hay mapa, y tampoco se muestra el título.
+    final tieneUbicacion = ref.watch(
+      perfilTecnicoProvider.select((p) => p.value?.ubicacionActual != null),
+    );
+    if (!tieneUbicacion) return const SizedBox.shrink();
     return Seccion(
       titulo: 'Tu zona de trabajo',
-      child: MapaZonaTecnico(
-        centro: centro,
-        radioM: perfil.rangoCoberturaM,
-        solicitudes: [for (final i in items) i.solicitud],
-        onCambiarRadio: (m) => _cambiarRadio(context, ref, perfil, m),
+      child: MapaZonaPerfil(
+        onTapSolicitud: (s) => _abrirSolicitud(context, ref, s),
       ),
     );
   }
 }
+
 // Para empezar a trabajar
 /// Lo que le falta al perfil para recibir solicitudes. Desaparece cuando
 /// todo está listo.
@@ -688,10 +656,11 @@ class _UltimasResenas extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final resenas = ref.watch(perfilPublicoProvider(tecnicoId)).value?.resenas;
-    // Las reseñas complementan la tarjeta: si no cargan, no se muestran.
+    // Las reseñas complementan la tarjeta: si no cargan, no se muestran (ni
+    // tampoco el título de la sección).
     if (resenas == null || resenas.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: Espacios.m),
+    return Seccion(
+      titulo: 'Reseñas',
       child: Column(
         children: [for (final r in resenas.take(2)) TarjetaResena(resena: r)],
       ),
