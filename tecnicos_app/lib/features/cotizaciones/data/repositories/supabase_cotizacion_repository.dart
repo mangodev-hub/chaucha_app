@@ -64,27 +64,20 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
     });
   }
 
-  /// Solo cambia la oferta del técnico conectado que sigue pendiente. Si no
-  /// se actualizó ninguna fila (ya no está pendiente, o RLS lo impidió),
-  /// avisa con un [AppFailure].
-  @override
-  Future<void> enviarTarifa(String cotizacionId, NuevaTarifa tarifa) {
-    return supabaseGuard(() async {
-      final filas = await _client
-          .from(_tabla)
-          .update(CotizacionModel.cambiosTarifa(tarifa))
-          .eq('id', cotizacionId)
-          .eq('tecnico_id', _client.uidActual)
-          .eq('estado', EstadoCotizacion.pendiente.valorDb)
-          .select('id');
-      if (filas.isEmpty) {
-        throw const AppFailure(
-          'No se pudo enviar el ticket. Puede que la oferta ya no esté '
-          'pendiente.',
-        );
-      }
+@override
+Future<void> enviarTarifa(String cotizacionId, NuevaTarifa tarifa) {
+  return supabaseGuard(() async {
+    final f = tarifa.fechaServicio;
+    await _client.rpc('enviar_tarifa', params: {
+      'p_cotizacion_id': cotizacionId,
+      'p_mano_obra': tarifa.precioAcordado,
+      'p_materiales': tarifa.materiales,
+      'p_fecha_servicio': f == null
+          ? null
+          : DateTime(f.year, f.month, f.day, 12).toUtc().toIso8601String(),
     });
-  }
+  });
+}
 
   @override
   Future<void> rechazarTarifa(String cotizacionId) {

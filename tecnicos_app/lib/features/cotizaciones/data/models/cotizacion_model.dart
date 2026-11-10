@@ -70,24 +70,6 @@ abstract final class CotizacionModel {
     'materiales': 0,
   };
 
-  /// Cambios para enviar el ticket sobre la oferta.
-  static Map<String, dynamic> cambiosTarifa(NuevaTarifa tarifa) {
-    final fecha = tarifa.fechaServicio;
-    return {
-      'mano_obra': tarifa.precioAcordado,
-      'materiales': tarifa.materiales,
-      // Al mediodía local, para que el día no cambie al convertir a UTC.
-      'fecha_servicio': fecha == null
-          ? null
-          : DateTime(
-              fecha.year,
-              fecha.month,
-              fecha.day,
-              12,
-            ).toUtc().toIso8601String(),
-      'tarifa_enviada': true,
-    };
-  }
 
   /// Cambios cuando el cliente rechaza el ticket.
   static const Map<String, dynamic> cambiosRechazo = {'tarifa_enviada': false};

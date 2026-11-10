@@ -51,7 +51,7 @@ void main() {
       expect(cotizacionId, 'q1');
       expect(tarifa.precioAcordado, 40);
       expect(tarifa.materiales, 10);
-      expect(chat.enviados.single, contains(r'$50.00'));
+      expect(chat.enviados, isEmpty);
     });
 
     test('con precio 0 no envía', () async {
@@ -107,7 +107,7 @@ void main() {
 
       expect(ok, isTrue);
       expect(cotizaciones.aceptadas, ['q1']);
-      expect(chat.enviados.single, startsWith('Confirmé'));
+      expect(chat.enviados, isEmpty);
     });
 
     test('sin ticket pendiente no confirma', () async {

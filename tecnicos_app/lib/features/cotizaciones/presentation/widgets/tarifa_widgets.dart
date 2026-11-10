@@ -8,6 +8,7 @@ import '../../../../core/utils/formatos.dart';
 import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/cotizacion.dart';
@@ -392,8 +393,8 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
     final hoy = DateUtils.dateOnly(DateTime.now());
     final elegida = await showDatePicker(
       context: context,
-      initialDate: _fecha ?? hoy,
-      firstDate: hoy,
+      initialDate: _fecha ?? hoy.add(const Duration(days: 1)),
+      firstDate: hoy.add(const Duration(days: 1)),
       lastDate: hoy.add(const Duration(days: 90)),
       helpText: 'Fecha del servicio',
     );
@@ -402,6 +403,13 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
 
   void _enviar() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_fecha == null) {
+      context.mostrarMensaje(
+        'Elige la fecha del servicio.',
+        tipo: TipoMensaje.error,
+      );
+      return;
+    }
     Navigator.pop<NuevaTarifa>(
       context,
       NuevaTarifa(
@@ -486,7 +494,7 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
               const SizedBox(height: Espacios.l),
               CampoEtiquetado(
                 etiqueta: 'Fecha del servicio',
-                ayuda: 'Opcional',
+                ayuda: 'Obligatoria',
                 child: OutlinedButton.icon(
                   onPressed: _elegirFecha,
                   icon: const Icon(Icons.event_outlined),
