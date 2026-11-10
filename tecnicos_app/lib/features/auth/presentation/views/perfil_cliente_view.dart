@@ -2,12 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/carrusel_aliados.dart';
-
+import '../../../solicitudes/domain/entities/solicitud.dart';
+import '../../../solicitudes/presentation/providers/listas_provider.dart';
+import '../providers/sesion_provider.dart';
 
 const _azul = Colores.primarioVivo;
 const _azulOscuro = Colores.primarioProfundo;
@@ -17,14 +20,32 @@ const _texto = Colores.tinta;
 const _gris = Colores.tintaSuave;
 const _borde = Colores.linea;
 const _rojo = Colores.error;
-const _estrella = Colores.estrella;
 const _blanco = Colores.tarjeta;
 
-class PerfilClienteView extends StatelessWidget {
+String _mesAnio(DateTime f) {
+  const m = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  return '${m[f.month - 1]} ${f.year}';
+}
+
+String _fecha(DateTime f) {
+  final d = f.toLocal();
+  return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+}
+
+class PerfilClienteView extends ConsumerWidget {
   const PerfilClienteView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final usuario = ref.watch(usuarioActualProvider);
+    if (usuario == null) return const SizedBox.shrink();
+    final todas = ref.watch(misSolicitudesProvider).value ?? const <Solicitud>[];
+    final completadas = [
+      for (final s in todas)
+        if (s.estado == EstadoSolicitud.completada) s,
+    ];
+    final activas = todas.where((s) => s.estado.recibeCotizaciones).length;
+
     return ColoredBox(
       color: _fondo,
       child: SingleChildScrollView(
@@ -35,18 +56,10 @@ class PerfilClienteView extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, c) {
                 final ancho = c.maxWidth >= 900;
-                const izquierda = Column(
-                  children: [
-                    _Historial(),
-                    SizedBox(height: 24),
-                    _Favoritos(),
-                  ],
-                );
+                final izquierda = _Historial(completadas);
                 const derecha = Column(
                   children: [
                     _Ubicacion(),
-                    SizedBox(height: 16),
-                    _Nivel(),
                     SizedBox(height: 16),
                     _Privacidad(),
                     SizedBox(height: 16),
@@ -55,22 +68,26 @@ class PerfilClienteView extends StatelessWidget {
                 );
                 return Column(
                   children: [
-                    const _Cabecera(),
+                    _Cabecera(usuario.nombreCompleto),
                     const SizedBox(height: 24),
-                    const _Estadisticas(),
+                    _Estadisticas(
+                      completadas: completadas.length,
+                      activas: activas,
+                      desde: usuario.creadoEn.toLocal(),
+                    ),
                     const SizedBox(height: 24),
                     if (ancho)
-                      const Row(
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(flex: 8, child: izquierda),
-                          SizedBox(width: 24),
-                          Expanded(flex: 4, child: derecha),
+                          const SizedBox(width: 24),
+                          const Expanded(flex: 4, child: derecha),
                         ],
                       )
-                    else ...const [
+                    else ...[
                       izquierda,
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
                       derecha,
                     ],
                   ],
@@ -162,38 +179,10 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-class _Estrellas extends StatelessWidget {
-  const _Estrellas(this.nota);
-
-  final double nota;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          nota.toStringAsFixed(1).replaceAll('.', ','),
-          style: const TextStyle(
-            color: _estrella,
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
-          ),
-        ),
-        const SizedBox(width: 4),
-        for (var i = 0; i < 5; i++)
-          Icon(
-            i < nota.round() ? Icons.star : Icons.star_border,
-            size: 14,
-            color: _estrella,
-          ),
-      ],
-    );
-  }
-}
-
 class _Cabecera extends StatelessWidget {
-  const _Cabecera();
+  const _Cabecera(this.nombre);
+
+  final String nombre;
 
   @override
   Widget build(BuildContext context) {
@@ -230,7 +219,7 @@ class _Cabecera extends StatelessWidget {
                         color: _blanco,
                         shape: BoxShape.circle,
                       ),
-                      child: const _Avatar('Mateo Vargas', radio: 56),
+                      child: _Avatar(nombre, radio: 56),
                     ),
                     Positioned(
                       right: 4,
@@ -261,26 +250,19 @@ class _Cabecera extends StatelessWidget {
               runSpacing: 16,
               spacing: 16,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Mateo Vargas',
-                          style: TextStyle(
-                            color: _texto,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        _Etiqueta('Nivel 2 · 340 puntos'),
-                      ],
+                    Text(
+                      nombre,
+                      style: const TextStyle(
+                        color: _texto,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    SizedBox(height: 6),
-                    Row(
+                    const SizedBox(height: 6),
+                    const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
@@ -297,15 +279,10 @@ class _Cabecera extends StatelessWidget {
                     ),
                   ],
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextButton(
-                      onPressed: () => _mostrarBaja(context),
-                      style: TextButton.styleFrom(foregroundColor: _rojo),
-                      child: const Text('Darse de baja'),
-                    ),
-                  ],
+                TextButton(
+                  onPressed: () => _mostrarBaja(context),
+                  style: TextButton.styleFrom(foregroundColor: _rojo),
+                  child: const Text('Darse de baja'),
                 ),
               ],
             ),
@@ -342,40 +319,48 @@ Future<void> _mostrarBaja(BuildContext context) {
 }
 
 class _Estadisticas extends StatelessWidget {
-  const _Estadisticas();
+  const _Estadisticas({
+    required this.completadas,
+    required this.activas,
+    required this.desde,
+  });
+
+  final int completadas;
+  final int activas;
+  final DateTime desde;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
-        const a = _Estadistica(
+        final a = _Estadistica(
           Icons.check_circle_outline,
-          '8',
+          '$completadas',
           'Solicitudes completadas',
         );
-        const b = _Estadistica(
+        final b = _Estadistica(
           Icons.calendar_month_outlined,
-          'Sep 2026',
+          _mesAnio(desde),
           'Miembro desde',
         );
-        const d = _Estadistica(
-          Icons.star,
-          '4,9',
-          'Calificación promedio de los técnicos',
+        final d = _Estadistica(
+          Icons.pending_actions_outlined,
+          '$activas',
+          'Solicitudes activas',
         );
         if (c.maxWidth >= 900) {
-          return const Row(
+          return Row(
             children: [
               Expanded(child: a),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(child: b),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(child: d),
             ],
           );
         }
-        return const Column(
-          children: [a, SizedBox(height: 12), b, SizedBox(height: 12), d],
+        return Column(
+          children: [a, const SizedBox(height: 12), b, const SizedBox(height: 12), d],
         );
       },
     );
@@ -428,53 +413,10 @@ class _Estadistica extends StatelessWidget {
   }
 }
 
-class _Trabajo {
-  const _Trabajo(
-    this.oficio,
-    this.titulo,
-    this.fecha,
-    this.tecnico,
-    this.nota,
-    this.resena,
-  );
-
-  final String oficio;
-  final String titulo;
-  final String fecha;
-  final String tecnico;
-  final double nota;
-  final String resena;
-}
-
-const _trabajos = [
-  _Trabajo(
-    'Plomería',
-    'Reparación de fuga en fregadero de cocina',
-    '14 de octubre, 2026',
-    'Carlos M. Enríquez',
-    5,
-    'Mateo tuvo todo despejado para el trabajo y fue muy atento con las especificaciones. Excelente cliente para coordinar.',
-  ),
-  _Trabajo(
-    'Electricidad',
-    'Instalación y revisión de breaker principal',
-    '28 de septiembre, 2026',
-    'Patricio Guayasamín',
-    5,
-    'Puntual en recibirme, clara descripción del problema eléctrico previo a mi llegada y trato muy cordial.',
-  ),
-  _Trabajo(
-    'Cerrajería',
-    'Cambio de cilindro y ajuste de chapa de seguridad',
-    '9 de septiembre, 2026',
-    'Roberto Andrango',
-    4.8,
-    'Facilitó el acceso sin demoras y verificamos el funcionamiento de la llave juntos. Muy recomendado.',
-  ),
-];
-
 class _Historial extends StatelessWidget {
-  const _Historial();
+  const _Historial(this.solicitudes);
+
+  final List<Solicitud> solicitudes;
 
   @override
   Widget build(BuildContext context) {
@@ -482,9 +424,9 @@ class _Historial extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: Text(
                   'Historial de servicios',
                   style: TextStyle(
@@ -494,14 +436,20 @@ class _Historial extends StatelessWidget {
                   ),
                 ),
               ),
-              _Etiqueta('3 servicios'),
+              _Etiqueta('${solicitudes.length} servicios'),
             ],
           ),
           const SizedBox(height: 16),
-          for (final t in _trabajos) ...[
-            _FilaTrabajo(t),
-            const SizedBox(height: 12),
-          ],
+          if (solicitudes.isEmpty)
+            const Text(
+              'Aún no tienes servicios completados.',
+              style: TextStyle(color: _gris, fontSize: 14),
+            )
+          else
+            for (final s in solicitudes) ...[
+              _FilaTrabajo(s),
+              const SizedBox(height: 12),
+            ],
         ],
       ),
     );
@@ -509,13 +457,14 @@ class _Historial extends StatelessWidget {
 }
 
 class _FilaTrabajo extends StatelessWidget {
-  const _FilaTrabajo(this.t);
+  const _FilaTrabajo(this.s);
 
-  final _Trabajo t;
+  final Solicitud s;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -524,138 +473,27 @@ class _FilaTrabajo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Row(
             children: [
-              _Etiqueta(t.oficio),
+              _Etiqueta(s.oficioNombre),
+              const SizedBox(width: 12),
               Text(
-                t.titulo,
-                style: const TextStyle(
-                  color: _texto,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                _fecha(s.creadoEn),
+                style: const TextStyle(color: _gris, fontSize: 13),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _Avatar(t.tecnico, radio: 12),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Técnico: ${t.tecnico} · ${t.fecha}',
-                  style: const TextStyle(color: _gris, fontSize: 13),
-                ),
-              ),
-              _Estrellas(t.nota),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: _fondo,
-              border: Border(left: BorderSide(color: _azul, width: 3)),
-            ),
-            child: Text(
-              '“${t.resena}”\n— Reseña de ${t.tecnico}',
-              style: const TextStyle(
-                color: _gris,
-                fontSize: 13,
-                fontStyle: FontStyle.italic,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Favoritos extends StatelessWidget {
-  const _Favoritos();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _Tarjeta(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Mis técnicos favoritos',
-                  style: TextStyle(
-                    color: _texto,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              _Etiqueta('3 guardados'),
-            ],
-          ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _Favorito('Patricio Guayasamín', 'Electricidad', 5),
-              ),
-              SizedBox(width: 12),
-              Expanded(child: _Favorito('Carlos M. Enríquez', 'Plomería', 4.9)),
-              SizedBox(width: 12),
-              Expanded(child: _Favorito('Roberto Andrango', 'Cerrajería', 4.8)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Favorito extends StatelessWidget {
-  const _Favorito(this.nombre, this.oficio, this.nota);
-
-  final String nombre;
-  final String oficio;
-  final double nota;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _borde),
-      ),
-      child: Column(
-        children: [
-          const Align(
-            alignment: Alignment.topRight,
-            child: Icon(Icons.favorite, color: Color(0xFFE91E63), size: 18),
-          ),
-          _Avatar(nombre, radio: 28),
           const SizedBox(height: 10),
           Text(
-            nombre,
-            textAlign: TextAlign.center,
+            s.descripcion,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: _texto,
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 6),
-          _Etiqueta(oficio),
-          const SizedBox(height: 6),
-          _Estrellas(nota),
         ],
       ),
     );
@@ -788,64 +626,6 @@ class _MapaZonaState extends State<_MapaZona> {
   }
 }
 
-class _Nivel extends StatelessWidget {
-  const _Nivel();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _Tarjeta(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.bolt, color: _estrella, size: 20),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Mi nivel',
-                  style: TextStyle(
-                    color: _texto,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              _Etiqueta('Nivel 2'),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('340 puntos acumulados', style: TextStyle(fontSize: 13)),
-              Text(
-                'Meta: 500 pts',
-                style: TextStyle(color: _gris, fontSize: 13),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.all(Radius.circular(8)),
-            child: LinearProgressIndicator(
-              value: 340 / 500,
-              minHeight: 8,
-              color: _azul,
-              backgroundColor: _hielo,
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            'Te faltan 160 puntos para el Nivel 3.',
-            style: TextStyle(color: _gris, fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _Privacidad extends StatelessWidget {
   const _Privacidad();
 
@@ -882,4 +662,3 @@ class _Privacidad extends StatelessWidget {
     );
   }
 }
-
