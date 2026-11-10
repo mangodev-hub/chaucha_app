@@ -5,7 +5,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/async_value_view.dart';
@@ -17,6 +17,7 @@ import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/domain/entities/reglas_tarifa.dart';
 import '../../../cotizaciones/presentation/widgets/tarifa_widgets.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../../domain/entities/mensaje.dart';
 import '../../domain/entities/reglas_chat.dart';
 import '../providers/enviar_mensaje_provider.dart';
@@ -36,6 +37,22 @@ class _ChatViewState extends ConsumerState<ChatView> {
   static const double _anchoMaximo = 720;
 
   final _texto = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+      if (uid == null) return;
+      unawaited(
+        ref.read(notificacionesRepoProvider).marcarLeidas(
+          uid,
+          tipos: const ['mensaje', 'chat'],
+          referenciaId: widget.conversacionId,
+        ),
+      );
+    });
+  }
 
   @override
   void dispose() {

@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/providers/core_providers.dart';
 import '../core/theme/tokens.dart';
 import '../core/widgets/responsive_layout.dart';
+import '../features/notificaciones/presentation/providers/notificaciones_provider.dart';
+import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
+import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
 import 'menu_cuenta.dart';
 
 class Destino {
@@ -12,6 +18,7 @@ class Destino {
     this.vista, {
     this.iconoActivo,
     this.corto,
+    this.tiposNotificacion = const [],
   });
 
   /// Título completo: barra superior y pestañas de escritorio.
@@ -23,6 +30,7 @@ class Destino {
 
   /// Etiqueta corta para la barra flotante del móvil (si no, [titulo]).
   final String? corto;
+    final List<String> tiposNotificacion;
   final Widget vista;
 
   String get etiqueta => corto ?? titulo;
@@ -45,7 +53,16 @@ class InicioShell extends ConsumerStatefulWidget {
 class _InicioShellState extends ConsumerState<InicioShell> {
   int _indice = 0;
 
-  void _cambiar(int indice) => setState(() => _indice = indice);
+  void _cambiar(int indice) {
+    setState(() => _indice = indice);
+    final tipos = widget.destinos[indice].tiposNotificacion;
+    if (tipos.isEmpty) return;
+    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (uid == null) return;
+    unawaited(
+      ref.read(notificacionesRepoProvider).marcarLeidas(uid, tipos: tipos),
+    );
+  }
 
   // Solo hay "Mi perfil" para cliente y técnico (el admin no tiene).
   int get _indicePerfil =>
@@ -55,7 +72,10 @@ class _InicioShellState extends ConsumerState<InicioShell> {
       _indicePerfil < 0 ? null : () => _cambiar(_indicePerfil);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      EscuchaNotificaciones(child: _contenido(context));
+
+  Widget _contenido(BuildContext context) {
     final destinos = widget.destinos;
     final contenido = IndexedStack(
       index: _indice,
@@ -153,6 +173,7 @@ class _InicioShellState extends ConsumerState<InicioShell> {
                       padding: const EdgeInsets.only(right: Espacios.xs),
                       child: _Pestana(
                         titulo: widget.destinos[i].titulo,
+                        tipos: widget.destinos[i].tiposNotificacion,
                         activa: i == _indice,
                         onTap: () => _cambiar(i),
                       ),
@@ -181,11 +202,13 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 class _Pestana extends StatelessWidget {
   const _Pestana({
     required this.titulo,
+    required this.tipos,
     required this.activa,
     required this.onTap,
   });
 
   final String titulo;
+  final List<String> tipos;
   final bool activa;
   final VoidCallback onTap;
 
@@ -221,7 +244,7 @@ class _Pestana extends StatelessWidget {
                         color: activa ? Colores.primario : Colores.tintaSuave,
                         fontWeight: FontWeight.w700,
                       ),
-              child: Text(titulo),
+              child: PuntoNoLeidas(tipos: tipos, child: Text(titulo)),
             ),
           ),
         ),
@@ -321,10 +344,15 @@ class _ItemBarra extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (activo)
-                _IconoActivo(destino.iconoActivo ?? destino.icono, color: color)
-              else
-                Icon(destino.icono, color: color),
+              PuntoNoLeidas(
+                tipos: destino.tiposNotificacion,
+                child: activo
+                    ? _IconoActivo(
+                        destino.iconoActivo ?? destino.icono,
+                        color: color,
+                      )
+                    : Icon(destino.icono, color: color),
+              ),
               const SizedBox(height: Espacios.xs),
               AnimatedDefaultTextStyle(
                 duration: Movimiento.de(context, Movimiento.normal),
