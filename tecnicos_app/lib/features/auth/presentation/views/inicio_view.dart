@@ -19,8 +19,11 @@ import '../../domain/entities/tecnico_cercano.dart';
 import '../providers/inicio_provider.dart';
 import '../widgets/inicio_widgets.dart';
 import '../widgets/mapa_tecnicos.dart';
+import '../../../solicitudes/domain/entities/solicitud.dart';
+import '../../../chat/data/repositories/supabase_chat_repository.dart';
+import '../../../../core/errors/app_failure.dart';
+import '../../../../core/widgets/mensajes.dart';
 
-/// Abre el formulario de nueva solicitud y, si se crea, va a su detalle.
 Future<void> _pedir(
   BuildContext context,
   WidgetRef ref, {
@@ -39,30 +42,97 @@ Future<void> _pedir(
 }
 
 /// Regla de Selena: antes de negociar hay que publicar la solicitud.
-Future<void> _solicitarTecnico(BuildContext context, WidgetRef ref) async {
-  final seguir = await showDialog<bool>(
-    context: context,
-    builder: (dialogo) => AlertDialog(
-      icon: const Icon(Icons.warning_amber_rounded, color: Colores.aviso),
-      title: const Text('Publica tu requerimiento primero'),
-      content: const Text(
-        'Para recibir ofertas debes publicar una solicitud con el '
-        'resumen de tu problema y tu ubicación.',
+/// Con solicitudes compatibles, el cliente elige una y se abre el chat.
+Future<void> _solicitarTecnico(
+  BuildContext context,
+  WidgetRef ref,
+  TecnicoCercano tecnico,
+) async {
+  var compatibles = <Solicitud>[];
+  try {
+    final lista = await ref.read(misSolicitudesProvider.future);
+    compatibles = [
+      for (final s in lista)
+        if (s.estado.recibeCotizaciones && tecnico.oficios.contains(s.oficioNombre)) s,
+    ];
+  } catch (_) {}
+  if (!context.mounted) return;
+
+  if (compatibles.isEmpty) {
+    final seguir = await showDialog<bool>(
+      context: context,
+      builder: (dialogo) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: Colores.aviso),
+        title: const Text('Publica tu requerimiento primero'),
+        content: Text(
+          'Para escribirle a ${tecnico.nombreCorto} necesitas una solicitud '
+          'de ${tecnico.oficios.join(' o ')}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogo).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogo).pop(true),
+            child: const Text('Publicar problema'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogo).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(dialogo).pop(true),
-          child: const Text('Publicar problema'),
-        ),
-      ],
+    );
+    if (seguir == true && context.mounted) await _pedir(context, ref);
+    return;
+  }
+
+  final elegida = compatibles.length == 1
+      ? compatibles.first
+      : await _elegirSolicitud(context, tecnico, compatibles);
+  if (elegida == null || !context.mounted) return;
+
+  try {
+    final id = await ref.read(chatRepositoryProvider).obtenerOCrearConversacion(
+          solicitudId: elegida.id,
+          tecnicoId: tecnico.id,
+        );
+    if (!context.mounted) return;
+    await context.push(AppRoutes.chat(id, esCliente: true));
+  } on AppFailure catch (e) {
+    if (context.mounted) context.mostrarMensaje(e.message, tipo: TipoMensaje.error);
+  }
+}
+
+Future<Solicitud?> _elegirSolicitud(
+  BuildContext context,
+  TecnicoCercano tecnico,
+  List<Solicitud> lista,
+) {
+  return showModalBottomSheet<Solicitud>(
+    context: context,
+    showDragHandle: true,
+    builder: (hoja) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Espacios.xl, 0, Espacios.xl, Espacios.s),
+            child: Text(
+              '¿Qué solicitud le envías a ${tecnico.nombreCorto}?',
+              style: Theme.of(hoja).textTheme.titleMedium,
+            ),
+          ),
+          for (final s in lista)
+            ListTile(
+              leading: const Icon(Icons.assignment_outlined),
+              title: Text(s.oficioNombre),
+              subtitle: Text(s.descripcion, maxLines: 2, overflow: TextOverflow.ellipsis),
+              onTap: () => Navigator.of(hoja).pop(s),
+            ),
+          const SizedBox(height: Espacios.s),
+        ],
+      ),
     ),
   );
-  if (seguir != true || !context.mounted) return;
-  await _pedir(context, ref);
 }
 
 class InicioView extends ConsumerStatefulWidget {
@@ -241,9 +311,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
         tecnicos: lista,
         alto: alto,
         etiquetaRadio: 'Radio: $km km (PostGIS)',
-        onContactar: widget.esCliente
-            ? () => _solicitarTecnico(context, ref)
-            : null,
+        onContactar: widget.esCliente ? (t) => _solicitarTecnico(context, ref, t) : null,
       ),
     );
   }
@@ -321,9 +389,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
                 TecnicoFila(
                   tecnico: visibles[i],
                   destacado: i == 0,
-                  onSolicitar: widget.esCliente
-                      ? () => _solicitarTecnico(context, ref)
-                      : null,
+                  onSolicitar: widget.esCliente ? () => _solicitarTecnico(context, ref, visibles[i]) : null,
                 ),
               ],
             ],
