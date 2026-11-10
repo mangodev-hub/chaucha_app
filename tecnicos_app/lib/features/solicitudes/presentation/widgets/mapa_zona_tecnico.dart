@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/presionable.dart';
 import '../../../auth/presentation/widgets/mapa_tecnicos.dart';
 import '../../domain/entities/solicitud.dart';
 
@@ -15,6 +16,7 @@ class MapaZonaTecnico extends StatefulWidget {
     required this.radioM,
     required this.solicitudes,
     this.onCambiarRadio,
+    this.onTapSolicitud,
     this.alto = 380,
   });
 
@@ -23,6 +25,10 @@ class MapaZonaTecnico extends StatefulWidget {
   final List<Solicitud> solicitudes;
   final double alto;
   final ValueChanged<int>? onCambiarRadio;
+
+  /// Al tocar el pin de una solicitud (por ejemplo, para abrir su detalle).
+  /// Si es null, los pines solo informan.
+  final ValueChanged<Solicitud>? onTapSolicitud;
 
   @override
   State<MapaZonaTecnico> createState() => _MapaZonaTecnicoState();
@@ -72,7 +78,8 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
               initialCenter: widget.centro,
               initialZoom: _zoomInicial,
               interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all &
+                flags:
+                    InteractiveFlag.all &
                     ~InteractiveFlag.rotate &
                     ~InteractiveFlag.scrollWheelZoom,
               ),
@@ -102,7 +109,12 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
                       width: 130,
                       height: 80,
                       alignment: Alignment.topCenter,
-                      child: _PinSolicitud(oficio: s.oficioNombre),
+                      child: _PinSolicitud(
+                        oficio: s.oficioNombre,
+                        onTap: widget.onTapSolicitud == null
+                            ? null
+                            : () => widget.onTapSolicitud!(s),
+                      ),
                     ),
                   Marker(
                     point: widget.centro,
@@ -169,12 +181,30 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
 }
 
 class _PinSolicitud extends StatelessWidget {
-  const _PinSolicitud({required this.oficio});
+  const _PinSolicitud({required this.oficio, this.onTap});
 
   final String oficio;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final pin = _contenido(context);
+    final onTap = this.onTap;
+    if (onTap == null) return pin;
+    return Semantics(
+      button: true,
+      label: 'Ver solicitud de $oficio',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Presionable(escala: 0.92, child: ExcludeSemantics(child: pin)),
+        ),
+      ),
+    );
+  }
+
+  Widget _contenido(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     return Column(
       mainAxisSize: MainAxisSize.min,

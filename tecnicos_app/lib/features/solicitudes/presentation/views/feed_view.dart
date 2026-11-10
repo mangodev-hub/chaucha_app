@@ -1,5 +1,9 @@
-// Pestaña "Solicitudes cerca" del técnico: resumen de su zona y las
-// solicitudes de sus oficios, de la más cercana a la más lejana.
+// Pestaña "Solicitudes cerca" del técnico: resumen de su zona, el mapa con
+// las solicitudes de sus oficios y la lista, de la más cercana a la más
+// lejana.
+//
+// En móvil: una columna con el mapa arriba de la lista. En escritorio: la
+// lista a la izquierda y el mapa a la derecha.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +15,7 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
@@ -19,6 +24,7 @@ import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.da
 import '../../domain/entities/feed.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/feed_provider.dart';
+import '../widgets/mapa_zona_perfil.dart';
 import '../widgets/solicitud_widgets.dart';
 
 class FeedView extends ConsumerWidget {
@@ -55,48 +61,71 @@ class FeedView extends ConsumerWidget {
           );
         }
         final n = datos.items.length;
+        final escritorio = ResponsiveLayout.isDesktop(context);
+        final mapa = MapaZonaPerfil(
+          alto: escritorio ? 560 : 300,
+          onTapSolicitud: abrir,
+        );
+        final lista = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              n == 0
+                  ? 'Sin solicitudes cerca'
+                  : n == 1
+                  ? '1 solicitud cerca'
+                  : '$n solicitudes cerca',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: Espacios.m),
+            if (n == 0)
+              const EstadoMensaje(
+                compacto: true,
+                icono: Icons.search_off,
+                mensaje:
+                    'No hay solicitudes de tus oficios en tu '
+                    'zona. Desliza hacia abajo para actualizar.',
+              )
+            else
+              CuadriculaAdaptable(
+                children: [
+                  for (final item in datos.items)
+                    SolicitudCard(
+                      solicitud: item.solicitud,
+                      distancia: Formatos.distancia(item.distanciaMetros),
+                      yaCotice: item.yaCotice,
+                      onTap: () => abrir(item.solicitud),
+                    ),
+                ],
+              ),
+          ],
+        );
         return RefreshIndicator(
           onRefresh: recargar,
           child: ListView(
-            padding: const EdgeInsets.all(Espacios.l),
+            padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
             children: [
               AnchoMaximo(
+                ancho: escritorio ? 1100 : 900,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _ResumenZona(perfil: datos.perfil),
                     const SizedBox(height: Espacios.xl),
-                    Text(
-                      n == 0
-                          ? 'Sin solicitudes cerca'
-                          : n == 1
-                          ? '1 solicitud cerca'
-                          : '$n solicitudes cerca',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: Espacios.m),
-                    if (n == 0)
-                      const EstadoMensaje(
-                        compacto: true,
-                        icono: Icons.search_off,
-                        mensaje:
-                            'No hay solicitudes de tus oficios en tu '
-                            'zona. Desliza hacia abajo para actualizar.',
-                      )
-                    else
-                      CuadriculaAdaptable(
+                    if (escritorio)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (final item in datos.items)
-                            SolicitudCard(
-                              solicitud: item.solicitud,
-                              distancia: Formatos.distancia(
-                                item.distanciaMetros,
-                              ),
-                              yaCotice: item.yaCotice,
-                              onTap: () => abrir(item.solicitud),
-                            ),
+                          Expanded(child: lista),
+                          const SizedBox(width: Espacios.xl),
+                          Expanded(child: mapa),
                         ],
-                      ),
+                      )
+                    else ...[
+                      mapa,
+                      const SizedBox(height: Espacios.xl),
+                      lista,
+                    ],
                   ],
                 ),
               ),
