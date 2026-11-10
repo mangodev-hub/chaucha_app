@@ -144,9 +144,13 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     final hecho = await _acciones.eliminar();
     if (!mounted) return;
     if (hecho) {
-      context
-        ..mostrarMensaje('Solicitud eliminada.', tipo: TipoMensaje.exito)
-        ..pop();
+context
+  ..mostrarMensaje(
+    'La solicitud y sus propuestas se borraron.',
+    tipo: TipoMensaje.eliminado,
+    titulo: 'Eliminado correctamente',
+  )
+  ..pop();
     } else {
       _mostrarErrorDeAccion();
     }
