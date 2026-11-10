@@ -13,7 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../widgets/editar_solicitud_dialog.dart';
+
 import '../../../../core/media/selector_fotos.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
@@ -38,6 +38,7 @@ import '../../domain/entities/foto_solicitud.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/detalle_provider.dart';
 import '../widgets/detalle_widgets.dart';
+import '../widgets/editar_solicitud_dialog.dart';
 import '../widgets/solicitud_widgets.dart';
 
 /// Acción principal del detalle según el rol y el estado.
