@@ -35,8 +35,7 @@ class SupabaseInicioRepository implements InicioRepository {
       );
       return [
         for (final fila in filas)
-          TecnicoCercanoModel.fromJson(fila as Map<String, dynamic>)
-              .aEntidad(),
+          TecnicoCercanoModel.fromJson(fila as Map<String, dynamic>).aEntidad(),
       ];
     });
   }

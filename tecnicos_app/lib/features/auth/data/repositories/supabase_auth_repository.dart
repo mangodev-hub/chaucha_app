@@ -55,6 +55,7 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     });
   }
+
   @override
   String? get correoActual => _auth.currentUser?.email;
 
@@ -98,13 +99,14 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     });
   }
+
   @override
   Future<void> cambiarContrasena(String nueva) {
     return supabaseGuard(() async {
       await _auth.updateUser(UserAttributes(password: nueva));
     });
   }
-  
+
   @override
   Future<void> iniciarSesion({
     required String email,
@@ -118,7 +120,7 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> cerrarSesionEnTodos() =>
       supabaseGuard(() => _auth.signOut(scope: SignOutScope.global));
-      
+
   @override
   Future<RegistroResultado> registrar(RegistroDatos datos) {
     return supabaseGuard(() async {
@@ -138,6 +140,7 @@ class SupabaseAuthRepository implements AuthRepository {
           : RegistroResultado.confirmarCorreo;
     });
   }
+
   @override
   Future<void> iniciarConGoogle() {
     return supabaseGuard(() async {
@@ -148,7 +151,7 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     });
   }
+
   @override
   Future<void> cerrarSesion() => supabaseGuard(_auth.signOut);
 }
-

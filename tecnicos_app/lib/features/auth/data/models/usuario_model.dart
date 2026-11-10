@@ -17,8 +17,9 @@ class UsuarioModel {
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
     final identidad = json['identidades'];
     return UsuarioModel(
-      perfilCompleto:
-        identidad is List ? identidad.isNotEmpty : identidad != null,
+      perfilCompleto: identidad is List
+          ? identidad.isNotEmpty
+          : identidad != null,
       id: json['id'] as String,
       rol: RolDb.desdeDb(json['rol'] as String),
       nombres: json['nombres'] as String,
@@ -33,7 +34,6 @@ class UsuarioModel {
       'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, '
       'identidades(usuario_id)';
 
-
   final String id;
   final Rol rol;
   final String nombres;
@@ -43,12 +43,12 @@ class UsuarioModel {
   final bool perfilCompleto;
 
   Usuario aEntidad() => Usuario(
-        id: id,
-        rol: rol,
-        nombres: nombres,
-        apellidos: apellidos,
-        fotoPerfilRuta: fotoPerfilRuta,
-        creadoEn: creadoEn,
-        perfilCompleto: perfilCompleto,
-      );
+    id: id,
+    rol: rol,
+    nombres: nombres,
+    apellidos: apellidos,
+    fotoPerfilRuta: fotoPerfilRuta,
+    creadoEn: creadoEn,
+    perfilCompleto: perfilCompleto,
+  );
 }

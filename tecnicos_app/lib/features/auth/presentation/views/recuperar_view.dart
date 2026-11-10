@@ -65,7 +65,8 @@ class _RecuperarViewState extends ConsumerState<RecuperarView> {
         child: EstadoMensaje(
           icono: Icons.mark_email_read_outlined,
           tipo: TipoEstado.exito,
-          mensaje: 'Si el correo está registrado, te enviamos un enlace '
+          mensaje:
+              'Si el correo está registrado, te enviamos un enlace '
               'para crear una nueva contraseña.',
           textoAccion: 'Volver a iniciar sesión',
           onAccion: () => context.go(AppRoutes.login),

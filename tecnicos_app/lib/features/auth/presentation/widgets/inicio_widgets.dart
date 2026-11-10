@@ -22,11 +22,27 @@ class HeroBusqueda extends StatefulWidget {
 
 class _HeroBusquedaState extends State<HeroBusqueda> {
   static const _frecuentes = [
-    (Icons.water_damage_outlined, 'Fuga de agua', 'Fuga de agua en baño o cocina'),
-    (Icons.lock_outline, 'Cambio de cerradura', 'Cambio de cerradura de seguridad'),
+    (
+      Icons.water_damage_outlined,
+      'Fuga de agua',
+      'Fuga de agua en baño o cocina',
+    ),
+    (
+      Icons.lock_outline,
+      'Cambio de cerradura',
+      'Cambio de cerradura de seguridad',
+    ),
     (Icons.bolt, 'Cortocircuito', 'Cortocircuito o breaker caído'),
-    (Icons.format_paint_outlined, 'Pintura interior', 'Pintura interior para departamento'),
-    (Icons.local_fire_department_outlined, 'Calefón', 'Mantenimiento de calefón a gas'),
+    (
+      Icons.format_paint_outlined,
+      'Pintura interior',
+      'Pintura interior para departamento',
+    ),
+    (
+      Icons.local_fire_department_outlined,
+      'Calefón',
+      'Mantenimiento de calefón a gas',
+    ),
   ];
 
   final _texto = TextEditingController();
@@ -45,79 +61,79 @@ class _HeroBusquedaState extends State<HeroBusqueda> {
   }
 
   Widget _campo(TextTheme textos) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
-        height: 52,
-        decoration: BoxDecoration(
-          color: Colores.superficie,
-          borderRadius: BorderRadius.circular(Radios.medio),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.search, color: Colores.primario, size: 24),
-            const SizedBox(width: Espacios.m),
-            Expanded(
-              child: TextField(
-                controller: _texto,
-                focusNode: _foco,
-                onSubmitted: (_) => _enviar(),
-                style: textos.bodyLarge,
-                decoration: InputDecoration.collapsed(
-                  hintText: '¿Qué necesitas arreglar hoy? Ej. fugas, cerradura...',
-                  hintStyle: textos.bodyLarge?.copyWith(
-                    color: Colores.tintaSuave,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+    padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
+    height: 52,
+    decoration: BoxDecoration(
+      color: Colores.superficie,
+      borderRadius: BorderRadius.circular(Radios.medio),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.search, color: Colores.primario, size: 24),
+        const SizedBox(width: Espacios.m),
+        Expanded(
+          child: TextField(
+            controller: _texto,
+            focusNode: _foco,
+            onSubmitted: (_) => _enviar(),
+            style: textos.bodyLarge,
+            decoration: InputDecoration.collapsed(
+              hintText: '¿Qué necesitas arreglar hoy? Ej. fugas, cerradura...',
+              hintStyle: textos.bodyLarge?.copyWith(
+                color: Colores.tintaSuave,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _ubicacion(TextTheme textos) => Container(
-        height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
-        decoration: BoxDecoration(
-          color: Colores.primarioSuave,
-          borderRadius: BorderRadius.circular(Radios.medio),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+    height: 52,
+    padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
+    decoration: BoxDecoration(
+      color: Colores.primarioSuave,
+      borderRadius: BorderRadius.circular(Radios.medio),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.location_on_outlined, color: Colores.info, size: 20),
+        const SizedBox(width: Espacios.s),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.location_on_outlined, color: Colores.info, size: 20),
-            const SizedBox(width: Espacios.s),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'UBICACIÓN ACTUAL',
-                  style: textos.labelSmall?.copyWith(
-                    color: Colores.tintaSuave,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                    fontSize: 10,
-                  ),
-                ),
-                Text(
-                  'Quito, Ecuador',
-                  style: textos.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ],
+            Text(
+              'UBICACIÓN ACTUAL',
+              style: textos.labelSmall?.copyWith(
+                color: Colores.tintaSuave,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                fontSize: 10,
+              ),
+            ),
+            Text(
+              'Quito, Ecuador',
+              style: textos.labelLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
           ],
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _boton() => SizedBox(
-        height: 52,
-        child: FilledButton.icon(
-          style: FilledButton.styleFrom(minimumSize: const Size(180, 52)),
-          onPressed: _enviar,
-          icon: const Icon(Icons.add),
-          label: const Text('Nueva Solicitud'),
-        ),
-      );
+    height: 52,
+    child: FilledButton.icon(
+      style: FilledButton.styleFrom(minimumSize: const Size(180, 52)),
+      onPressed: _enviar,
+      icon: const Icon(Icons.add),
+      label: const Text('Nueva Solicitud'),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -261,10 +277,8 @@ class EtiquetaEnVivo extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             'En vivo en Quito',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colores.info,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: Colores.info, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -321,7 +335,8 @@ class Categorias extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ordenados = [...oficios]..sort((a, b) {
+    final ordenados = [...oficios]
+      ..sort((a, b) {
         final c = (conteo[b.nombre] ?? 0).compareTo(conteo[a.nombre] ?? 0);
         return c != 0 ? c : a.nombre.compareTo(b.nombre);
       });
@@ -495,11 +510,11 @@ class _Pastilla extends StatelessWidget {
           child: Text(
             texto,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: activa
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Colores.tintaSuave,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: activa
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Colores.tintaSuave,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
@@ -530,8 +545,8 @@ class GrillaResponsiva extends StatelessWidget {
             ((restricciones.maxWidth + espacio) / (anchoMinimo + espacio))
                 .floor();
         final columnas = math.max(1, math.min(maxColumnas, caben));
-        final ancho = (restricciones.maxWidth - espacio * (columnas - 1)) /
-            columnas;
+        final ancho =
+            (restricciones.maxWidth - espacio * (columnas - 1)) / columnas;
         return Wrap(
           spacing: espacio,
           runSpacing: espacio,
@@ -640,19 +655,29 @@ class TecnicoCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.star_rounded, size: 16, color: Colores.estrella),
+                const Icon(
+                  Icons.star_rounded,
+                  size: 16,
+                  color: Colores.estrella,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   t.totalResenas == 0
                       ? 'Nuevo'
-                      : t.calificacion.toStringAsFixed(t.calificacion % 1 == 0 ? 1 : 2),
-                  style: textos.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                      : t.calificacion.toStringAsFixed(
+                          t.calificacion % 1 == 0 ? 1 : 2,
+                        ),
+                  style: textos.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 if (t.totalResenas > 0) ...[
                   const SizedBox(width: 4),
                   Text(
                     '(${t.totalResenas})',
-                    style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
+                    style: textos.bodySmall?.copyWith(
+                      color: Colores.tintaSuave,
+                    ),
                   ),
                 ],
                 const SizedBox(width: Espacios.m),
@@ -670,7 +695,9 @@ class TecnicoCard extends StatelessWidget {
                     'a ${Formatos.distancia(t.metros.toDouble())}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
+                    style: textos.bodySmall?.copyWith(
+                      color: Colores.tintaSuave,
+                    ),
                   ),
                 ),
               ],
@@ -726,17 +753,9 @@ class TecnicoCard extends StatelessWidget {
 
 /// Técnico en una fila: datos a la izquierda, tarifa y botones a la derecha.
 class TecnicoFila extends StatelessWidget {
-  const TecnicoFila({
-    super.key,
-    required this.tecnico,
-    this.destacado = false,
-    this.onSolicitar,
-  });
+  const TecnicoFila({super.key, required this.tecnico, this.onSolicitar});
 
   final TecnicoCercano tecnico;
-
-  /// El primero de la lista muestra también el botón "Contactar".
-  final bool destacado;
 
   /// Null para el técnico (solo el cliente puede solicitar).
   final VoidCallback? onSolicitar;
@@ -795,8 +814,11 @@ class TecnicoFila extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.verified_outlined,
-                size: 18, color: Colores.primario),
+            const Icon(
+              Icons.verified_outlined,
+              size: 18,
+              color: Colores.primario,
+            ),
             if (t.nivel.isNotEmpty) ...[
               const SizedBox(width: Espacios.s),
               Pildora(texto: t.nivel, color: Colores.primario),
@@ -819,8 +841,9 @@ class TecnicoFila extends StatelessWidget {
             Text(
               t.totalResenas == 0
                   ? 'Nuevo'
-                  : t.calificacion
-                      .toStringAsFixed(t.calificacion % 1 == 0 ? 1 : 2),
+                  : t.calificacion.toStringAsFixed(
+                      t.calificacion % 1 == 0 ? 1 : 2,
+                    ),
               style: textos.labelLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             if (t.totalResenas > 0) ...[
@@ -868,14 +891,6 @@ class TecnicoFila extends StatelessWidget {
     final acciones = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (destacado && onSolicitar != null) ...[
-          FilledButton.tonal(
-            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-            onPressed: onSolicitar,
-            child: const Text('Contactar'),
-          ),
-          const SizedBox(width: Espacios.s),
-        ],
         if (onSolicitar != null)
           FilledButton(
             style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
@@ -948,36 +963,36 @@ class BannerConfianza extends StatelessWidget {
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     Widget pilar((IconData, String, String) datos) => Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colores.primarioSuave,
-                borderRadius: BorderRadius.circular(Radios.grande),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colores.primarioSuave,
+            borderRadius: BorderRadius.circular(Radios.grande),
+          ),
+          child: Icon(datos.$1, color: Colores.primario, size: 26),
+        ),
+        const SizedBox(width: Espacios.l),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(datos.$2, style: textos.titleSmall),
+              const SizedBox(height: Espacios.xs),
+              Text(
+                datos.$3,
+                style: textos.bodyMedium?.copyWith(
+                  color: Colores.tintaSuave,
+                  height: 1.5,
+                ),
               ),
-              child: Icon(datos.$1, color: Colores.primario, size: 26),
-            ),
-            const SizedBox(width: Espacios.l),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(datos.$2, style: textos.titleSmall),
-                  const SizedBox(height: Espacios.xs),
-                  Text(
-                    datos.$3,
-                    style: textos.bodyMedium?.copyWith(
-                      color: Colores.tintaSuave,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
+            ],
+          ),
+        ),
+      ],
+    );
 
     return TarjetaApp(
       radio: Radios.muyGrande,

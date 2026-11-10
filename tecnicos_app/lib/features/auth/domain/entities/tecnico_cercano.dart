@@ -27,7 +27,8 @@ class TecnicoCercano {
 
   String get primerNombre => nombres.split(' ').first;
 
-  String get nombreCorto => '$primerNombre ${apellidos.split(' ').first}'.trim();
+  String get nombreCorto =>
+      '$primerNombre ${apellidos.split(' ').first}'.trim();
 
   String get iniciales {
     final a = nombres.isEmpty ? '' : nombres[0];

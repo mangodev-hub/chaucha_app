@@ -11,8 +11,8 @@ import '../../domain/entities/rol.dart';
 
 final registroProvider =
     AsyncNotifierProvider.autoDispose<RegistroNotifier, RegistroResultado?>(
-  RegistroNotifier.new,
-);
+      RegistroNotifier.new,
+    );
 
 class RegistroNotifier extends AsyncNotifier<RegistroResultado?> {
   @override
@@ -37,8 +37,9 @@ class RegistroNotifier extends AsyncNotifier<RegistroResultado?> {
       codigoDactilar: codigoDactilar,
     );
     state = const AsyncLoading();
-    final resultado =
-        await asyncGuard(() => ref.read(authRepositoryProvider).registrar(datos));
+    final resultado = await asyncGuard(
+      () => ref.read(authRepositoryProvider).registrar(datos),
+    );
     if (ref.mounted) state = resultado;
   }
 }

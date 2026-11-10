@@ -7,8 +7,14 @@ import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../data/repositories/supabase_inicio_repository.dart';
 import '../../domain/entities/tecnico_cercano.dart';
 
-const int radioInicioM = 5000;
+class RadioInicio extends Notifier<int> {
+  @override
+  int build() => 5000;
 
+  void cambiar(int metros) => state = metros;
+}
+
+final radioInicioProvider = NotifierProvider<RadioInicio, int>(RadioInicio.new);
 
 final ubicacionInicioProvider = FutureProvider.autoDispose<LatLng>((ref) async {
   final actual = await ref.watch(ubicacionServiceProvider).obtenerActual();
@@ -17,9 +23,10 @@ final ubicacionInicioProvider = FutureProvider.autoDispose<LatLng>((ref) async {
 
 final tecnicosCercanosProvider =
     FutureProvider.autoDispose<List<TecnicoCercano>>((ref) async {
-  ref.watch(usuarioActualProvider.select((usuario) => usuario?.id));
-  final punto = await ref.watch(ubicacionInicioProvider.future);
-  return ref
-      .watch(inicioRepositoryProvider)
-      .tecnicosCercanos(punto: punto, radioM: radioInicioM);
-});
+      ref.watch(usuarioActualProvider.select((usuario) => usuario?.id));
+      final punto = await ref.watch(ubicacionInicioProvider.future);
+      final radioM = ref.watch(radioInicioProvider);
+      return ref
+          .watch(inicioRepositoryProvider)
+          .tecnicosCercanos(punto: punto, radioM: radioM);
+    });

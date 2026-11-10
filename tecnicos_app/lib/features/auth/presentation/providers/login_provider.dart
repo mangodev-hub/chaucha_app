@@ -7,8 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/async_guard.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 
-final loginProvider =
-    AsyncNotifierProvider.autoDispose<LoginNotifier, void>(LoginNotifier.new);
+final loginProvider = AsyncNotifierProvider.autoDispose<LoginNotifier, void>(
+  LoginNotifier.new,
+);
 
 class LoginNotifier extends AsyncNotifier<void> {
   @override
@@ -21,6 +22,7 @@ class LoginNotifier extends AsyncNotifier<void> {
     );
     if (ref.mounted) state = resultado;
   }
+
   Future<void> iniciarSesion({
     required String email,
     required String password,

@@ -12,8 +12,9 @@ import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/usuario_repository.dart';
 
-final sesionProvider =
-    NotifierProvider<SesionNotifier, SesionEstado>(SesionNotifier.new);
+final sesionProvider = NotifierProvider<SesionNotifier, SesionEstado>(
+  SesionNotifier.new,
+);
 
 /// Usuario conectado, o null si no hay sesión.
 final usuarioActualProvider = Provider<Usuario?>(
@@ -51,7 +52,7 @@ class SesionNotifier extends Notifier<SesionEstado> {
     ref.onDispose(recuperacion.cancel);
     return const SesionVerificando();
   }
-  
+
   Future<void> finalizarRecuperacion() => _alCambiarSesion(_auth.usuarioId);
 
   Future<void> cancelarRecuperacion() async {
@@ -76,21 +77,20 @@ class SesionNotifier extends Notifier<SesionEstado> {
     }
   }
 
-void _alFallarEnlace() {
-  ++_version;
-  final desdeEnlace = AuthRedirect.vieneDeConfirmacion;
-  AuthRedirect.vieneDeConfirmacion = false;
-  _emitir(SinSesion(correoVerificado: desdeEnlace));
-}
+  void _alFallarEnlace() {
+    ++_version;
+    final desdeEnlace = AuthRedirect.vieneDeConfirmacion;
+    AuthRedirect.vieneDeConfirmacion = false;
+    _emitir(SinSesion(correoVerificado: desdeEnlace));
+  }
 
   Future<void> _alCambiarSesion(String? usuarioId) async {
     final version = ++_version;
 
     if (usuarioId == null) {
-      _emitir(SinSesion(
-        aviso: _avisoPendiente,
-        correoVerificado: _correoVerificado,
-      ));
+      _emitir(
+        SinSesion(aviso: _avisoPendiente, correoVerificado: _correoVerificado),
+      );
       _avisoPendiente = null;
       _correoVerificado = false;
       return;
