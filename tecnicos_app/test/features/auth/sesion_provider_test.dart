@@ -31,7 +31,8 @@ class _AuthFalso implements AuthRepository {
 
   @override
   Future<void> cambiarContrasena(String nueva) async {}
-  @override Future<void> iniciarConGoogle() async {}
+  @override
+  Future<void> iniciarConGoogle() async {}
 
   @override
   Stream<String?> get cambiosDeSesion => cambios.stream;
@@ -96,12 +97,12 @@ class _UsuariosFalso implements UsuarioRepository {
 }
 
 Usuario _usuario(String id, {Rol rol = Rol.cliente}) => Usuario(
-      id: id,
-      rol: rol,
-      nombres: 'Ana',
-      apellidos: 'Pérez',
-      creadoEn: DateTime(2026),
-    );
+  id: id,
+  rol: rol,
+  nombres: 'Ana',
+  apellidos: 'Pérez',
+  creadoEn: DateTime(2026),
+);
 
 /// Deja correr los eventos del stream y los `await` pendientes.
 Future<void> _esperar() async {

@@ -89,7 +89,7 @@ class SolicitudesFalsas implements SolicitudRepository {
     if (falla != null) throw falla;
   }
 
-    @override
+  @override
   Future<void> editar(
     String id, {
     required String descripcion,

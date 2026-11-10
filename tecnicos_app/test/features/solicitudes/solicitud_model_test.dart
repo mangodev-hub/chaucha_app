@@ -6,16 +6,16 @@ import 'package:tecnicos_app/features/solicitudes/domain/entities/foto_solicitud
 import 'package:tecnicos_app/features/solicitudes/domain/entities/solicitud.dart';
 
 Map<String, dynamic> _fila({Object? oficios, String estado = 'abierta'}) => {
-      'id': 's1',
-      'cliente_id': 'c1',
-      'oficio_id': '3',
-      'descripcion': 'Gotea la llave',
-      'ubicacion': 'SRID=4326;POINT(-78.47 -0.18)',
-      'direccion_referencia': 'Portón negro',
-      'estado': estado,
-      'creado_en': '2026-11-07T10:00:00Z',
-      'oficios': oficios,
-    };
+  'id': 's1',
+  'cliente_id': 'c1',
+  'oficio_id': '3',
+  'descripcion': 'Gotea la llave',
+  'ubicacion': 'SRID=4326;POINT(-78.47 -0.18)',
+  'direccion_referencia': 'Portón negro',
+  'estado': estado,
+  'creado_en': '2026-11-07T10:00:00Z',
+  'oficios': oficios,
+};
 
 Solicitud _leer(Map<String, dynamic> fila) =>
     SolicitudModel.fromJson(fila).aEntidad();
@@ -35,7 +35,16 @@ void main() {
     });
 
     test('acepta el join como lista y usa "Oficio" si no llega', () {
-      expect(_leer(_fila(oficios: [{'nombre': 'Gasfitería'}])).oficioNombre, 'Gasfitería');
+      expect(
+        _leer(
+          _fila(
+            oficios: [
+              {'nombre': 'Gasfitería'},
+            ],
+          ),
+        ).oficioNombre,
+        'Gasfitería',
+      );
       expect(_leer(_fila()).oficioNombre, 'Oficio');
     });
 
