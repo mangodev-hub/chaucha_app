@@ -1,5 +1,5 @@
-// Pestaña "Perfil" del técnico: nivel y puntos, verificación de identidad y
-// datos de trabajo (tarifa, oficios y zona).
+// Pestaña "Perfil" del técnico: cabecera con nivel y estadísticas,
+// verificación de identidad y datos de trabajo (tarifa, oficios y zona).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -17,9 +17,11 @@ import '../../../../core/widgets/barra_accion.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
 import '../../domain/entities/cambios_perfil.dart';
@@ -138,12 +140,14 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
           cargando: guardando,
           onPressed: _guardar,
         );
-        final resumen = [
-          _Resumen(perfil: perfil),
-          const SizedBox(height: Espacios.l),
-          _BannerVerificacion(verificado: perfil.verificado),
+        final nombre = ref.watch(usuarioActualProvider)?.nombreCompleto ?? '';
+        final cabecera = <Widget>[
+          _CabeceraTecnico(nombre: nombre, perfil: perfil),
+          const SizedBox(height: Espacios.xl + 8),
+          _EstadisticasTecnico(perfil: perfil),
           const SizedBox(height: Espacios.l),
         ];
+        final banner = _BannerVerificacion(verificado: perfil.verificado);
         final tarifa = BloqueTarjeta(
           icono: Icons.payments_outlined,
           titulo: 'Tarifa base',
@@ -178,21 +182,32 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
               ancho: 1100,
               child: Form(
                 key: _formKey,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [...resumen, tarifa, oficios],
-                      ),
-                    ),
-                    const SizedBox(width: Espacios.xl),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [zona, boton],
-                      ),
+                    ...cabecera,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              banner,
+                              const SizedBox(height: Espacios.l),
+                              tarifa,
+                              oficios,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: Espacios.xl),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [zona, boton],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -212,7 +227,14 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
                   child: AnchoMaximo(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [...resumen, tarifa, oficios, zona],
+                      children: [
+                        ...cabecera,
+                        banner,
+                        const SizedBox(height: Espacios.l),
+                        tarifa,
+                        oficios,
+                        zona,
+                      ],
                     ),
                   ),
                 ),
@@ -331,88 +353,116 @@ class _BannerVerificacion extends StatelessWidget {
   }
 }
 
-/// Encabezado del perfil: puntos en grande, nivel y datos en píldoras.
-class _Resumen extends StatelessWidget {
-  const _Resumen({required this.perfil});
+/// Cabecera del perfil: banner, avatar con iniciales, nombre, ubicación,
+/// nivel y verificado.
+class _CabeceraTecnico extends StatelessWidget {
+  const _CabeceraTecnico({required this.nombre, required this.perfil});
 
+  final String nombre;
   final PerfilTecnico perfil;
 
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    final blanco = Theme.of(context).colorScheme.onPrimary;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colores.primario, Colores.primarioOscuro],
-        ),
-        boxShadow: Sombras.suave,
-        borderRadius: BorderRadius.circular(Radios.grande),
-      ),
+    final iniciales = nombre
+        .split(' ')
+        .where((p) => p.isNotEmpty)
+        .take(2)
+        .map((p) => p[0].toUpperCase())
+        .join();
+    return TarjetaApp(
+      padding: EdgeInsets.zero,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: blanco.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(Radios.pildora),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.workspace_premium_rounded,
-                  color: Colores.estrella,
-                  size: 32,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(Radios.grande),
                 ),
-                const SizedBox(width: Espacios.s),
-                // En pantallas angostas, el número se achica en vez de
-                // desbordarse.
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '${perfil.puntos} pts',
-                      style: textos.displaySmall?.copyWith(color: blanco),
+                child: Container(
+                  height: 120,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colores.primarioOscuro, Colores.primario],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                     ),
                   ),
                 ),
+              ),
+              Positioned(
+                left: Espacios.xl,
+                bottom: -44,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colores.tarjeta,
+                    shape: BoxShape.circle,
+                  ),
+                  child: CircleAvatar(
+                    radius: 44,
+                    backgroundColor: Colores.primarioSuave,
+                    child: Text(
+                      iniciales,
+                      style: textos.headlineSmall?.copyWith(
+                        color: Colores.primarioOscuro,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Espacios.xl + 104,
+              Espacios.m,
+              Espacios.l,
+              Espacios.l,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(nombre, style: textos.headlineSmall),
+                const SizedBox(height: Espacios.xs),
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: Colores.primario,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Quito, Ecuador',
+                      style: TextStyle(color: Colores.tintaSuave),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Espacios.s),
+                Wrap(
+                  spacing: Espacios.s,
+                  runSpacing: Espacios.xs,
+                  children: [
+                    Pildora(
+                      texto: 'Nivel ${perfil.nivelNombre}',
+                      icono: Icons.workspace_premium_outlined,
+                      color: Colores.primario,
+                    ),
+                    if (perfil.verificado)
+                      const Pildora(
+                        texto: 'Verificado',
+                        icono: Icons.verified,
+                        color: Colores.acento,
+                      ),
+                  ],
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: Espacios.m),
-          Text(
-            'Nivel ${perfil.nivelNombre}',
-            style: textos.titleLarge?.copyWith(color: blanco),
-          ),
-          const SizedBox(height: Espacios.l),
-          Wrap(
-            spacing: Espacios.s,
-            runSpacing: Espacios.s,
-            alignment: WrapAlignment.center,
-            children: [
-              _Pildora(
-                icono: Icons.star_rounded,
-                colorIcono: Colores.estrella,
-                texto:
-                    '${perfil.calificacionPromedio.toStringAsFixed(1)} '
-                    '(${perfil.totalResenas} reseñas)',
-              ),
-              _Pildora(
-                icono: Icons.percent_rounded,
-                texto:
-                    'Comisión ${perfil.comisionPorcentaje.toStringAsFixed(0)} %',
-              ),
-              if (perfil.verificado)
-                const _Pildora(
-                  icono: Icons.verified_rounded,
-                  colorIcono: Colores.acento,
-                  texto: 'Verificado',
-                ),
-            ],
           ),
         ],
       ),
@@ -420,32 +470,77 @@ class _Resumen extends StatelessWidget {
   }
 }
 
-class _Pildora extends StatelessWidget {
-  const _Pildora({
-    required this.icono,
-    required this.texto,
-    this.colorIcono = Colores.tinta,
-  });
+/// Tarjetas de puntos, calificación y comisión.
+class _EstadisticasTecnico extends StatelessWidget {
+  const _EstadisticasTecnico({required this.perfil});
 
-  final IconData icono;
-  final String texto;
-  final Color colorIcono;
+  final PerfilTecnico perfil;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colores.tarjeta,
-        borderRadius: BorderRadius.circular(Radios.pildora),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    final esNuevo = perfil.totalResenas == 0;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _DatoPerfil(
+            icono: Icons.workspace_premium_outlined,
+            valor: '${perfil.puntos}',
+            etiqueta: 'Puntos',
+          ),
+        ),
+        const SizedBox(width: Espacios.m),
+        Expanded(
+          child: _DatoPerfil(
+            icono: Icons.star_rounded,
+            valor: esNuevo
+                ? 'Nuevo'
+                : perfil.calificacionPromedio.toStringAsFixed(1),
+            etiqueta: esNuevo ? 'Sin reseñas' : '${perfil.totalResenas} reseñas',
+          ),
+        ),
+        const SizedBox(width: Espacios.m),
+        Expanded(
+          child: _DatoPerfil(
+            icono: Icons.percent_rounded,
+            valor: '${perfil.comisionPorcentaje.toStringAsFixed(0)} %',
+            etiqueta: 'Comisión',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DatoPerfil extends StatelessWidget {
+  const _DatoPerfil({
+    required this.icono,
+    required this.valor,
+    required this.etiqueta,
+  });
+
+  final IconData icono;
+  final String valor;
+  final String etiqueta;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return TarjetaApp(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icono, size: 16, color: colorIcono),
-          const SizedBox(width: Espacios.xs),
-          Flexible(
-            child: Text(texto, style: Theme.of(context).textTheme.labelLarge),
+          IconoRecuadro(icono: icono, lado: 40),
+          const SizedBox(height: Espacios.s),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(valor, style: textos.headlineSmall),
+          ),
+          Text(
+            etiqueta,
+            maxLines: 2,
+            style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
           ),
         ],
       ),
