@@ -67,7 +67,9 @@ class _EditarDialogState extends ConsumerState<_EditarDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (widget.solicitud.estado.oficioEditable)
-                  ref.watch(oficiosProvider).when(
+                  ref
+                      .watch(oficiosProvider)
+                      .when(
                         data: (lista) => DropdownButtonFormField<int>(
                           initialValue: _oficioId,
                           decoration: const InputDecoration(

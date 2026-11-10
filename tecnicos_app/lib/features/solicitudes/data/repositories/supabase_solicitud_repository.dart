@@ -56,12 +56,15 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
     String? direccion,
   }) {
     return supabaseGuard(() async {
-      await _client.rpc('editar_solicitud', params: {
-        'p_id': id,
-        'p_descripcion': descripcion,
-        'p_oficio_id': oficioId,
-        'p_direccion': direccion,
-      });
+      await _client.rpc(
+        'editar_solicitud',
+        params: {
+          'p_id': id,
+          'p_descripcion': descripcion,
+          'p_oficio_id': oficioId,
+          'p_direccion': direccion,
+        },
+      );
     });
   }
 
@@ -71,7 +74,7 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
       await _client.rpc('eliminar_solicitud', params: {'p_id': id});
     });
   }
-  
+
   @override
   Future<String> crear(NuevaSolicitud nueva) {
     return supabaseGuard(() async {

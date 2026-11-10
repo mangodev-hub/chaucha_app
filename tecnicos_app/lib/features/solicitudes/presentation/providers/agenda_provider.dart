@@ -57,19 +57,20 @@ final agendaProvider = FutureProvider.autoDispose.family<Agenda, bool>((
     for (final i in items)
       if (i.oferta.tarifaPendiente && i.solicitud.estado.recibeCotizaciones) i,
   ];
-  final proximos = [
-    for (final i in items)
-      if (i.oferta.estado == EstadoCotizacion.aceptada &&
-          i.solicitud.estado == EstadoSolicitud.aceptada)
-        i,
-  ]..sort((a, b) {
-      final fa = a.fecha;
-      final fb = b.fecha;
-      if (fa == null && fb == null) return 0;
-      if (fa == null) return 1;
-      if (fb == null) return -1;
-      return fa.compareTo(fb);
-    });
+  final proximos =
+      [
+        for (final i in items)
+          if (i.oferta.estado == EstadoCotizacion.aceptada &&
+              i.solicitud.estado == EstadoSolicitud.aceptada)
+            i,
+      ]..sort((a, b) {
+        final fa = a.fecha;
+        final fb = b.fecha;
+        if (fa == null && fb == null) return 0;
+        if (fa == null) return 1;
+        if (fb == null) return -1;
+        return fa.compareTo(fb);
+      });
 
   return Agenda(tickets: tickets, proximos: proximos);
 });
