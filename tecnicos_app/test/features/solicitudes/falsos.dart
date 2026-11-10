@@ -89,6 +89,17 @@ class SolicitudesFalsas implements SolicitudRepository {
     if (falla != null) throw falla;
   }
 
+    @override
+  Future<void> editar(
+    String id, {
+    required String descripcion,
+    required int oficioId,
+    String? direccion,
+  }) async {}
+
+  @override
+  Future<void> eliminar(String id) async {}
+
   @override
   Future<List<FotoSolicitud>> fotos(String solicitudId) async => const [];
 

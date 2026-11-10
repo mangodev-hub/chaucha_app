@@ -51,6 +51,27 @@ class _AuthFalso implements AuthRepository {
   @override
   Future<RegistroResultado> registrar(RegistroDatos datos) async =>
       RegistroResultado.sesionIniciada;
+
+  @override
+  String? get correoActual => null;
+
+  @override
+  bool get usaContrasena => true;
+
+  @override
+  Future<void> cambiarContrasenaConActual({
+    required String actual,
+    required String nueva,
+  }) async {}
+
+  @override
+  Future<void> cambiarCorreo({
+    required String contrasena,
+    required String nuevo,
+  }) async {}
+
+  @override
+  Future<void> cerrarSesionEnTodos() async {}
 }
 
 class _UsuariosFalso implements UsuarioRepository {

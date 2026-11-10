@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tecnicos_app/app/inicio_shell.dart';
+import 'package:tecnicos_app/features/auth/data/repositories/supabase_auth_repository.dart';
+import 'package:tecnicos_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:tecnicos_app/features/auth/presentation/providers/sesion_provider.dart';
 
 const _destinos = [
   Destino(
@@ -18,6 +21,17 @@ const _destinos = [
   ),
 ];
 
+class _AuthSinSesion implements AuthRepository {
+  @override
+  String? get correoActual => null;
+
+  @override
+  bool get usaContrasena => true;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
 Future<void> _montarEnMovil(WidgetTester tester) async {
   tester.view
     ..physicalSize = const Size(390, 844)
@@ -25,6 +39,10 @@ Future<void> _montarEnMovil(WidgetTester tester) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
+      overrides: [
+        usuarioActualProvider.overrideWithValue(null),
+        authRepositoryProvider.overrideWithValue(_AuthSinSesion()),
+      ],
       child: MaterialApp(
         home: InicioShell(destinos: _destinos, onCerrarSesion: () {}),
       ),
@@ -40,7 +58,6 @@ void main() {
 
     expect(find.byType(NavigationBar), findsNothing);
     expect(find.text('Cerca'), findsOneWidget);
-    // El título completo va en la barra superior.
     expect(find.widgetWithText(AppBar, 'Inicio'), findsOneWidget);
     expect(find.byIcon(Icons.home_rounded), findsOneWidget);
   });
@@ -56,7 +73,6 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Solicitudes cerca'), findsOneWidget);
     final pila = tester.widget<IndexedStack>(find.byType(IndexedStack));
     expect(pila.index, 1);
-    // La pestaña de inicio vuelve al ícono sin relleno.
     expect(find.byIcon(Icons.home_rounded), findsNothing);
     expect(find.byIcon(Icons.home_outlined), findsOneWidget);
   });
