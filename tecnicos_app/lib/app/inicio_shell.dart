@@ -10,6 +10,7 @@ import '../features/notificaciones/presentation/providers/notificaciones_provide
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
 import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
 import 'menu_cuenta.dart';
+import '../features/chat/presentation/widgets/boton_chats.dart';
 
 class Destino {
   const Destino(
@@ -41,10 +42,13 @@ class InicioShell extends ConsumerStatefulWidget {
     super.key,
     required this.destinos,
     required this.onCerrarSesion,
+    this.conChats = false, this.esCliente = false,
   });
 
   final List<Destino> destinos;
   final VoidCallback onCerrarSesion;
+  final bool conChats;
+  final bool esCliente;
 
   @override
   ConsumerState<InicioShell> createState() => _InicioShellState();
@@ -90,6 +94,8 @@ class _InicioShellState extends ConsumerState<InicioShell> {
             Expanded(child: contenido),
           ],
         ),
+        floatingActionButton:
+            widget.conChats ? BotonChats(esCliente: widget.esCliente) : null,
       );
     }
 
@@ -106,6 +112,8 @@ class _InicioShellState extends ConsumerState<InicioShell> {
         ],
       ),
       body: contenido,
+      floatingActionButton:
+          widget.conChats ? BotonChats(esCliente: widget.esCliente) : null,
       bottomNavigationBar: _BarraFlotante(
         destinos: destinos,
         indice: _indice,

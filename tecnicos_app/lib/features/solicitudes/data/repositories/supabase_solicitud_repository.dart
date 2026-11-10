@@ -130,6 +130,18 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
   }
 
   @override
+  Future<List<Solicitud>> porIds(List<String> ids) {
+    if (ids.isEmpty) return Future.value(const <Solicitud>[]);
+    return supabaseGuard(() async {
+      final filas = await _client
+          .from(_tabla)
+          .select(SolicitudModel.columnas)
+          .inFilter('id', ids);
+      return _aEntidades(filas);
+    });
+  }
+
+  @override
   Future<void> marcarTerminada(String solicitudId, List<Uint8List> evidencias) {
     return supabaseGuard(() async {
       await _subirFotos(solicitudId, TipoArchivo.evidencia, evidencias);

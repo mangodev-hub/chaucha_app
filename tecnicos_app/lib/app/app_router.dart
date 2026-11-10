@@ -29,6 +29,7 @@ import '../features/solicitudes/presentation/views/mis_trabajos_view.dart';
 import '../features/solicitudes/presentation/views/solicitud_detalle_view.dart';
 import 'inicio_shell.dart';
 import 'route_guard.dart';
+import '../features/solicitudes/presentation/views/agenda_view.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final cambiosDeSesion = ValueNotifier<SesionEstado>(ref.read(sesionProvider));
@@ -85,6 +86,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.clienteInicio,
         builder: (context, state) => InicioShell(
           onCerrarSesion: cerrarSesion,
+          conChats: true, esCliente: true,
           destinos: const [
             Destino(
               'Inicio',
@@ -98,6 +100,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               MisSolicitudesView(),
               iconoActivo: Icons.assignment_rounded,
               tiposNotificacion: ['cotizacion', 'tarifa', 'mensaje'],
+            ),
+                        Destino(
+              'Agenda',
+              Icons.event_outlined,
+              AgendaView(esCliente: true),
+              iconoActivo: Icons.event_rounded,
+              tiposNotificacion: ['tarifa'],
             ),
             Destino(
               'Mi perfil',
@@ -135,6 +144,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.tecnicoInicio,
         builder: (context, state) => InicioShell(
           onCerrarSesion: cerrarSesion,
+          conChats: true,
           destinos: const [
             Destino(
               'Inicio',
@@ -160,6 +170,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 'tarifa_cancelada',
                 'cierre',
               ],
+            ),
+              Destino(
+              'Agenda',
+              Icons.event_outlined,
+              AgendaView(esCliente: false),
+              iconoActivo: Icons.event_rounded,
             ),
             Destino(
               'Mi perfil',

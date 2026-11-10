@@ -23,6 +23,7 @@ import '../../domain/entities/tecnico_cercano.dart';
 import '../providers/inicio_provider.dart';
 import '../widgets/inicio_widgets.dart';
 import '../widgets/mapa_tecnicos.dart';
+import '../../../chat/presentation/widgets/chat_flotante.dart';
 
 Future<void> _pedir(
   BuildContext context,
@@ -95,7 +96,7 @@ Future<void> _solicitarTecnico(
           tecnicoId: tecnico.id,
         );
     if (!context.mounted) return;
-    await context.push(AppRoutes.chat(id, esCliente: true));
+    await abrirChat(context, id, esCliente: true);
   } on AppFailure catch (e) {
     if (context.mounted) context.mostrarMensaje(e.message, tipo: TipoMensaje.error);
   }

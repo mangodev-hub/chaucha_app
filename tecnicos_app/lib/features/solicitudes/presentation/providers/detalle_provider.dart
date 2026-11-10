@@ -77,23 +77,16 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
     () => ref.read(solicitudRepositoryProvider).eliminar(solicitudId),
     recargar: false,
   );
-  Future<bool> enviarOferta({
-    required double precioBase,
-    required String solucion,
-  }) {
+  Future<bool> enviarOferta({required String solucion}) {
     return _ejecutar(() async {
       if (solucion.trim().isEmpty) {
         throw const AppFailure('Explica cómo resolverías el problema.');
-      }
-      if (precioBase <= 0) {
-        throw const AppFailure('El precio base debe ser mayor que 0.');
       }
       await ref
           .read(cotizacionRepositoryProvider)
           .enviar(
             NuevaCotizacion(
               solicitudId: solicitudId,
-              precioBase: precioBase,
               solucion: solucion.trim(),
             ),
           );
