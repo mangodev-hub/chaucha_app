@@ -25,7 +25,7 @@ class MapaTecnicos extends StatefulWidget {
   final int radioM;
   final List<TecnicoCercano> tecnicos;
 
-  final VoidCallback? onContactar;
+final ValueChanged<TecnicoCercano>? onContactar;
 
   @override
   State<MapaTecnicos> createState() => _MapaTecnicosState();
@@ -139,7 +139,7 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
               bottom: Espacios.l,
               child: _TarjetaCercano(
                 tecnico: cercano,
-                onContactar: widget.onContactar,
+                onContactar: widget.onContactar == null ? null : () => widget.onContactar!(cercano),
               ),
             ),
         ],

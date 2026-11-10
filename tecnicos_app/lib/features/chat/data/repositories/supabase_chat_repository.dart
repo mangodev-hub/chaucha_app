@@ -98,21 +98,11 @@ class SupabaseChatRepository implements ChatRepository {
     required String tecnicoId,
   }) {
     return supabaseGuard(() async {
-      final existente = await _client
-          .from('conversaciones')
-          .select('id')
-          .eq('solicitud_id', solicitudId)
-          .eq('tecnico_id', tecnicoId)
-          .limit(1)
-          .maybeSingle();
-      if (existente != null) return existente['id'] as String;
-
-      final nueva = await _client
-          .from('conversaciones')
-          .insert({'solicitud_id': solicitudId, 'tecnico_id': tecnicoId})
-          .select('id')
-          .single();
-      return nueva['id'] as String;
+      final id = await _client.rpc('iniciar_conversacion', params: {
+        'p_solicitud': solicitudId,
+        'p_tecnico': tecnicoId,
+      });
+      return id as String;
     });
   }
 
