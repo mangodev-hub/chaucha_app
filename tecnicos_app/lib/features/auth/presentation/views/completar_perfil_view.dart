@@ -49,7 +49,9 @@ class _CompletarPerfilViewState extends ConsumerState<CompletarPerfilView> {
       _avisarFallo();
       return;
     }
-    await ref.read(completarPerfilProvider.notifier).completar(
+    await ref
+        .read(completarPerfilProvider.notifier)
+        .completar(
           cedula: _cedula.text,
           codigoDactilar: _dactilar.text,
           rol: _rol,

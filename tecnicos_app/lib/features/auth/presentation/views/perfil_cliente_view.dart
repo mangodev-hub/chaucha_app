@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/carrusel_aliados.dart';
 import '../../../solicitudes/domain/entities/solicitud.dart';
@@ -23,7 +25,20 @@ const _rojo = Colores.error;
 const _blanco = Colores.tarjeta;
 
 String _mesAnio(DateTime f) {
-  const m = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const m = [
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
+  ];
   return '${m[f.month - 1]} ${f.year}';
 }
 
@@ -39,12 +54,17 @@ class PerfilClienteView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final usuario = ref.watch(usuarioActualProvider);
     if (usuario == null) return const SizedBox.shrink();
-    final todas = ref.watch(misSolicitudesProvider).value ?? const <Solicitud>[];
+    final todas =
+        ref.watch(misSolicitudesProvider).value ?? const <Solicitud>[];
     final completadas = [
       for (final s in todas)
         if (s.estado == EstadoSolicitud.completada) s,
     ];
-    final activas = todas.where((s) => s.estado.recibeCotizaciones).length;
+    final pendientes = [
+      for (final s in todas)
+        if (s.estado.recibeCotizaciones) s,
+    ];
+    final activas = pendientes.length;
 
     return ColoredBox(
       color: _fondo,
@@ -56,7 +76,13 @@ class PerfilClienteView extends ConsumerWidget {
             child: LayoutBuilder(
               builder: (context, c) {
                 final ancho = c.maxWidth >= 900;
-                final izquierda = _Historial(completadas);
+                final izquierda = Column(
+                  children: [
+                    _Activas(pendientes),
+                    const SizedBox(height: 24),
+                    _Historial(completadas),
+                  ],
+                );
                 const derecha = Column(
                   children: [
                     _Ubicacion(),
@@ -195,8 +221,9 @@ class _Cabecera extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
                 child: Container(
                   height: 160,
                   decoration: const BoxDecoration(
@@ -279,10 +306,25 @@ class _Cabecera extends StatelessWidget {
                     ),
                   ],
                 ),
-                TextButton(
+                TextButton.icon(
                   onPressed: () => _mostrarBaja(context),
-                  style: TextButton.styleFrom(foregroundColor: _rojo),
-                  child: const Text('Darse de baja'),
+                  icon: const Icon(Icons.person_remove_outlined, size: 18),
+                  label: const Text(
+                    'Darse de baja',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: _rojo,
+                    backgroundColor: _rojo.withValues(alpha: 0.08),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: _rojo.withValues(alpha: 0.3)),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -360,7 +402,13 @@ class _Estadisticas extends StatelessWidget {
           );
         }
         return Column(
-          children: [a, const SizedBox(height: 12), b, const SizedBox(height: 12), d],
+          children: [
+            a,
+            const SizedBox(height: 12),
+            b,
+            const SizedBox(height: 12),
+            d,
+          ],
         );
       },
     );
@@ -448,6 +496,55 @@ class _Historial extends StatelessWidget {
           else
             for (final s in solicitudes) ...[
               _FilaTrabajo(s),
+              const SizedBox(height: 12),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Activas extends StatelessWidget {
+  const _Activas(this.solicitudes);
+
+  final List<Solicitud> solicitudes;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Tarjeta(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Solicitudes activas',
+                  style: TextStyle(
+                    color: _texto,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              _Etiqueta('${solicitudes.length} en curso'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (solicitudes.isEmpty)
+            const Text(
+              'No tienes solicitudes en curso.',
+              style: TextStyle(color: _gris, fontSize: 14),
+            )
+          else
+            for (final s in solicitudes) ...[
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => context.push(
+                  AppRoutes.detalleSolicitud(s.id, esCliente: true),
+                ),
+                child: _FilaTrabajo(s),
+              ),
               const SizedBox(height: 12),
             ],
         ],
@@ -573,7 +670,9 @@ class _MapaZonaState extends State<_MapaZona> {
         return;
       }
       final p = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+        ),
       );
       if (!mounted) return;
       final punto = LatLng(

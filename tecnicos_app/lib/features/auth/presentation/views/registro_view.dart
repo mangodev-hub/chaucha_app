@@ -61,7 +61,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
       _email,
       _password,
       _confirmacion,
-      _dactilar
+      _dactilar,
     ]) {
       controller.dispose();
     }
@@ -76,7 +76,9 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
       _avisarFallo();
       return;
     }
-    await ref.read(registroProvider.notifier).registrar(
+    await ref
+        .read(registroProvider.notifier)
+        .registrar(
           email: _email.text,
           password: _password.text,
           nombres: _nombres.text,
@@ -151,9 +153,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
               '¿No recibiste el correo de confirmación? Revisa spam o '
               'promociones; a veces tarda unos minutos.',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
+              style: Theme.of(context).textTheme.bodySmall
                   ?.copyWith(color: Colores.tintaSuave),
             ),
             TextButton(
@@ -261,8 +261,9 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
                     etiqueta: 'Apellidos',
                     child: TextFormField(
                       controller: _apellidos,
-                      decoration:
-                          const InputDecoration(hintText: 'Zambrano García'),
+                      decoration: const InputDecoration(
+                        hintText: 'Zambrano García',
+                      ),
                       textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.familyName],
                       textInputAction: TextInputAction.next,

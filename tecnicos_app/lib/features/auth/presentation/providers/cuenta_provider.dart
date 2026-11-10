@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/async_guard.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 
-final cuentaProvider =
-    AsyncNotifierProvider.autoDispose<CuentaNotifier, void>(CuentaNotifier.new);
+final cuentaProvider = AsyncNotifierProvider.autoDispose<CuentaNotifier, void>(
+  CuentaNotifier.new,
+);
 
 class CuentaNotifier extends AsyncNotifier<void> {
   @override

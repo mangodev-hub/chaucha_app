@@ -21,7 +21,7 @@ abstract interface class AuthRepository {
   Future<void> reenviarConfirmacion(String email);
 
   Future<void> cambiarContrasena(String nueva);
-    String? get correoActual;
+  String? get correoActual;
 
   bool get usaContrasena;
 

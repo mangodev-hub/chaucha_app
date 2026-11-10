@@ -9,8 +9,8 @@ import 'sesion_provider.dart';
 
 final completarPerfilProvider =
     AsyncNotifierProvider.autoDispose<CompletarPerfilNotifier, void>(
-  CompletarPerfilNotifier.new,
-);
+      CompletarPerfilNotifier.new,
+    );
 
 class CompletarPerfilNotifier extends AsyncNotifier<void> {
   @override
@@ -24,7 +24,9 @@ class CompletarPerfilNotifier extends AsyncNotifier<void> {
     if (state.isLoading) return;
     state = const AsyncLoading();
     final resultado = await asyncGuard(() async {
-      await ref.read(usuarioRepositoryProvider).completarPerfil(
+      await ref
+          .read(usuarioRepositoryProvider)
+          .completarPerfil(
             cedula: cedula,
             codigoDactilar: codigoDactilar,
             rol: rol,

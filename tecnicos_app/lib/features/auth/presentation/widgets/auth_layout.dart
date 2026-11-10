@@ -43,7 +43,11 @@ class AuthLayout extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colores.primarioSuave, Colores.fondo, Colores.superficie],
+              colors: [
+                Colores.primarioSuave,
+                Colores.fondo,
+                Colores.superficie,
+              ],
             ),
           ),
           child: SafeArea(
@@ -59,7 +63,9 @@ class AuthLayout extends StatelessWidget {
         desktop: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: _PanelMarca(detallado: esRegistro || panelDetallado)),
+            Expanded(
+              child: _PanelMarca(detallado: esRegistro || panelDetallado),
+            ),
             Expanded(
               child: _FormularioEscritorio(
                 titulo: titulo,
@@ -158,7 +164,12 @@ class _PanelMarca extends StatelessWidget {
     style: estilo?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
   );
 
-  Widget _beneficio(TextTheme textos, IconData icono, String titulo, String texto) {
+  Widget _beneficio(
+    TextTheme textos,
+    IconData icono,
+    String titulo,
+    String texto,
+  ) {
     return Container(
       padding: const EdgeInsets.all(Espacios.m),
       decoration: BoxDecoration(

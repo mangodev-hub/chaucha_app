@@ -15,17 +15,16 @@ class MapaTecnicos extends StatefulWidget {
     required this.radioM,
     required this.tecnicos,
     this.onContactar,
+    this.onCambiarRadio,
     this.alto = 460,
-    this.etiquetaRadio,
   });
 
   final double alto;
-  final String? etiquetaRadio;
   final LatLng punto;
   final int radioM;
   final List<TecnicoCercano> tecnicos;
-
-final ValueChanged<TecnicoCercano>? onContactar;
+  final ValueChanged<TecnicoCercano>? onContactar;
+  final ValueChanged<int>? onCambiarRadio;
 
   @override
   State<MapaTecnicos> createState() => _MapaTecnicosState();
@@ -34,6 +33,13 @@ final ValueChanged<TecnicoCercano>? onContactar;
 class _MapaTecnicosState extends State<MapaTecnicos> {
   static const double _zoomInicial = 12.5;
   final MapController _controller = MapController();
+  late double _radioKm = widget.radioM / 1000;
+
+  @override
+  void didUpdateWidget(MapaTecnicos anterior) {
+    super.didUpdateWidget(anterior);
+    if (anterior.radioM != widget.radioM) _radioKm = widget.radioM / 1000;
+  }
 
   @override
   void dispose() {
@@ -68,7 +74,8 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
               initialCenter: widget.punto,
               initialZoom: _zoomInicial,
               interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all &
+                flags:
+                    InteractiveFlag.all &
                     ~InteractiveFlag.rotate &
                     ~InteractiveFlag.scrollWheelZoom,
               ),
@@ -82,7 +89,7 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
                 circles: [
                   CircleMarker(
                     point: widget.punto,
-                    radius: widget.radioM.toDouble(),
+                    radius: _radioKm * 1000,
                     useRadiusInMeter: true,
                     color: Colores.primario.withValues(alpha: 0.08),
                     borderColor: Colores.primario,
@@ -117,12 +124,17 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
               ),
             ],
           ),
-          if (widget.etiquetaRadio != null)
-            Positioned(
-              top: Espacios.l,
-              left: Espacios.l,
-              child: _ChipRadio(texto: widget.etiquetaRadio!),
+          Positioned(
+            top: Espacios.l,
+            left: Espacios.l,
+            child: _ControlRadio(
+              km: _radioKm,
+              onCambio: (v) => setState(() => _radioKm = v),
+              onFin: widget.onCambiarRadio == null
+                  ? null
+                  : (v) => widget.onCambiarRadio!((v * 1000).round()),
             ),
+          ),
           Positioned(
             top: Espacios.l,
             right: Espacios.l,
@@ -139,7 +151,9 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
               bottom: Espacios.l,
               child: _TarjetaCercano(
                 tecnico: cercano,
-                onContactar: widget.onContactar == null ? null : () => widget.onContactar!(cercano),
+                onContactar: widget.onContactar == null
+                    ? null
+                    : () => widget.onContactar!(cercano),
               ),
             ),
         ],
@@ -228,23 +242,26 @@ class _Controles extends StatelessWidget {
   final VoidCallback onCentrar;
 
   Widget _caja(List<Widget> hijos) => Container(
-        decoration: BoxDecoration(
-          color: Colores.tarjeta,
-          borderRadius: BorderRadius.circular(Radios.medio),
-          boxShadow: Sombras.suave,
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: hijos),
-      );
+    decoration: BoxDecoration(
+      color: Colores.tarjeta,
+      borderRadius: BorderRadius.circular(Radios.medio),
+      boxShadow: Sombras.suave,
+    ),
+    child: Column(mainAxisSize: MainAxisSize.min, children: hijos),
+  );
 
-  Widget _boton(IconData icono, String ayuda, VoidCallback onTap,
-          {Color color = Colores.tinta}) =>
-      IconButton(
-        tooltip: ayuda,
-        constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-        padding: EdgeInsets.zero,
-        icon: Icon(icono, size: 20, color: color),
-        onPressed: onTap,
-      );
+  Widget _boton(
+    IconData icono,
+    String ayuda,
+    VoidCallback onTap, {
+    Color color = Colores.tinta,
+  }) => IconButton(
+    tooltip: ayuda,
+    constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+    padding: EdgeInsets.zero,
+    icon: Icon(icono, size: 20, color: color),
+    onPressed: onTap,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -269,31 +286,40 @@ class _Controles extends StatelessWidget {
   }
 }
 
-class _ChipRadio extends StatelessWidget {
-  const _ChipRadio({required this.texto});
+class _ControlRadio extends StatelessWidget {
+  const _ControlRadio({required this.km, required this.onCambio, this.onFin});
 
-  final String texto;
+  final double km;
+  final ValueChanged<double> onCambio;
+  final ValueChanged<double>? onFin;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Espacios.m, vertical: 6),
+      width: 220,
+      padding: const EdgeInsets.fromLTRB(Espacios.m, 6, Espacios.m, 0),
       decoration: BoxDecoration(
         color: Colores.tarjeta,
-        borderRadius: BorderRadius.circular(Radios.pildora),
+        borderRadius: BorderRadius.circular(Radios.medio),
         boxShadow: Sombras.suave,
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.circle, size: 8, color: Colores.primario),
-          const SizedBox(width: 6),
           Text(
-            texto,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
+            'Radio: ${km.round()} km',
+            style: Theme.of(context).textTheme.labelSmall
                 ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          Slider(
+            value: km,
+            min: 1,
+            max: 20,
+            divisions: 19,
+            label: '${km.round()} km',
+            onChanged: onCambio,
+            onChangeEnd: onFin,
           ),
         ],
       ),

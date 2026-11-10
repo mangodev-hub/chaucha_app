@@ -17,13 +17,13 @@ import '../../../../core/widgets/tarjeta_portada.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
 import '../../../chat/data/repositories/supabase_chat_repository.dart';
+import '../../../chat/presentation/widgets/chat_flotante.dart';
 import '../../../solicitudes/domain/entities/solicitud.dart';
 import '../../../solicitudes/presentation/providers/listas_provider.dart';
 import '../../domain/entities/tecnico_cercano.dart';
 import '../providers/inicio_provider.dart';
 import '../widgets/inicio_widgets.dart';
 import '../widgets/mapa_tecnicos.dart';
-import '../../../chat/presentation/widgets/chat_flotante.dart';
 
 Future<void> _pedir(
   BuildContext context,
@@ -54,7 +54,9 @@ Future<void> _solicitarTecnico(
     final lista = await ref.read(misSolicitudesProvider.future);
     compatibles = [
       for (final s in lista)
-        if (s.estado.recibeCotizaciones && tecnico.oficios.contains(s.oficioNombre)) s,
+        if (s.estado.recibeCotizaciones &&
+            tecnico.oficios.contains(s.oficioNombre))
+          s,
     ];
   } catch (_) {}
   if (!context.mounted) return;
@@ -91,14 +93,18 @@ Future<void> _solicitarTecnico(
   if (elegida == null || !context.mounted) return;
 
   try {
-    final id = await ref.read(chatRepositoryProvider).obtenerOCrearConversacion(
+    final id = await ref
+        .read(chatRepositoryProvider)
+        .obtenerOCrearConversacion(
           solicitudId: elegida.id,
           tecnicoId: tecnico.id,
         );
     if (!context.mounted) return;
     await abrirChat(context, id, esCliente: true);
   } on AppFailure catch (e) {
-    if (context.mounted) context.mostrarMensaje(e.message, tipo: TipoMensaje.error);
+    if (context.mounted) {
+      context.mostrarMensaje(e.message, tipo: TipoMensaje.error);
+    }
   }
 }
 
@@ -116,7 +122,12 @@ Future<Solicitud?> _elegirSolicitud(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(Espacios.xl, 0, Espacios.xl, Espacios.s),
+            padding: const EdgeInsets.fromLTRB(
+              Espacios.xl,
+              0,
+              Espacios.xl,
+              Espacios.s,
+            ),
             child: Text(
               '¿Qué solicitud le envías a ${tecnico.nombreCorto}?',
               style: Theme.of(hoja).textTheme.titleMedium,
@@ -126,7 +137,11 @@ Future<Solicitud?> _elegirSolicitud(
             ListTile(
               leading: const Icon(Icons.assignment_outlined),
               title: Text(s.oficioNombre),
-              subtitle: Text(s.descripcion, maxLines: 2, overflow: TextOverflow.ellipsis),
+              subtitle: Text(
+                s.descripcion,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               onTap: () => Navigator.of(hoja).pop(s),
             ),
           const SizedBox(height: Espacios.s),
@@ -296,23 +311,23 @@ class _InicioViewState extends ConsumerState<InicioView> {
 
   Widget _mapa(AsyncValue<List<TecnicoCercano>> tecnicos, double alto) {
     final punto = ref.watch(ubicacionInicioProvider).value ?? GeoMapper.quito;
-    final km = (radioInicioM / 1000).toStringAsFixed(
-      radioInicioM % 1000 == 0 ? 0 : 1,
-    );
+    final radioM = ref.watch(radioInicioProvider);
     return tecnicos.when(
+      skipLoadingOnReload: true,
       loading: () => SizedBox(
         height: alto,
         child: const Center(child: CircularProgressIndicator()),
       ),
-      // El error ya se muestra (con reintento) en la lista de técnicos.
       error: (_, _) => const SizedBox.shrink(),
       data: (lista) => MapaTecnicos(
         punto: punto,
-        radioM: radioInicioM,
+        radioM: radioM,
+        onCambiarRadio: ref.read(radioInicioProvider.notifier).cambiar,
         tecnicos: lista,
         alto: alto,
-        etiquetaRadio: 'Radio: $km km (PostGIS)',
-        onContactar: widget.esCliente ? (t) => _solicitarTecnico(context, ref, t) : null,
+        onContactar: widget.esCliente
+            ? (t) => _solicitarTecnico(context, ref, t)
+            : null,
       ),
     );
   }
@@ -389,8 +404,9 @@ class _InicioViewState extends ConsumerState<InicioView> {
                 if (i > 0) const SizedBox(height: Espacios.l),
                 TecnicoFila(
                   tecnico: visibles[i],
-                  destacado: i == 0,
-                  onSolicitar: widget.esCliente ? () => _solicitarTecnico(context, ref, visibles[i]) : null,
+                  onSolicitar: widget.esCliente
+                      ? () => _solicitarTecnico(context, ref, visibles[i])
+                      : null,
                 ),
               ],
             ],

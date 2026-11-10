@@ -44,8 +44,9 @@ class _RestablecerViewState extends ConsumerState<RestablecerView> {
       return;
     }
     final mensajes = ScaffoldMessenger.of(context);
-    final bien =
-        await ref.read(restablecerProvider.notifier).cambiar(_password.text);
+    final bien = await ref
+        .read(restablecerProvider.notifier)
+        .cambiar(_password.text);
     if (bien) {
       mensajes.showSnackBar(
         const SnackBar(content: Text('Contraseña actualizada.')),

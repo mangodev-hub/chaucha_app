@@ -67,7 +67,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
     return AuthLayout(
       titulo: 'Iniciar sesión',
       tituloCentrado: true,
-            subtitulo: 'Ingresa tus datos para gestionar tus servicios del hogar.',
+      subtitulo: 'Ingresa tus datos para gestionar tus servicios del hogar.',
       anchoEscritorio: 440,
       panelDetallado: true,
       child: AutofillGroup(
@@ -77,7 +77,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const _AvisoSesion(),
-                            if (error != null)
+              if (error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: Espacios.l),
                   child: AvisoBanner(tipo: TipoAviso.error, mensaje: error),
@@ -97,7 +97,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 ),
               ),
               const SizedBox(height: Espacios.xl),
-                            CampoEtiquetado(
+              CampoEtiquetado(
                 etiqueta: 'Contraseña',
                 child: CampoContrasena(
                   controller: _password,

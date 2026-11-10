@@ -8,8 +8,8 @@ import 'sesion_provider.dart';
 
 final recuperarProvider =
     AsyncNotifierProvider.autoDispose<RecuperarNotifier, bool>(
-  RecuperarNotifier.new,
-);
+      RecuperarNotifier.new,
+    );
 
 class RecuperarNotifier extends AsyncNotifier<bool> {
   @override
@@ -28,8 +28,8 @@ class RecuperarNotifier extends AsyncNotifier<bool> {
 
 final restablecerProvider =
     AsyncNotifierProvider.autoDispose<RestablecerNotifier, void>(
-  RestablecerNotifier.new,
-);
+      RestablecerNotifier.new,
+    );
 
 class RestablecerNotifier extends AsyncNotifier<void> {
   @override
@@ -49,8 +49,8 @@ class RestablecerNotifier extends AsyncNotifier<void> {
 
 final reenviarConfirmacionProvider =
     AsyncNotifierProvider.autoDispose<ReenviarConfirmacionNotifier, void>(
-  ReenviarConfirmacionNotifier.new,
-);
+      ReenviarConfirmacionNotifier.new,
+    );
 
 class ReenviarConfirmacionNotifier extends AsyncNotifier<void> {
   @override
