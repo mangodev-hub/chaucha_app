@@ -13,10 +13,10 @@ import '../../../../core/utils/json_utils.dart';
 import '../../domain/entities/conversacion.dart';
 import '../../domain/entities/conversacion_pendiente.dart';
 import '../../domain/entities/mensaje.dart';
+import '../../domain/entities/resumen_chat.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../models/conversacion_model.dart';
 import '../models/mensaje_model.dart';
-import '../../domain/entities/resumen_chat.dart';
 
 final chatRepositoryProvider = Provider<ChatRepository>(
   (ref) => SupabaseChatRepository(ref.watch(supabaseClientProvider)),
@@ -89,8 +89,8 @@ class SupabaseChatRepository implements ChatRepository {
       return pendientes;
     });
   }
-  
-    @override
+
+  @override
   Future<List<ResumenChat>> misChats() {
     return supabaseGuard(() async {
       final uid = _client.uidActual;
@@ -172,10 +172,10 @@ class SupabaseChatRepository implements ChatRepository {
     required String tecnicoId,
   }) {
     return supabaseGuard(() async {
-      final id = await _client.rpc('iniciar_conversacion', params: {
-        'p_solicitud': solicitudId,
-        'p_tecnico': tecnicoId,
-      });
+      final id = await _client.rpc(
+        'iniciar_conversacion',
+        params: {'p_solicitud': solicitudId, 'p_tecnico': tecnicoId},
+      );
       return id as String;
     });
   }

@@ -3,10 +3,10 @@ import '../../domain/entities/cotizacion.dart';
 
 extension EstadoCotizacionDb on EstadoCotizacion {
   String get valorDb => switch (this) {
-        EstadoCotizacion.pendiente => 'pendiente',
-        EstadoCotizacion.aceptada => 'aceptada',
-        EstadoCotizacion.rechazada => 'rechazada',
-      };
+    EstadoCotizacion.pendiente => 'pendiente',
+    EstadoCotizacion.aceptada => 'aceptada',
+    EstadoCotizacion.rechazada => 'rechazada',
+  };
 
   static EstadoCotizacion desdeDb(String valor) =>
       EstadoCotizacion.values.firstWhere(

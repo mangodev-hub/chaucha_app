@@ -24,5 +24,5 @@ abstract interface class ChatRepository {
 
   Future<void> enviar({required String conversacionId, required String texto});
 
-    Future<List<ResumenChat>> misChats();
+  Future<List<ResumenChat>> misChats();
 }

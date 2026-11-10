@@ -273,7 +273,6 @@ class _Tecnico extends StatelessWidget {
   }
 }
 
-
 /// Formulario del técnico: precio base y cómo resolvería el problema.
 Future<String?> mostrarFormularioOferta(
   BuildContext context, {
@@ -289,7 +288,6 @@ class _FormularioOferta extends StatefulWidget {
   const _FormularioOferta({required this.tarifaBase});
 
   final double tarifaBase;
-
 
   @override
   State<_FormularioOferta> createState() => _FormularioOfertaState();

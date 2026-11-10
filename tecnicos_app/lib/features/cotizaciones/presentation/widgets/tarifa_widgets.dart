@@ -408,20 +408,26 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
     );
     if (hora == null || !mounted) return;
     setState(
-      () => _fecha = DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute),
+      () => _fecha = DateTime(
+        dia.year,
+        dia.month,
+        dia.day,
+        hora.hour,
+        hora.minute,
+      ),
     );
   }
 
   void _enviar() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-      if (_fecha == null) {
-        context.mostrarMensaje(
-          'Elige la fecha del servicio.',
-          tipo: TipoMensaje.error,
-        );
-        return;
-      }
-        if (!_fecha!.isAfter(DateTime.now())) {
+    if (_fecha == null) {
+      context.mostrarMensaje(
+        'Elige la fecha del servicio.',
+        tipo: TipoMensaje.error,
+      );
+      return;
+    }
+    if (!_fecha!.isAfter(DateTime.now())) {
       context.mostrarMensaje(
         'Elige una fecha y hora futuras.',
         tipo: TipoMensaje.error,

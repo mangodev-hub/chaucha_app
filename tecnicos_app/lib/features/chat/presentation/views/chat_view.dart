@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
@@ -60,11 +61,13 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
       final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
       if (uid == null) return;
       unawaited(
-        ref.read(notificacionesRepoProvider).marcarLeidas(
-          uid,
-          tipos: const ['mensaje', 'chat'],
-          referenciaId: widget.conversacionId,
-        ),
+        ref
+            .read(notificacionesRepoProvider)
+            .marcarLeidas(
+              uid,
+              tipos: const ['mensaje', 'chat'],
+              referenciaId: widget.conversacionId,
+            ),
       );
     });
   }
@@ -262,7 +265,7 @@ class _Mensajes extends StatefulWidget {
 class _MensajesState extends State<_Mensajes> {
   /// Ids ya mostrados. Null hasta la primera carga, que no se anima.
   Set<String>? _vistos;
-    Widget _contenido(Mensaje m, String? idUltimoTicket) {
+  Widget _contenido(Mensaje m, String? idUltimoTicket) {
     final esMio = m.autorId == widget.miId;
     if (m.accion == 'tarifa_enviada') {
       final pendiente =
@@ -289,7 +292,7 @@ class _MensajesState extends State<_Mensajes> {
     // cuando llegan mensajes nuevos.
     final elementos = <Widget>[];
     String? diaAnterior;
-        String? idUltimoTicket;
+    String? idUltimoTicket;
     for (final m in widget.mensajes) {
       if (m.accion == 'tarifa_enviada') idUltimoTicket = m.id;
     }
