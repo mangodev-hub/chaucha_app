@@ -12,6 +12,7 @@ import '../../../perfil_puntos/domain/entities/nivel.dart';
 import '../../domain/entities/resumen_tecnico.dart';
 import '../../domain/entities/solicitud.dart';
 import 'listas_provider.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
 
 /// Ofertas del técnico conectado.
 final misOfertasProvider = FutureProvider.autoDispose<List<Cotizacion>>((ref) {
@@ -46,3 +47,29 @@ final resumenTecnicoProvider = FutureProvider.autoDispose<ResumenTecnico>((
     hoy: DateTime.now(),
   );
 });
+
+/// Chats por responder que aún no se abrieron. Al abrirlos salen de
+/// "Pendientes" y quedan solo en el botón flotante de mensajes.
+final chatsPendientesProvider =
+    Provider.autoDispose<AsyncValue<List<ConversacionPendiente>>>((ref) {
+      final chats = ref.watch(chatsPorResponderProvider);
+      final sinLeer = ref.watch(notificacionesNoLeidasProvider);
+      final lista = sinLeer.value;
+      if (lista == null) {
+        return sinLeer.hasError
+            ? chats
+            : const AsyncLoading<List<ConversacionPendiente>>();
+      }
+      final ids = {
+        for (final n in lista)
+          if ((n.tipo == 'mensaje' || n.tipo == 'chat') &&
+              n.referenciaId != null)
+            n.referenciaId!,
+      };
+      return chats.whenData(
+        (l) => [
+          for (final c in l)
+            if (ids.contains(c.conversacionId)) c,
+        ],
+      );
+    });

@@ -127,7 +127,7 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
           Positioned(
             top: Espacios.l,
             left: Espacios.l,
-            child: _ControlRadio(
+            child: ControlRadio(
               km: _radioKm,
               onCambio: (v) => setState(() => _radioKm = v),
               onFin: widget.onCambiarRadio == null
@@ -138,7 +138,7 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
           Positioned(
             top: Espacios.l,
             right: Espacios.l,
-            child: _Controles(
+            child: ControlesMapa(
               onMas: () => _zoom(1),
               onMenos: () => _zoom(-1),
               onCentrar: () => _controller.move(widget.punto, _zoomInicial),
@@ -230,8 +230,8 @@ class _Pin extends StatelessWidget {
   }
 }
 
-class _Controles extends StatelessWidget {
-  const _Controles({
+class ControlesMapa extends StatelessWidget {
+  const ControlesMapa({
     required this.onMas,
     required this.onMenos,
     required this.onCentrar,
@@ -286,8 +286,8 @@ class _Controles extends StatelessWidget {
   }
 }
 
-class _ControlRadio extends StatelessWidget {
-  const _ControlRadio({required this.km, required this.onCambio, this.onFin});
+class ControlRadio extends StatelessWidget {
+  const ControlRadio({required this.km, required this.onCambio, this.onFin});
 
   final double km;
   final ValueChanged<double> onCambio;
