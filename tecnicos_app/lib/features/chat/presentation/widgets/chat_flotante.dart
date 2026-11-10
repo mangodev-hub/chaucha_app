@@ -76,7 +76,8 @@ class _VentanaState extends ConsumerState<_Ventana> {
         valueListenable: _ChatFlotante.id,
         builder: (context, id, _) {
           if (id == null) return const SizedBox.shrink();
-          final esCliente = ref.watch(usuarioActualProvider)?.rol == Rol.cliente;
+          final esCliente =
+              ref.watch(usuarioActualProvider)?.rol == Rol.cliente;
           final nombre = esCliente
               ? ref.watch(contextoChatProvider(id)).value?.oferta?.tecnicoNombre
               : null;
@@ -100,7 +101,11 @@ class _VentanaState extends ConsumerState<_Ventana> {
                     color: Colores.primario,
                     child: Row(
                       children: [
-                        Icon(Icons.chat_bubble_rounded, color: blanco, size: 20),
+                        Icon(
+                          Icons.chat_bubble_rounded,
+                          color: blanco,
+                          size: 20,
+                        ),
                         const SizedBox(width: Espacios.s),
                         Expanded(
                           child: Text(

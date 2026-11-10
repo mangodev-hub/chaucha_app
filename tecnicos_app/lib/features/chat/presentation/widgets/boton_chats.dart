@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/responsive_layout.dart';
 import '../../../notificaciones/presentation/widgets/punto_no_leidas.dart';
 import '../../domain/entities/resumen_chat.dart';
 import '../providers/mis_chats_provider.dart';
 import 'chat_flotante.dart';
-import '../../../chat/presentation/widgets/chat_flotante.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 
 class BotonChats extends StatelessWidget {
   const BotonChats({super.key, required this.esCliente});
@@ -155,7 +152,11 @@ class _FilaChat extends StatelessWidget {
         foregroundColor: Colores.primario,
         child: Text(chat.otroNombre.characters.first.toUpperCase()),
       ),
-      title: Text(chat.otroNombre, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(
+        chat.otroNombre,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       subtitle: Text(
         oficio == null ? vista : '$oficio · $vista',
         maxLines: 1,
