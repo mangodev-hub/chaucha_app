@@ -271,6 +271,7 @@ Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) asyn
         destinatarioId: destinatarioId,
         estrellas: resena.estrellas,
         comentario: resena.comentario,
+        etiquetas: resena.etiquetas,
       ),
       '¡Gracias por tu calificación!',
     );

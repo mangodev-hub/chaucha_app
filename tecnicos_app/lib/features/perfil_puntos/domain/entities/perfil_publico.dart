@@ -41,11 +41,13 @@ class ResenaPublica {
     required this.calificacion,
     required this.creadoEn,
     this.comentario,
+    this.etiquetas = const [],
   });
 
   /// Nombre corto del autor ("Ana P.").
   final String autor;
   final int calificacion;
   final String? comentario;
+  final List<String> etiquetas;
   final DateTime creadoEn;
 }

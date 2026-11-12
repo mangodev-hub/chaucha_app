@@ -1,4 +1,4 @@
-// Tarjeta de una reseña: estrellas, fecha, comentario y autor (nombre corto).
+// Tarjeta de una reseña: estrellas, fecha, etiquetas, comentario y autor (nombre corto).
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
@@ -23,17 +23,20 @@ class TarjetaResena extends StatelessWidget {
           Row(
             children: [
               Semantics(
-                label: 'Valoración ${resena.calificacion >= 4 ? "excelente" : resena.calificacion == 3 ? "neutra" : "mala"}',
+                label: '${resena.calificacion} de 5 estrellas',
                 child: ExcludeSemantics(
-                  child: Icon(
-  resena.calificacion >= 4
-      ? Icons.sentiment_very_satisfied_rounded
-      : resena.calificacion == 3
-          ? Icons.thumb_up_alt_outlined
-          : Icons.sentiment_very_dissatisfied_rounded,
-  size: 22,
-  color: Colores.estrella,
-)
+                  child: Row(
+                    children: [
+                      for (var i = 1; i <= 5; i++)
+                        Icon(
+                          Icons.star_rounded,
+                          size: 20,
+                          color: i <= resena.calificacion
+                              ? Colores.estrella
+                              : Colores.linea,
+                        ),
+                    ],
+                  ),
                 ),
               ),
               const Spacer(),
@@ -43,6 +46,21 @@ class TarjetaResena extends StatelessWidget {
               ),
             ],
           ),
+          if (resena.etiquetas.isNotEmpty) ...[
+            const SizedBox(height: Espacios.s),
+            Wrap(
+              spacing: Espacios.s,
+              runSpacing: 4,
+              children: [
+                for (final e in resena.etiquetas)
+                  Chip(
+                    label: Text(e),
+                    visualDensity: VisualDensity.compact,
+                    labelStyle: textos.labelSmall,
+                  ),
+              ],
+            ),
+          ],
           if (comentario != null) ...[
             const SizedBox(height: Espacios.s),
             Text(comentario, style: textos.bodyMedium),

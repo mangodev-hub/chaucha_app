@@ -93,6 +93,7 @@ class SupabasePerfilRepository implements PerfilRepository {
         'destinatario_id': resena.destinatarioId,
         'calificacion': resena.calificacion,
         'comentario': resena.comentario?.trim(),
+        'etiquetas': resena.etiquetas,
       });
     });
   }

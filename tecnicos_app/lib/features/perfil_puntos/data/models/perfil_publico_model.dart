@@ -17,7 +17,7 @@ abstract final class PerfilPublicoModel {
   /// Columnas de `resenas` con el autor. `resenas` tiene dos claves hacia
   /// `usuarios` (autor y destinatario), así que se nombra la del autor.
   static const String columnasResenas =
-      'calificacion, comentario, creado_en, '
+      'calificacion, comentario, etiquetas, creado_en, '
       'autor:usuarios!fk_resenas_autor(nombres, apellidos)';
 
   /// Cuántas reseñas recientes se muestran.
@@ -87,6 +87,7 @@ abstract final class PerfilPublicoModel {
       autor: nombreCorto(anidado(fila['autor'])),
       calificacion: aInt(fila['calificacion']),
       comentario: comentario == null || comentario.isEmpty ? null : comentario,
+      etiquetas: List<String>.from(fila['etiquetas'] as List? ?? const []),
       creadoEn: aFecha(fila['creado_en']),
     );
   }

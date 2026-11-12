@@ -118,6 +118,7 @@ Future<bool> cancelarVisita(String cotizacionId) =>
     required String destinatarioId,
     required int estrellas,
     String? comentario,
+    List<String> etiquetas = const [],
   }) {
     return _ejecutar(
       () => ref
@@ -128,6 +129,7 @@ Future<bool> cancelarVisita(String cotizacionId) =>
               destinatarioId: destinatarioId,
               calificacion: estrellas,
               comentario: comentario,
+              etiquetas: etiquetas,
             ),
           ),
       recargar: false,

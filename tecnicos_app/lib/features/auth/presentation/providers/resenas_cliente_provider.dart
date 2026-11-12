@@ -37,6 +37,7 @@ final resenasRecibidasProvider =
               autor: PerfilPublicoModel.nombreCorto(anidado(f['autor'])),
               calificacion: aInt(f['calificacion']),
               comentario: (f['comentario'] as String?)?.trim(),
+              etiquetas: List<String>.from(f['etiquetas'] as List? ?? const []),
               creadoEn: aFecha(f['creado_en']),
             ),
         ]);

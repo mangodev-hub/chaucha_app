@@ -1,54 +1,85 @@
-// Diálogo de calificación de 3 niveles (excelente, neutro, malo), con comentario opcional.
+// Hoja de calificación: 5 estrellas, etiquetas según la nota y comentario opcional.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
-import '../../../../core/widgets/campos.dart';
 
-typedef DatosResena = ({int estrellas, String? comentario});
+typedef DatosResena = ({
+  int estrellas,
+  List<String> etiquetas,
+  String? comentario,
+});
+
+abstract final class EtiquetasResena {
+  static const _tecnicoBien = [
+    'Puntual',
+    'Trabajo limpio',
+    'Buen trato',
+    'Buen precio',
+    'Resolvió el problema',
+    'Buena comunicación',
+  ];
+  static const _tecnicoMal = [
+    'Llegó tarde',
+    'Trabajo incompleto',
+    'Mala actitud',
+    'Dejó sucio',
+    'Precio distinto al cotizado',
+    'No resolvió el problema',
+  ];
+  static const _clienteBien = [
+    'Amable',
+    'Explicó bien el problema',
+    'Estuvo disponible',
+    'Respetuoso',
+    'Acceso fácil',
+  ];
+  static const _clienteMal = [
+    'Tiempo de espera',
+    'Actitud',
+    'Problema mal descrito',
+    'Ubicación difícil',
+    'No estuvo disponible',
+    'Cambió lo acordado',
+  ];
+
+  static List<String> para({
+    required bool paraTecnico,
+    required int estrellas,
+  }) {
+    final bien = estrellas >= 4;
+    return paraTecnico
+        ? (bien ? _tecnicoBien : _tecnicoMal)
+        : (bien ? _clienteBien : _clienteMal);
+  }
+}
 
 Future<DatosResena?> mostrarDialogoResena(
   BuildContext context, {
   required String nombre,
   required bool paraTecnico,
 }) {
-  return showDialog<DatosResena>(
+  return showModalBottomSheet<DatosResena>(
     context: context,
-    builder: (context) =>
-        _DialogoResena(nombre: nombre, paraTecnico: paraTecnico),
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => _HojaResena(nombre: nombre, paraTecnico: paraTecnico),
   );
 }
 
-class _DialogoResena extends StatefulWidget {
-  const _DialogoResena({required this.nombre, required this.paraTecnico});
+class _HojaResena extends StatefulWidget {
+  const _HojaResena({required this.nombre, required this.paraTecnico});
 
   final String nombre;
   final bool paraTecnico;
 
   @override
-  State<_DialogoResena> createState() => _DialogoResenaState();
+  State<_HojaResena> createState() => _HojaResenaState();
 }
 
-class _DialogoResenaState extends State<_DialogoResena> {
-  static const _opciones = [
-    (valor: 5, icono: Icons.sentiment_very_satisfied_rounded),
-    (valor: 3, icono: Icons.thumb_up_alt_outlined),
-    (valor: 1, icono: Icons.sentiment_very_dissatisfied_rounded),
-  ];
-
+class _HojaResenaState extends State<_HojaResena> {
   int _estrellas = 0;
+  final _etiquetas = <String>{};
   final _comentario = TextEditingController();
-
-  String _texto(int v) => widget.paraTecnico
-      ? switch (v) {
-          5 => 'Excelente servicio, lo recomiendo',
-          3 => 'Trabajo realizado',
-          _ => 'El técnico fue grosero',
-        }
-      : switch (v) {
-          5 => 'Fue muy amable',
-          3 => 'Trabajo cumplido',
-          _ => 'El cliente fue grosero',
-        };
 
   @override
   void dispose() {
@@ -56,83 +87,120 @@ class _DialogoResenaState extends State<_DialogoResena> {
     super.dispose();
   }
 
+  void _elegir(int valor) {
+    setState(() {
+      if ((_estrellas >= 4) != (valor >= 4)) _etiquetas.clear();
+      _estrellas = valor;
+    });
+  }
+
+  void _enviar() {
+    final texto = _comentario.text.trim();
+    Navigator.pop<DatosResena>(context, (
+      estrellas: _estrellas,
+      etiquetas: _etiquetas.toList(),
+      comentario: texto.isEmpty ? null : texto,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    return AlertDialog(
-      icon: const Icon(Icons.star_rounded, color: Colores.estrella, size: 36),
-      title: Text('Califica a ${widget.nombre}'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final o in _opciones)
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => setState(() => _estrellas = o.valor),
-                      child: Padding(
-                        padding: const EdgeInsets.all(Espacios.s),
-                        child: Column(
-                          children: [
-                            Icon(
-                              o.icono,
-                              size: 40,
-                              color: _estrellas == o.valor
-                                  ? Colores.estrella
-                                  : Colores.tintaSuave,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _texto(o.valor),
-                              textAlign: TextAlign.center,
-                              style: textos.labelSmall,
-                            ),
-                          ],
-                        ),
+    final opciones = _estrellas == 0
+        ? const <String>[]
+        : EtiquetasResena.para(
+            paraTecnico: widget.paraTecnico,
+            estrellas: _estrellas,
+          );
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            Espacios.l,
+            0,
+            Espacios.l,
+            Espacios.l,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                widget.paraTecnico
+                    ? '¿Cómo calificas al técnico?'
+                    : '¿Cómo calificas al cliente?',
+                textAlign: TextAlign.center,
+                style: textos.titleMedium,
+              ),
+              const SizedBox(height: Espacios.s),
+              Text(
+                widget.nombre,
+                textAlign: TextAlign.center,
+                style: textos.headlineSmall,
+              ),
+              const SizedBox(height: Espacios.m),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 1; i <= 5; i++)
+                    IconButton(
+                      tooltip: '$i ${i == 1 ? "estrella" : "estrellas"}',
+                      onPressed: () => _elegir(i),
+                      iconSize: 44,
+                      icon: Icon(
+                        Icons.star_rounded,
+                        color: i <= _estrellas ? Colores.estrella : Colores.linea,
                       ),
                     ),
+                ],
+              ),
+              if (_estrellas > 0) ...[
+                const SizedBox(height: Espacios.m),
+                Text(
+                  _estrellas >= 4 ? '¿Qué fue lo mejor?' : '¿Qué salió mal?',
+                  textAlign: TextAlign.center,
+                  style: textos.titleSmall,
+                ),
+                const SizedBox(height: Espacios.m),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: Espacios.s,
+                  runSpacing: Espacios.s,
+                  children: [
+                    for (final e in opciones)
+                      FilterChip(
+                        label: Text(e),
+                        selected: _etiquetas.contains(e),
+                        showCheckmark: false,
+                        onSelected: (v) => setState(
+                          () => v ? _etiquetas.add(e) : _etiquetas.remove(e),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: Espacios.m),
+                TextField(
+                  controller: _comentario,
+                  maxLines: 3,
+                  maxLength: 300,
+                  decoration: const InputDecoration(
+                    hintText: 'Comentario (opcional)',
                   ),
+                ),
               ],
-            ),
-            const SizedBox(height: Espacios.l),
-            CampoEtiquetado(
-              etiqueta: 'Comentario',
-              ayuda: 'Opcional',
-              child: TextField(
-                controller: _comentario,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: '¿Cómo fue tu experiencia?',
+              const SizedBox(height: Espacios.m),
+              FilledButton(
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                onPressed: _estrellas == 0 ? null : _enviar,
+                child: Text(
+                  widget.paraTecnico ? 'Calificar técnico' : 'Calificar cliente',
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-          onPressed: _estrellas == 0
-              ? null
-              : () {
-                  final texto = _comentario.text.trim();
-                  Navigator.pop<DatosResena>(context, (
-                    estrellas: _estrellas,
-                    comentario: texto.isEmpty ? null : texto,
-                  ));
-                },
-          child: const Text('Enviar'),
-        ),
-      ],
     );
   }
 }
