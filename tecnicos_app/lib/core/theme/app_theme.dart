@@ -1,8 +1,8 @@
 // Tema visual único de la app, construido a partir de los tokens.
 //
-// Estilo (ver `docs/DISENO.md`): blanco y azul, fondo celeste suave, tarjetas
-// blancas con sombra sutil, botón principal azul con sombra, campos celestes
-// sin borde y con ícono. El verde queda solo para lo positivo.
+// Estilo (ver `docs/DISENO.md`): verde y celeste. Fondo verde muy suave,
+// tarjetas blancas con sombra sutil, botón principal verde bosque con sombra,
+// campos verdosos sin borde y con ícono; el celeste es información y acento.
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -15,10 +15,12 @@ abstract final class AppTheme {
     onPrimary: Colors.white,
     primaryContainer: Colores.primarioSuave,
     onPrimaryContainer: Colores.primarioOscuro,
-    secondary: Colores.acento,
-    onSecondary: Colors.white,
-    secondaryContainer: Colores.acentoSuave,
-    onSecondaryContainer: Colores.acentoOscuro,
+    // Secundario: celeste. Con texto blanco no llega a AA, así que lleva
+    // texto oscuro encima.
+    secondary: Colores.cielo,
+    onSecondary: Colores.tinta,
+    secondaryContainer: Colores.cieloSuave,
+    onSecondaryContainer: Colores.cieloOscuro,
     tertiary: Colores.info,
     onTertiary: Colors.white,
     error: Colores.error,
@@ -33,7 +35,7 @@ abstract final class AppTheme {
     surfaceContainer: Colores.superficie,
     surfaceContainerHigh: Colores.superficie,
     surfaceContainerHighest: Colores.superficieFuerte,
-    outline: Color(0xFFA9B6C8),
+    outline: Color(0xFFA3B5A6),
     outlineVariant: Colores.linea,
   );
 
@@ -57,8 +59,8 @@ abstract final class AppTheme {
         centerTitle: false,
         titleTextStyle: textos.titleLarge,
       ),
-      // Botón principal: azul, alto y con una sombra azulada ("destacado").
-      // Desactivado, sin sombra.
+      // Botón principal: verde bosque, alto y con una sombra verde
+      // ("destacado"). Desactivado, sin sombra.
       filledButtonTheme: FilledButtonThemeData(
         style:
             FilledButton.styleFrom(
@@ -72,7 +74,7 @@ abstract final class AppTheme {
               shadowColor: const WidgetStatePropertyAll(Sombras.boton),
             ),
       ),
-      // Botón secundario: borde y texto azules.
+      // Botón secundario: borde y texto verdes.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: Colores.primario,
@@ -101,7 +103,7 @@ abstract final class AppTheme {
         foregroundColor: Colors.white,
         shape: StadiumBorder(),
       ),
-      // Campos celestes, sin borde; borde azul al enfocarlos.
+      // Campos verdosos, sin borde; borde verde marca al enfocarlos.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colores.superficie,
@@ -112,7 +114,7 @@ abstract final class AppTheme {
         border: _bordeCampo(BorderSide.none),
         enabledBorder: _bordeCampo(BorderSide.none),
         focusedBorder: _bordeCampo(
-          const BorderSide(color: Colores.primario, width: 1.5),
+          const BorderSide(color: Colores.primarioVivo, width: 1.5),
         ),
         errorBorder: _bordeCampo(const BorderSide(color: Colores.error)),
         focusedErrorBorder: _bordeCampo(
@@ -132,7 +134,7 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(Radios.grande),
         ),
       ),
-      // Chips: celestes; el elegido con borde azul.
+      // Chips: verde claro; el elegido con borde verde.
       chipTheme: ChipThemeData(
         backgroundColor: Colores.superficie,
         selectedColor: Colores.primarioSuave,

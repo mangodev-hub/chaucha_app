@@ -1,5 +1,6 @@
-// Tarjeta de portada del inicio: degradado azul, título grande en blanco,
-// subtítulo, un dato en una píldora blanca y una ilustración a la derecha.
+// Tarjeta de portada del inicio: fondo verde bosque plano con un "sol"
+// celeste y un "brote" verde asomando por la derecha, título grande en
+// blanco, subtítulo, un dato en una píldora blanca y una ilustración.
 // Va arriba del inicio del cliente y del técnico.
 import 'package:flutter/material.dart';
 
@@ -38,9 +39,9 @@ class TarjetaPortada extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: Degradados.portada,
+        color: Colores.primario,
         borderRadius: BorderRadius.circular(Radios.muyGrande),
-        boxShadow: Sombras.azul,
+        boxShadow: Sombras.fuerte,
       ),
       clipBehavior: Clip.antiAlias,
       child: LayoutBuilder(
@@ -79,17 +80,23 @@ class TarjetaPortada extends StatelessWidget {
 
           return Stack(
             children: [
-              // Círculos decorativos detrás de la ilustración.
+              // El sol celeste y el brote verde, detrás de la ilustración.
               if (conIlustracion) ...[
                 Positioned(
                   right: -tamanoIlustracion * 0.45,
                   top: -tamanoIlustracion * 0.5,
-                  child: _Circulo(tamano: tamanoIlustracion * 1.6),
+                  child: _Circulo(
+                    tamano: tamanoIlustracion * 1.6,
+                    color: Colores.cieloClaro,
+                  ),
                 ),
                 Positioned(
                   right: tamanoIlustracion * 0.9,
                   bottom: -tamanoIlustracion * 0.35,
-                  child: _Circulo(tamano: tamanoIlustracion * 0.6),
+                  child: _Circulo(
+                    tamano: tamanoIlustracion * 0.6,
+                    color: Colores.primarioClaro,
+                  ),
                 ),
               ],
               Padding(
@@ -112,7 +119,7 @@ class TarjetaPortada extends StatelessWidget {
   }
 }
 
-/// Título con el signo final en celeste.
+/// Título con el signo final en verde brote.
 class _Titulo extends StatelessWidget {
   const _Titulo(this.titulo, {required this.estilo});
 
@@ -254,19 +261,17 @@ class _Ilustracion extends StatelessWidget {
 }
 
 class _Circulo extends StatelessWidget {
-  const _Circulo({required this.tamano});
+  const _Circulo({required this.tamano, required this.color});
 
   final double tamano;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: tamano,
       height: tamano,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colores.tarjeta.withValues(alpha: 0.07),
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }
