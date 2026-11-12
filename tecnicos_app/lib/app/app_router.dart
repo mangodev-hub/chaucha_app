@@ -23,7 +23,6 @@ import '../features/perfil_puntos/presentation/views/perfil_publico_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_tecnico_view.dart';
 import '../features/solicitudes/presentation/views/agenda_view.dart';
 import '../features/solicitudes/presentation/views/crear_solicitud_view.dart';
-import '../features/solicitudes/presentation/views/feed_view.dart';
 import '../features/solicitudes/presentation/views/inicio_tecnico_view.dart';
 import '../features/solicitudes/presentation/views/mis_solicitudes_view.dart';
 import '../features/solicitudes/presentation/views/mis_trabajos_view.dart';
@@ -156,12 +155,6 @@ Future<void> cerrarSesion() async {
               Icons.home_outlined,
               InicioTecnicoView(),
               iconoActivo: Icons.home_rounded,
-            ),
-            Destino(
-              'Solicitudes cerca',
-              Icons.travel_explore,
-              FeedView(),
-              corto: 'Cerca',
             ),
             Destino(
               'Mis trabajos',
