@@ -295,10 +295,14 @@ class _InicioViewState extends ConsumerState<InicioView> {
                   // lleva la separación normal entre secciones.
                   if (esCliente) ...[
                     const SizedBox(height: Espacios.l),
+                    if (esCliente) ...[
+                    const SizedBox(height: Espacios.l),
+                    const AvisoVerificacionCliente(margenInferior: Espacios.l),
                     HeroBusqueda(
                       onNueva: (texto) =>
                           _pedir(context, ref, descripcion: texto),
                     ),
+                  ],
                   ],
                   separacion,
                   cuerpo,
