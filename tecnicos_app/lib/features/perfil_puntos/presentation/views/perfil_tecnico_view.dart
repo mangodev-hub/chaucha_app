@@ -35,6 +35,7 @@ import '../widgets/resena_widgets.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
 import 'verificacion_view.dart';
 import '../../../../core/widgets/boton_baja.dart';
+import 'aviso_verificacion_cliente.dart';
 
 class PerfilTecnicoView extends ConsumerStatefulWidget {
   const PerfilTecnicoView({super.key});
@@ -330,12 +331,9 @@ class _BannerVerificacion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (verificado) {
-      return const AvisoBanner(
-        tipo: TipoAviso.exito,
-        icono: Icons.verified,
-        titulo: 'Cuenta verificada',
-        mensaje: 'Los clientes ven tu insignia de técnico verificado.',
-      );
+    return const AvisoVerificacionCliente(
+      subtitulo: 'Los clientes confían más en técnicos verificados.',
+    );
     }
     final textos = Theme.of(context).textTheme;
     return TarjetaApp(

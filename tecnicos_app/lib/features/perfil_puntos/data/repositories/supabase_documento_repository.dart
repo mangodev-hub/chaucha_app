@@ -1,5 +1,6 @@
 // Implementación de [DocumentoRepository] con Supabase (tabla + Storage).
 // Ruta en Storage: `{id_del_tecnico}/{tipo}_{marcaDeTiempo}.jpg`.
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -93,6 +94,17 @@ class SupabaseDocumentoRepository implements DocumentoRepository {
             .eq('tecnico_id', uid)
             .eq('tipo', tipo.valorDb);
       }
+      if (tipo == TipoDocumento.cedulaFrontal) _compararRostro();
     });
+  }
+
+  // Apoyo a la revisión: guarda el resultado en `comparaciones_rostro`.
+  // No bloquea ni afecta la subida si falla.
+  void _compararRostro() {
+    unawaited(
+      _client.functions
+          .invoke('comparar-rostro-cedula')
+          .then((_) {}, onError: (_) {}),
+    );
   }
 }

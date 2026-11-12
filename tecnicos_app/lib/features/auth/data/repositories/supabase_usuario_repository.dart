@@ -8,6 +8,7 @@ import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/usuario_repository.dart';
 import '../models/rol_db.dart';
 import '../models/usuario_model.dart';
+import 'dart:async';
 
 final usuarioRepositoryProvider = Provider<UsuarioRepository>(
   (ref) => SupabaseUsuarioRepository(ref.watch(supabaseClientProvider)),
@@ -59,7 +60,14 @@ class SupabaseUsuarioRepository implements UsuarioRepository {
           .eq('id', _client.auth.currentUser!.id);
       final r = await _client.functions.invoke('validar-foto-rostro');
       final datos = r.data as Map<String, dynamic>;
-      if (datos['valida'] == true) return null;
+        if (datos['valida'] == true) {
+        unawaited(
+          _client.functions
+              .invoke('comparar-rostro-cedula')
+              .then((_) {}, onError: (_) {}),
+        );
+        return null;
+      }
       return (datos['motivo'] as String?) ?? 'No se ve un rostro claro.';
     });
   }

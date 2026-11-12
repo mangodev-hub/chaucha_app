@@ -1,46 +1,164 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/errors/app_failure.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
+import '../../domain/entities/documento_tecnico.dart';
+import '../providers/verificacion_provider.dart';
 import 'verificacion_view.dart';
-import '../../../../core/errors/app_failure.dart';
 
+/// Tarjeta con los pasos que faltan para verificarse. Cada paso abre la
+/// verificación y arranca directo (cédula o selfie). Desaparece al quedar
+/// verificado.
 class AvisoVerificacionCliente extends ConsumerWidget {
-  const AvisoVerificacionCliente({super.key});
+  const AvisoVerificacionCliente({
+    super.key,
+    this.subtitulo = 'Necesitas verificarte para pedir un técnico.',
+    this.margenInferior = 0,
+  });
+
+  final String subtitulo;
+  final double margenInferior;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usuario = ref.watch(usuarioActualProvider);
-    if (usuario == null || usuario.verificado) return const SizedBox.shrink();
+    if (usuario == null || usuario.verificado || usuario.rol == Rol.admin) {
+      return const SizedBox.shrink();
+    }
+    final v = ref.watch(verificacionProvider).value;
+    final cedulaHecha =
+        v != null &&
+        !v.puedeSubir(TipoDocumento.cedulaFrontal) &&
+        !v.puedeSubir(TipoDocumento.cedulaPosterior);
+    final selfieHecha = usuario.fotoVerificada;
+    final enRevision = v != null && v.todoEnviado && selfieHecha;
     final textos = Theme.of(context).textTheme;
-    return TarjetaApp(
-      onTap: () async {
-        await mostrarVerificacion(context);
-        await refrescarVerificacion(ref);
-      },
-      colorBorde: Colores.primarioClaro,
-      child: Row(
-        children: [
-          const IconoRecuadro(icono: Icons.shield_outlined, lado: 44),
-          const SizedBox(width: Espacios.m),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Verifica tu identidad', style: textos.titleSmall),
-                Text(
-                  'Necesitas verificarte para pedir un técnico. '
-                  'Sube tu cédula y una selfie.',
-                  style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
-                ),
-              ],
+
+    Future<void> abrir([PasoVerificacion? paso]) async {
+      await mostrarVerificacion(context, paso: paso);
+      await refrescarVerificacion(ref);
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: margenInferior),
+      child: TarjetaApp(
+        colorBorde: Colores.primarioClaro,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(Radios.medio),
+              onTap: () => abrir(),
+              child: Row(
+                children: [
+                  IconoRecuadro(
+                    icono: enRevision
+                        ? Icons.hourglass_top_rounded
+                        : Icons.shield_outlined,
+                    lado: 44,
+                  ),
+                  const SizedBox(width: Espacios.m),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          enRevision
+                              ? 'Perfil en revisión'
+                              : 'Falta verificar tu identidad',
+                          style: textos.titleSmall,
+                        ),
+                        Text(
+                          enRevision
+                              ? 'Tu verificación se realizará pronto.'
+                              : subtitulo,
+                          style: textos.bodySmall?.copyWith(
+                            color: Colores.tintaSuave,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right, color: Colores.primario),
-        ],
+            const SizedBox(height: Espacios.s),
+            _LineaPaso(
+              numero: 1,
+              texto: 'Sube tu cédula',
+              hecho: cedulaHecha,
+              onTap: () => abrir(cedulaHecha ? null : PasoVerificacion.cedula),
+            ),
+            _LineaPaso(
+              numero: 2,
+              texto: 'Tómate una selfie',
+              hecho: selfieHecha,
+              onTap: () => abrir(selfieHecha ? null : PasoVerificacion.selfie),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LineaPaso extends StatelessWidget {
+  const _LineaPaso({
+    required this.numero,
+    required this.texto,
+    required this.hecho,
+    required this.onTap,
+  });
+
+  final int numero;
+  final String texto;
+  final bool hecho;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(Radios.medio),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: Espacios.s,
+          horizontal: Espacios.xs,
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 13,
+              backgroundColor: hecho ? Colores.acento : Colores.primario,
+              child: hecho
+                  ? const Icon(Icons.check, size: 16, color: Colores.tarjeta)
+                  : Text(
+                      '$numero',
+                      style: textos.labelMedium?.copyWith(
+                        color: Colores.tarjeta,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: Espacios.m),
+            Expanded(
+              child: Text(
+                texto,
+                style: textos.bodyMedium?.copyWith(
+                  color: hecho ? Colores.tintaSuave : null,
+                  decoration: hecho ? TextDecoration.lineThrough : null,
+                ),
+              ),
+            ),
+            if (!hecho)
+              const Icon(Icons.chevron_right, color: Colores.primario),
+          ],
+        ),
       ),
     );
   }
@@ -58,7 +176,7 @@ Future<bool> exigirVerificado(BuildContext context, WidgetRef ref) async {
     builder: (ctx) => AlertDialog(
       title: const Text('Verifica tu identidad'),
       content: const Text(
-        'Para pedir un técnico primero debes verificar tu cédula. '
+        'Para pedir un técnico primero debes verificar tu identidad. '
         'Mientras tanto puedes navegar y chatear.',
       ),
       actions: [
