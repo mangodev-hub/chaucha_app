@@ -61,16 +61,49 @@ class MensajeTicket extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: Espacios.m),
-                _Fila(
-                  'Precio de la visita',
-                  Formatos.dinero(_valor('total')),
-                  fuerte: true,
+                // El precio, grande: es lo que el cliente decide.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      Formatos.dinero(_valor('total')),
+                      style: textos.headlineSmall,
+                    ),
+                    const SizedBox(width: Espacios.s),
+                    Expanded(
+                      child: Text(
+                        'la visita',
+                        style: textos.bodySmall?.copyWith(
+                          color: Colores.tintaSuave,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                if (fecha != null)
-                  _Fila(
-                    'Fecha',
-                    '${Formatos.fechaCorta(fecha)} · ${Formatos.hora(fecha)}',
+                if (fecha != null) ...[
+                  const SizedBox(height: Espacios.s),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.event_outlined,
+                        size: 18,
+                        color: Colores.cielo,
+                      ),
+                      const SizedBox(width: Espacios.xs + 2),
+                      Expanded(
+                        child: Text(
+                          '${Formatos.fechaCorta(fecha)} · '
+                          '${Formatos.hora(fecha)} a '
+                          '${Formatos.hora(fecha.add(const Duration(hours: 1)))}',
+                          style: textos.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                ],
                 const SizedBox(height: Espacios.m),
                 if (puedeResponder)
                   Row(
@@ -107,31 +140,8 @@ class MensajeTicket extends StatelessWidget {
   }
 }
 
-class _Fila extends StatelessWidget {
-  const _Fila(this.etiqueta, this.valor, {this.fuerte = false});
-
-  final String etiqueta;
-  final String valor;
-  final bool fuerte;
-
-  @override
-  Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    final estilo = fuerte ? textos.titleMedium : textos.bodyMedium;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(etiqueta, style: estilo),
-          Text(valor, style: estilo),
-        ],
-      ),
-    );
-  }
-}
-
-/// Aviso centrado para mensajes del sistema (ticket aceptado, rechazado...).
+/// Aviso centrado para mensajes del sistema (ticket aceptado, rechazado...):
+/// verde claro con texto verde bosque.
 class NotaSistema extends StatelessWidget {
   const NotaSistema(this.texto, {super.key});
 
@@ -148,13 +158,16 @@ class NotaSistema extends StatelessWidget {
         ),
         constraints: const BoxConstraints(maxWidth: 360),
         decoration: BoxDecoration(
-          color: Colores.superficieFuerte,
+          color: Colores.primarioSuave,
           borderRadius: BorderRadius.circular(Radios.medio),
         ),
         child: Text(
           texto,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: Colores.primarioOscuro,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );

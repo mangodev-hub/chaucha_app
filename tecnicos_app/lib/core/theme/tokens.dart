@@ -41,6 +41,10 @@ abstract final class Colores {
   /// Celeste oscuro, legible como texto sobre blanco y sobre `cieloSuave`.
   static const Color cieloOscuro = Color(0xFF0B4F73);
 
+  /// Fondo de la conversación del chat: celeste casi blanco, para que las
+  /// burbujas blancas y verdes se distingan del resto de la app.
+  static const Color fondoChat = Color(0xFFEEF7FC);
+
   // Texto: verde muy oscuro y gris verdoso.
   static const Color tinta = Color(0xFF0E2A14);
   static const Color tintaSuave = Color(0xFF4F6654);

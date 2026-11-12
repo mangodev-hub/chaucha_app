@@ -37,15 +37,19 @@ class ChatView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rol = ref.watch(usuarioActualProvider)?.rol;
+    final contexto = ref.watch(contextoChatProvider(conversacionId)).value;
     final ruta = rol == Rol.admin
         ? null
-        : rutaPerfilDelChat(
-            ref.watch(contextoChatProvider(conversacionId)).value,
-            soyCliente: rol == Rol.cliente,
-          );
+        : rutaPerfilDelChat(contexto, soyCliente: rol == Rol.cliente);
+    // El cliente ve el nombre del técnico en la barra, como en WhatsApp.
+    final nombre = rol == Rol.cliente ? contexto?.oferta?.tecnicoNombre : null;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat'),
+        title: Text(
+          nombre ?? 'Chat',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           if (ruta != null)
             IconButton(
@@ -217,9 +221,11 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
               : null,
         ),
         Expanded(
-          child: AnchoMaximo(
-            ancho: _anchoMaximo,
-            child: AsyncValueView<List<Mensaje>>(
+          child: ColoredBox(
+            color: Colores.fondoChat,
+            child: AnchoMaximo(
+              ancho: _anchoMaximo,
+              child: AsyncValueView<List<Mensaje>>(
               value: mensajes,
               onRetry: () => ref.invalidate(mensajesProvider(id)),
               onData: (context, mensajes) => mensajes.isEmpty
@@ -238,14 +244,15 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
                                 'Cuando el cliente te escriba, podrás '
                                 'responderle aquí.',
                           )
-                  : _Mensajes(
-                      mensajes: mensajes,
-                      miId: miId,
-                      oferta: oferta,
-                      puedeResponder: puedeResponder && !procesando,
-                      onAceptar: _confirmar,
-                      onRechazar: _rechazar,
-                    ),
+                    : _Mensajes(
+                        mensajes: mensajes,
+                        miId: miId,
+                        oferta: oferta,
+                        puedeResponder: puedeResponder && !procesando,
+                        onAceptar: _confirmar,
+                        onRechazar: _rechazar,
+                      ),
+              ),
             ),
           ),
         ),
@@ -425,13 +432,16 @@ class _SeparadorDia extends StatelessWidget {
             vertical: Espacios.xs,
           ),
           decoration: BoxDecoration(
-            color: Colores.superficieFuerte,
+            color: Colores.tarjeta,
             borderRadius: BorderRadius.circular(Radios.pildora),
+            boxShadow: Sombras.suave,
           ),
           child: Text(
             dia,
-            style: Theme.of(context).textTheme.labelSmall
-                ?.copyWith(color: Colores.tinta),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Colores.tintaSuave,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
@@ -448,11 +458,10 @@ class _Burbuja extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    final blanco = Theme.of(context).colorScheme.onPrimary;
     const radio = Radius.circular(Radios.grande);
     const esquina = Radius.circular(Espacios.xs);
-    // Mis mensajes en azul; los del otro en blanco. La esquina recortada
-    // apunta hacia quien escribió.
+    // Como en WhatsApp: mis mensajes en verde claro, los del otro en blanco,
+    // ambos con texto oscuro. La esquina recortada apunta a quien escribió.
     return Align(
       alignment: esMio ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -465,8 +474,14 @@ class _Burbuja extends StatelessWidget {
         ),
         constraints: const BoxConstraints(maxWidth: 420),
         decoration: BoxDecoration(
-          color: esMio ? Colores.primario : Colores.tarjeta,
-          boxShadow: esMio ? null : Sombras.suave,
+          color: esMio ? Colores.primarioSuave : Colores.tarjeta,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F0E2A14),
+              blurRadius: 2,
+              offset: Offset(0, 1),
+            ),
+          ],
           borderRadius: BorderRadius.only(
             topLeft: radio,
             topRight: radio,
@@ -477,20 +492,11 @@ class _Burbuja extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              mensaje.contenido,
-              style: textos.bodyMedium?.copyWith(
-                color: esMio ? blanco : Colores.tinta,
-              ),
-            ),
+            Text(mensaje.contenido, style: textos.bodyMedium),
             const SizedBox(height: 2),
             Text(
               Formatos.hora(mensaje.enviadoEn),
-              style: textos.labelSmall?.copyWith(
-                color: esMio
-                    ? blanco.withValues(alpha: 0.85)
-                    : Colores.tintaSuave,
-              ),
+              style: textos.labelSmall?.copyWith(color: Colores.tintaSuave),
             ),
           ],
         ),
@@ -499,7 +505,7 @@ class _Burbuja extends StatelessWidget {
   }
 }
 
-/// Barra blanca inferior: campo redondeado y botón azul de enviar. Si no
+/// Barra blanca inferior: campo redondeado y botón verde de enviar. Si no
 /// está [habilitada] (técnico antes de que el cliente escriba), muestra un
 /// aviso y desactiva el campo.
 class _BarraEnvio extends StatelessWidget {
@@ -521,7 +527,7 @@ class _BarraEnvio extends StatelessWidget {
   Widget build(BuildContext context) {
     final redondeado = OutlineInputBorder(
       borderRadius: BorderRadius.circular(Radios.pildora),
-      borderSide: BorderSide.none,
+      borderSide: const BorderSide(color: Colores.linea, width: 1.5),
     );
     return DecoratedBox(
       decoration: const BoxDecoration(
@@ -554,11 +560,12 @@ class _BarraEnvio extends StatelessWidget {
                           horizontal: Espacios.l + 4,
                           vertical: Espacios.m,
                         ),
+                        fillColor: Colores.fondo,
                         border: redondeado,
                         enabledBorder: redondeado,
                         focusedBorder: redondeado.copyWith(
                           borderSide: const BorderSide(
-                            color: Colores.primario,
+                            color: Colores.primarioVivo,
                             width: 1.5,
                           ),
                         ),
