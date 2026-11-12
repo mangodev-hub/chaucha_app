@@ -45,14 +45,13 @@ void main() {
       'o precio base, por fecha de servicio', () {
     final r = ResumenTecnico.calcular(
       ofertas: [
-        // Completado este mes, con ticket: cuenta el total (40 + 10).
+        // Completado este mes, con ticket: cuenta el precio acordado (40).
         cotizacionDePrueba(
           id: 'a',
           solicitudId: 's1',
           estado: EstadoCotizacion.aceptada,
           tarifa: Tarifa(
             precioAcordado: 40,
-            materiales: 10,
             fechaServicio: DateTime(2026, 11, 5),
           ),
         ),
@@ -89,7 +88,7 @@ void main() {
       hoy: _hoy,
     );
 
-    expect(r.ganadoEsteMes, 75);
+    expect(r.ganadoEsteMes, 65);
     expect(r.completados, 3);
   });
 }

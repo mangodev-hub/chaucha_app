@@ -401,12 +401,6 @@ class _CabeceraTecnico extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    final iniciales = nombre
-        .split(' ')
-        .where((p) => p.isNotEmpty)
-        .take(2)
-        .map((p) => p[0].toUpperCase())
-        .join();
     final info = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

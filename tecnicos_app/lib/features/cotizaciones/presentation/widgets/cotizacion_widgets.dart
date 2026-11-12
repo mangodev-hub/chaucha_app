@@ -68,9 +68,6 @@ class CotizacionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final c = cotizacion;
-    final falta = c.tarifa?.fechaServicio?.difference(DateTime.now());
-    final puedeCambiar = falta == null || falta >= const Duration(hours: 24);
-    final f = c.fechaPropuesta;
     final solucion = c.solucion;
     return TarjetaApp(
       margin: const EdgeInsets.only(bottom: Espacios.m),
@@ -417,13 +414,6 @@ class _FormularioOfertaState extends State<_FormularioOferta> {
   void dispose() {
     _solucion.dispose();
     super.dispose();
-  }
-
-  String? _validarPrecio(String? valor) {
-    final error = FormValidators.monto(valor, campo: 'El precio de la visita');
-    if (error != null) return error;
-    final precio = double.parse(valor!.trim().replaceAll(',', '.'));
-    return precio <= 0 ? 'El precio de la visita debe ser mayor que 0.' : null;
   }
 
   void _enviar() {

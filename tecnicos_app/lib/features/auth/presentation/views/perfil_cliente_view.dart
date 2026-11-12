@@ -607,7 +607,8 @@ class _MapaZonaState extends State<_MapaZona> {
         headers: {'Accept-Language': 'es'},
       );
       if (r.statusCode != 200) return;
-      final a = (jsonDecode(r.body)['address'] as Map?) ?? const {};
+      final cuerpo = jsonDecode(r.body) as Map?;
+      final a = (cuerpo?['address'] as Map?) ?? const {};
       final calle = a['road'] as String?;
       final calleValida =
           calle != null && !RegExp(r'^[A-Za-z]?\d+[A-Za-z]?$').hasMatch(calle)

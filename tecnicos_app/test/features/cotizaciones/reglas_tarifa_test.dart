@@ -95,7 +95,7 @@ void main() {
     });
   });
 
-  test('el total suma el precio acordado y los materiales', () {
-    expect(const Tarifa(precioAcordado: 40, materiales: 12.5).total, 52.5);
+  test('el total del ticket es el precio acordado', () {
+    expect(const Tarifa(precioAcordado: 40).total, 40);
   });
 }

@@ -94,6 +94,9 @@ class _UsuariosFalso implements UsuarioRepository {
     if (respuesta is Completer<Usuario?>) return respuesta.future;
     return respuesta as Usuario?;
   }
+
+  @override
+  Future<String?> registrarSelfie({required String ruta}) async => null;
 }
 
 Usuario _usuario(String id, {Rol rol = Rol.cliente}) => Usuario(

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tecnicos_app/app/inicio_shell.dart';
+import 'package:tecnicos_app/core/providers/sincronizacion_provider.dart';
 import 'package:tecnicos_app/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:tecnicos_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:tecnicos_app/features/auth/presentation/providers/sesion_provider.dart';
+import 'package:tecnicos_app/features/notificaciones/presentation/providers/notificaciones_provider.dart';
 
 const _destinos = [
   Destino(
@@ -42,6 +44,12 @@ Future<void> _montarEnMovil(WidgetTester tester) async {
       overrides: [
         usuarioActualProvider.overrideWithValue(null),
         authRepositoryProvider.overrideWithValue(_AuthSinSesion()),
+        // El shell sincroniza datos y escucha notificaciones por Supabase;
+        // en el test no hay cliente.
+        sincronizacionProvider.overrideWith((ref) {}),
+        notificacionesNoLeidasProvider.overrideWith(
+          (ref) => Stream.value(const []),
+        ),
       ],
       child: MaterialApp(
         home: InicioShell(destinos: _destinos, onCerrarSesion: () {}),

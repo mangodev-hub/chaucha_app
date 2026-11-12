@@ -1,7 +1,7 @@
 // Contexto del chat (solicitud y oferta del técnico, con su ticket) y las
 // acciones del ticket de trabajo: el técnico lo envía; el cliente lo
-// confirma o lo rechaza. El envío y la confirmación dejan su mensaje en el
-// chat desde la base de datos; el rechazo lo avisa la app.
+// confirma o lo rechaza. Los mensajes del chat sobre el ticket los deja la
+// base de datos; la app no escribe ninguno.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

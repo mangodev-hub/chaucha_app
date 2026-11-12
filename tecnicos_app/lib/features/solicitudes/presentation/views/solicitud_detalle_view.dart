@@ -145,6 +145,8 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
         ],
       );
     } on Object {
+      // Marcar las notificaciones como leídas es secundario: si falla, el
+      // detalle se muestra igual y no se avisa.
     }
   }
 

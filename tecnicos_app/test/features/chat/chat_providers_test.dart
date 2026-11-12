@@ -7,6 +7,7 @@ import 'package:tecnicos_app/features/chat/data/repositories/supabase_chat_repos
 import 'package:tecnicos_app/features/chat/domain/entities/conversacion.dart';
 import 'package:tecnicos_app/features/chat/domain/entities/conversacion_pendiente.dart';
 import 'package:tecnicos_app/features/chat/domain/entities/mensaje.dart';
+import 'package:tecnicos_app/features/chat/domain/entities/resumen_chat.dart';
 import 'package:tecnicos_app/features/chat/domain/repositories/chat_repository.dart';
 import 'package:tecnicos_app/features/chat/presentation/providers/enviar_mensaje_provider.dart';
 import 'package:tecnicos_app/features/chat/presentation/providers/mensajes_provider.dart';
@@ -48,6 +49,9 @@ class _ChatFalso implements ChatRepository {
     required String solicitudId,
     required String tecnicoId,
   }) async => 'c1';
+
+  @override
+  Future<List<ResumenChat>> misChats() async => const [];
 }
 
 Mensaje _mensaje(String id) => Mensaje(
