@@ -205,9 +205,7 @@ class TarjetaUsuario extends ConsumerWidget {
                   Rol.tecnico => 'Técnico',
                   Rol.admin => 'Administrador',
                 },
-                color: usuario.esAdmin
-                    ? Colores.primarioProfundo
-                    : Colores.primario,
+                color: usuario.esAdmin ? Colores.fondo : Colores.primario,
               ),
               if (usuario.verificado case final verificado?)
                 Pildora(
