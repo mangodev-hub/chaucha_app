@@ -171,10 +171,16 @@ class _ResumenZona extends ConsumerWidget {
                 ),
                 Text(oficios, style: textos.titleSmall),
                 Text(
-                  'Hasta ${Formatos.distancia(perfil.rangoCoberturaM.toDouble())} '
+                  'Hasta ${Formatos.distancia(perfil.rangoEfectivoM.toDouble())} '
                   'a la redonda',
                   style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
                 ),
+                if (perfil.rangoBonusM > 0)
+                  Text(
+                    '+${Formatos.distancia(perfil.rangoBonusM.toDouble())} '
+                    'por tus buenas reseñas recientes',
+                    style: textos.bodySmall?.copyWith(color: Colores.acento),
+                  ),
               ],
             ),
           ),

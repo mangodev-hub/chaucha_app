@@ -18,6 +18,7 @@ class PerfilTecnicoModel {
     required this.comisionPorcentaje,
     required this.oficioIds,
     this.ubicacionActual,
+    this.rangoBonusM = 0,
   });
 
   factory PerfilTecnicoModel.fromJson(Map<String, dynamic> json) {
@@ -27,6 +28,7 @@ class PerfilTecnicoModel {
       usuarioId: json['usuario_id'] as String,
       tarifaBase: aDouble(json['tarifa_base']),
       rangoCoberturaM: aInt(json['rango_cobertura_m'], porDefecto: 5000),
+      rangoBonusM: aInt(json['rango_bonus_m']),
       ubicacionActual: GeoMapper.fromDb(json['ubicacion_actual']),
       puntos: aInt(json['puntos']),
       calificacionPromedio: aDouble(json['calificacion_promedio']),
@@ -43,7 +45,7 @@ class PerfilTecnicoModel {
 
   /// Columnas que se piden en el `select`, con los joins a nivel y oficios.
   static const String columnas =
-      'usuario_id, tarifa_base, rango_cobertura_m, '
+      'usuario_id, tarifa_base, rango_cobertura_m, rango_bonus_m, '
       'ubicacion_actual, puntos, calificacion_promedio, total_resenas, '
       'verificado, niveles_gamificacion(nombre, comision_porcentaje), '
       'tecnico_oficios(oficio_id)';
@@ -51,6 +53,7 @@ class PerfilTecnicoModel {
   final String usuarioId;
   final double tarifaBase;
   final int rangoCoberturaM;
+  final int rangoBonusM;
   final LatLng? ubicacionActual;
   final int puntos;
   final double calificacionPromedio;
@@ -64,6 +67,7 @@ class PerfilTecnicoModel {
     usuarioId: usuarioId,
     tarifaBase: tarifaBase,
     rangoCoberturaM: rangoCoberturaM,
+    rangoBonusM: rangoBonusM,
     ubicacionActual: ubicacionActual,
     puntos: puntos,
     calificacionPromedio: calificacionPromedio,

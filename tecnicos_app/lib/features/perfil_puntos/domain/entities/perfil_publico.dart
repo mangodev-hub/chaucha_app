@@ -13,6 +13,7 @@ class PerfilPublico {
     this.fotoRuta,
     this.miembroDesde,
     this.esTecnico = true,
+    this.esVip = false,
   });
 
   final String tecnicoId;
@@ -20,6 +21,10 @@ class PerfilPublico {
   final String? fotoRuta;
   final DateTime? miembroDesde;
   final bool esTecnico;
+
+  /// Cliente VIP: ≥ 5 servicios cerrados en 90 días y sin reseñas "malo".
+  /// Lo calcula un job nocturno en la base.
+  final bool esVip;
   final bool verificado;
   final String nivelNombre;
   final double calificacionPromedio;

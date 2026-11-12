@@ -12,7 +12,7 @@ abstract final class PerfilPublicoModel {
 
   /// Columnas de `usuarios` para el perfil público de un cliente.
   static const String columnasCliente =
-      'id, nombres, apellidos, foto_perfil_ruta, creado_en, verificado';
+      'id, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, es_vip';
 
   /// Columnas de `resenas` con el autor. `resenas` tiene dos claves hacia
   /// `usuarios` (autor y destinatario), así que se nombra la del autor.
@@ -75,6 +75,7 @@ abstract final class PerfilPublicoModel {
       fotoRuta: usuario['foto_perfil_ruta'] as String?,
       miembroDesde: _fecha(usuario['creado_en']),
       esTecnico: false,
+      esVip: usuario['es_vip'] as bool? ?? false,
     );
   }
 

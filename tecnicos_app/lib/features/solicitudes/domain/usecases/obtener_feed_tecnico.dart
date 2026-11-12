@@ -29,7 +29,7 @@ class ObtenerFeedTecnico {
       final punto = solicitud.ubicacion;
       if (punto == null) continue;
       final distancia = GeoMapper.metrosEntre(centro, punto);
-      if (distancia > perfil.rangoCoberturaM) continue;
+      if (distancia > perfil.rangoEfectivoM) continue;
       items.add(
         ItemFeed(
           solicitud: solicitud,

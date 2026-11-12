@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/auth_redirect.dart';
 import '../../../../core/errors/app_failure.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_usuario_repository.dart';
 import '../../domain/entities/sesion_estado.dart';
@@ -61,7 +62,13 @@ class SesionNotifier extends Notifier<SesionEstado> {
     await _auth.cerrarSesion();
   }
 
-  Future<void> cerrarSesion() => _auth.cerrarSesion();
+  Future<void> cerrarSesion() async {
+    // Primero el token push: con la sesión cerrada, RLS ya no deja borrarlo.
+    await ref
+        .read(pushServiceProvider)
+        .olvidar(ref.read(supabaseClientProvider));
+    await _auth.cerrarSesion();
+  }
 
   Future<void> recargarUsuario() async {
     final actual = state;

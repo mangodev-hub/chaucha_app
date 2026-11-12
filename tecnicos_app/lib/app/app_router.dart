@@ -108,7 +108,12 @@ Future<void> cerrarSesion() async {
               Icons.assignment_outlined,
               MisSolicitudesView(),
               iconoActivo: Icons.assignment_rounded,
-              tiposNotificacion: ['cotizacion', 'tarifa', 'mensaje'],
+              tiposNotificacion: [
+                'cotizacion',
+                'tarifa',
+                'mensaje',
+                'solicitud_expirada',
+              ],
               marcaAlEntrar: false,
             ),
             Destino(

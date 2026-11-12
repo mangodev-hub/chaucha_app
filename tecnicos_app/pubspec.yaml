@@ -52,6 +52,8 @@ dependencies:
   table_calendar: ^3.3.0
   camera: ^0.12.2
   file_selector: ^1.1.0
+  firebase_core: ^5.1.0
+  firebase_messaging: ^17.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

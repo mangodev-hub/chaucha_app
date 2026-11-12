@@ -13,6 +13,7 @@ class UsuarioModel {
     this.fotoRostroValidada = false,
     this.perfilCompleto = true,
     this.verificado = false,
+    this.suspendidoHasta,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
@@ -29,12 +30,16 @@ class UsuarioModel {
       fotoRostroValidada: (json['foto_rostro_validada'] as bool?) ?? false,
       creadoEn: DateTime.parse(json['creado_en'] as String),
       verificado: (json['verificado'] as bool?) ?? false,
+      suspendidoHasta: switch (json['suspendido_hasta']) {
+        final String s => DateTime.parse(s).toLocal(),
+        _ => null,
+      },
     );
   }
 
   /// Columnas que se piden en el `select`.
   static const String columnas =
-      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, foto_rostro_validada,'
+      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, foto_rostro_validada, suspendido_hasta,'
       'identidades(usuario_id)';
 
   final String id;
@@ -46,6 +51,7 @@ class UsuarioModel {
   final DateTime creadoEn;
   final bool perfilCompleto;
   final bool verificado;
+  final DateTime? suspendidoHasta;
 
   Usuario aEntidad() => Usuario(
     id: id,
@@ -57,5 +63,6 @@ class UsuarioModel {
     creadoEn: creadoEn,
     perfilCompleto: perfilCompleto,
     verificado: verificado,
+    suspendidoHasta: suspendidoHasta,
   );
 }

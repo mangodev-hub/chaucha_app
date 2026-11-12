@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/providers/core_providers.dart';
 import '../core/providers/sincronizacion_provider.dart';
+import '../core/push/push_service.dart';
 import '../core/theme/tokens.dart';
+import '../core/utils/formatos.dart';
 import '../core/widgets/responsive_layout.dart';
+import '../features/auth/presentation/providers/sesion_provider.dart';
 import '../features/chat/presentation/widgets/boton_chats.dart';
 import '../features/notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
@@ -61,6 +64,32 @@ class InicioShell extends ConsumerStatefulWidget {
 
 class _InicioShellState extends ConsumerState<InicioShell> {
   int _indice = 0;
+  StreamSubscription<ToquePush>? _toques;
+
+  @override
+  void initState() {
+    super.initState();
+    final push = ref.read(pushServiceProvider);
+    _toques = push.toques.listen(_abrirDesdePush);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pendiente = push.consumirPendiente();
+      if (pendiente != null && mounted) _abrirDesdePush(pendiente);
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_toques?.cancel());
+    super.dispose();
+  }
+
+  /// Al tocar un push, va a la pestaña que maneja ese tipo de notificación.
+  void _abrirDesdePush(ToquePush toque) {
+    final i = widget.destinos.indexWhere(
+      (d) => d.tiposNotificacion.contains(toque.tipo),
+    );
+    if (i >= 0) _cambiar(i);
+  }
 
   void _cambiar(int indice) {
     setState(() => _indice = indice);
@@ -95,10 +124,22 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   Widget _contenido(BuildContext context) {
     final destinos = widget.destinos;
-    final contenido = IndexedStack(
+    final pestanas = IndexedStack(
       index: _indice,
       children: [for (final d in destinos) d.vista],
     );
+    final usuario = ref.watch(usuarioActualProvider);
+    final contenido = usuario != null && usuario.estaSuspendido
+        ? Column(
+            children: [
+              _BannerSuspension(
+                hasta: usuario.suspendidoHasta!,
+                esCliente: widget.esCliente,
+              ),
+              Expanded(child: pestanas),
+            ],
+          )
+        : pestanas;
 
     if (ResponsiveLayout.isDesktop(context)) {
       return Scaffold(
@@ -419,6 +460,44 @@ class _IconoActivo extends StatelessWidget {
       builder: (context, escala, child) =>
           Transform.scale(scale: escala, child: child),
       child: Icon(icono, color: color),
+    );
+  }
+}
+
+/// Aviso fijo mientras dure la sanción por reseñas negativas.
+class _BannerSuspension extends StatelessWidget {
+  const _BannerSuspension({required this.hasta, required this.esCliente});
+
+  final DateTime hasta;
+  final bool esCliente;
+
+  @override
+  Widget build(BuildContext context) {
+    final bloqueo = esCliente
+        ? 'No puedes publicar solicitudes'
+        : 'No puedes enviar propuestas';
+    return Material(
+      color: Colores.errorSuave,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Espacios.l,
+          vertical: Espacios.m,
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.gpp_bad_outlined, color: Colores.error),
+            const SizedBox(width: Espacios.m),
+            Expanded(
+              child: Text(
+                'Cuenta suspendida por 3 reseñas negativas. $bloqueo hasta el '
+                '${Formatos.fechaCorta(hasta)} a las ${Formatos.hora(hasta)}.',
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: Colores.errorOscuro),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

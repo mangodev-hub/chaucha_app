@@ -161,6 +161,12 @@ class _Encabezado extends StatelessWidget {
                         color: Colores.tintaSuave,
                       ),
                     if (certificado) const InsigniaCertificado(),
+                    if (perfil.esVip)
+                      const Pildora(
+                        texto: 'Cliente VIP',
+                        icono: Icons.star_rounded,
+                        color: Colores.estrella,
+                      ),
                     if (perfil.esTecnico)
                     Pildora(
                       texto: 'Nivel ${perfil.nivelNombre}',

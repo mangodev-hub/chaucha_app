@@ -11,6 +11,7 @@ class Usuario {
     this.fotoRostroValidada = false,
     this.perfilCompleto = true,
     this.verificado = false,
+    this.suspendidoHasta,
   });
 
   final String id;
@@ -22,6 +23,12 @@ class Usuario {
   final String? fotoPerfilRuta;
   final bool fotoRostroValidada;
   final DateTime creadoEn;
+
+  /// Fin de la sanción por reseñas negativas (null si nunca la tuvo).
+  final DateTime? suspendidoHasta;
+
+  bool get estaSuspendido =>
+      suspendidoHasta != null && suspendidoHasta!.isAfter(DateTime.now());
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
 
