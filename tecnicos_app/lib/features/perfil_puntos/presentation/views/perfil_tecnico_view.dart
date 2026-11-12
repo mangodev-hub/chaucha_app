@@ -402,46 +402,46 @@ class _CabeceraTecnico extends StatelessWidget {
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final info = Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(nombre, style: textos.headlineSmall),
-                const SizedBox(height: Espacios.xs),
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: Colores.cielo,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Quito, Ecuador',
-                      style: TextStyle(color: Colores.tintaSuave),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Espacios.s),
-                Wrap(
-                  spacing: Espacios.s,
-                  runSpacing: Espacios.xs,
-                  children: [
-                    Pildora(
-                      texto: 'Nivel ${perfil.nivelNombre}',
-                      icono: Icons.workspace_premium_outlined,
-                      color: Colores.info,
-                    ),
-                    if (perfil.verificado)
-                      const Pildora(
-                        texto: 'Verificado',
-                        icono: Icons.verified,
-                        color: Colores.acento,
-                      ),
-                    InsigniaSiCertificado(tecnicoId: perfil.usuarioId),
-                  ],
-                ),
-              ],
-            );
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(nombre, style: textos.headlineSmall),
+        const SizedBox(height: Espacios.xs),
+        const Row(
+          children: [
+            Icon(Icons.location_on_outlined, size: 16, color: Colores.cielo),
+            SizedBox(width: 4),
+            // Cede si no hay ancho: nunca desborda la fila.
+            Flexible(
+              child: Text(
+                'Quito, Ecuador',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colores.tintaSuave),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Espacios.s),
+        Wrap(
+          spacing: Espacios.s,
+          runSpacing: Espacios.xs,
+          children: [
+            Pildora(
+              texto: 'Nivel ${perfil.nivelNombre}',
+              icono: Icons.workspace_premium_outlined,
+              color: Colores.info,
+            ),
+            if (perfil.verificado)
+              const Pildora(
+                texto: 'Verificado',
+                icono: Icons.verified,
+                color: Colores.acento,
+              ),
+            InsigniaSiCertificado(tecnicoId: perfil.usuarioId),
+          ],
+        ),
+      ],
+    );
     return TarjetaApp(
       padding: EdgeInsets.zero,
       child: Column(
@@ -482,37 +482,42 @@ class _CabeceraTecnico extends StatelessWidget {
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Espacios.xl + 104,
-              Espacios.m,
-              Espacios.l,
-              Espacios.l,
-            ),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                const baja = BotonBaja();
-                // Ancho suficiente: el botón va a la derecha. Si no, debajo.
-                if (c.maxWidth >= 480) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(child: info),
-                      const SizedBox(width: Espacios.m),
-                      baja,
-                    ],
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Angosto (teléfono): los datos bajan debajo del avatar, a todo el
+          // ancho. Ancho: van a la derecha del avatar y el botón de baja al
+          // final de la fila.
+          LayoutBuilder(
+            builder: (context, c) {
+              const baja = BotonBaja();
+              if (c.maxWidth < 600) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Espacios.xl,
+                    44 + Espacios.m,
+                    Espacios.xl,
+                    Espacios.l,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [info, const SizedBox(height: Espacios.m), baja],
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Espacios.xl + 104,
+                  Espacios.m,
+                  Espacios.l,
+                  Espacios.l,
+                ),
+                child: Row(
                   children: [
-                    info,
-                    const SizedBox(height: Espacios.m),
+                    Expanded(child: info),
+                    const SizedBox(width: Espacios.m),
                     baja,
                   ],
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -665,16 +670,20 @@ class _NivelYResenas extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Cada insignia toma una parte igual del ancho: caben en
+                // cualquier teléfono.
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (final n in niveles)
-                      _Insignia(
-                        nombre: n.nombre,
-                        puntos: n.puntosMinimos,
-                        color: _colores[n.nombre] ?? Colores.primario,
-                        lograda: perfil.puntos >= n.puntosMinimos,
-                        actual: n.nombre == perfil.nivelNombre,
+                      Expanded(
+                        child: _Insignia(
+                          nombre: n.nombre,
+                          puntos: n.puntosMinimos,
+                          color: _colores[n.nombre] ?? Colores.primario,
+                          lograda: perfil.puntos >= n.puntosMinimos,
+                          actual: n.nombre == perfil.nivelNombre,
+                        ),
                       ),
                   ],
                 ),
@@ -744,8 +753,14 @@ class _Insignia extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(nombre, style: textos.labelLarge),
-        Text('$puntos pts', style: textos.bodySmall),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(nombre, maxLines: 1, style: textos.labelLarge),
+        ),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text('$puntos pts', maxLines: 1, style: textos.bodySmall),
+        ),
       ],
     );
   }

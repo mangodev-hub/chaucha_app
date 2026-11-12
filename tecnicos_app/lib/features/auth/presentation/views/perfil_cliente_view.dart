@@ -254,7 +254,6 @@ class _Cabecera extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   const Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.location_on_outlined,
@@ -262,9 +261,14 @@ class _Cabecera extends StatelessWidget {
                         color: _azul,
                       ),
                       SizedBox(width: 4),
-                      Text(
-                        'Quito, Ecuador',
-                        style: TextStyle(color: _gris, fontSize: 14),
+                      // Cede si no hay ancho: nunca desborda la fila.
+                      Flexible(
+                        child: Text(
+                          'Quito, Ecuador',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: _gris, fontSize: 14),
+                        ),
                       ),
                     ],
                   ),
