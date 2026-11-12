@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'etiqueta_sector.dart';
+
 class MapaUbicacion extends StatefulWidget {
   const MapaUbicacion({
     super.key,
@@ -12,6 +14,7 @@ class MapaUbicacion extends StatefulWidget {
     this.otrosPuntos = const [],
     this.altura = 280,
     this.zoom = 15,
+    this.mostrarSector = false,
   });
 
   final LatLng punto;
@@ -20,6 +23,9 @@ class MapaUbicacion extends StatefulWidget {
   final List<LatLng> otrosPuntos;
   final double altura;
   final double zoom;
+
+  /// Muestra sobre el mapa el sector (barrio) del punto.
+  final bool mostrarSector;
 
   @override
   State<MapaUbicacion> createState() => _MapaUbicacionState();
@@ -51,7 +57,9 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
       height: widget.altura,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: FlutterMap(
+        child: Stack(
+          children: [
+        FlutterMap(
           mapController: _controller,
           options: MapOptions(
             initialCenter: widget.punto,
@@ -100,6 +108,14 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
                 ),
               ],
             ),
+          ],
+        ),
+            if (widget.mostrarSector)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: EtiquetaSector(punto: widget.punto),
+              ),
           ],
         ),
       ),

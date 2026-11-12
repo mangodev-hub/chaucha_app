@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
+import '../../../../core/widgets/etiqueta_sector.dart';
 import '../../domain/entities/tecnico_cercano.dart';
 
 class MapaTecnicos extends StatefulWidget {
@@ -74,10 +75,7 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
               initialCenter: widget.punto,
               initialZoom: _zoomInicial,
               interactionOptions: const InteractionOptions(
-                flags:
-                    InteractiveFlag.all &
-                    ~InteractiveFlag.rotate &
-                    ~InteractiveFlag.scrollWheelZoom,
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
               ),
             ),
             children: [
@@ -127,12 +125,19 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
           Positioned(
             top: Espacios.l,
             left: Espacios.l,
-            child: ControlRadio(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ControlRadio(
               km: _radioKm,
               onCambio: (v) => setState(() => _radioKm = v),
               onFin: widget.onCambiarRadio == null
                   ? null
                   : (v) => widget.onCambiarRadio!((v * 1000).round()),
+            ),
+                const SizedBox(height: Espacios.s),
+                EtiquetaSector(punto: widget.punto),
+              ],
             ),
           ),
           Positioned(
