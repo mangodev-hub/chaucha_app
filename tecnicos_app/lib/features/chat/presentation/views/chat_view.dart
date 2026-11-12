@@ -15,6 +15,7 @@ import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
+import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/domain/entities/reglas_tarifa.dart';
 import '../../../cotizaciones/presentation/widgets/tarifa_widgets.dart';
@@ -114,11 +115,13 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
     }
   }
 
-  /// El técnico envía el ticket con el precio acordado.
-  Future<void> _empezarTrabajo(double precioBase) async {
+  Future<void> _empezarTrabajo(Cotizacion oferta) async {
     final tarifa = await mostrarFormularioTarifa(
       context,
-      precioBase: precioBase,
+      precioBase: oferta.precioBase,
+      cargarOcupados: (desde, hasta) => ref
+          .read(cotizacionRepositoryProvider)
+          .horariosOcupados(oferta.id, desde: desde, hasta: hasta),
     );
     if (tarifa == null) return;
     await _resultado(
@@ -191,7 +194,7 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
               ? AsyncValueView.mensajeDe(contexto.error!)
               : null,
           onEmpezar: puedeEnviarTicket
-              ? () => _empezarTrabajo(oferta!.precioBase)
+              ? () => _empezarTrabajo(oferta!)
               : null,
         ),
         Expanded(

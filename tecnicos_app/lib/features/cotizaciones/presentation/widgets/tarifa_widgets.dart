@@ -13,6 +13,7 @@ import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/cotizacion.dart';
 import '../../domain/entities/tarifa.dart';
+import 'selector_franja.dart';
 
 /// Desglose del ticket: precio de la visita y fecha.
 class DesgloseTarifa extends StatelessWidget {
@@ -309,22 +310,28 @@ class _ConBoton extends StatelessWidget {
   }
 }
 
-/// Formulario del técnico: el precio de referencia queda fijo; el precio de
-/// la visita empieza igual y se puede cambiar; la fecha y hora es obligatoria.
 Future<NuevaTarifa?> mostrarFormularioTarifa(
   BuildContext context, {
   required double precioBase,
+  required CargarOcupados cargarOcupados,
 }) {
   return showDialog<NuevaTarifa>(
     context: context,
-    builder: (context) => _FormularioTarifa(precioBase: precioBase),
+    builder: (context) => _FormularioTarifa(
+      precioBase: precioBase,
+      cargarOcupados: cargarOcupados,
+    ),
   );
 }
 
 class _FormularioTarifa extends StatefulWidget {
-  const _FormularioTarifa({required this.precioBase});
+  const _FormularioTarifa({
+    required this.precioBase,
+    required this.cargarOcupados,
+  });
 
   final double precioBase;
+  final CargarOcupados cargarOcupados;
 
   @override
   State<_FormularioTarifa> createState() => _FormularioTarifaState();
@@ -355,32 +362,13 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
   }
 
   Future<void> _elegirFecha() async {
-    final hoy = DateUtils.dateOnly(DateTime.now());
-    final dia = await showDatePicker(
-      context: context,
-      initialDate: _fecha ?? hoy,
-      firstDate: hoy,
-      lastDate: hoy.add(const Duration(days: 90)),
-      helpText: 'Fecha de la visita',
+    final fecha = await elegirFranja(
+      context,
+      cargarOcupados: widget.cargarOcupados,
+      inicial: _fecha,
     );
-    if (dia == null || !mounted) return;
-    final hora = await showTimePicker(
-      context: context,
-      initialTime: _fecha == null
-          ? const TimeOfDay(hour: 9, minute: 0)
-          : TimeOfDay.fromDateTime(_fecha!),
-      helpText: 'Hora de la visita',
-    );
-    if (hora == null || !mounted) return;
-    setState(
-      () => _fecha = DateTime(
-        dia.year,
-        dia.month,
-        dia.day,
-        hora.hour,
-        hora.minute,
-      ),
-    );
+    if (fecha == null || !mounted) return;
+    setState(() => _fecha = fecha);
   }
 
   void _enviar() {
@@ -503,5 +491,5 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
         ),
       ],
     );
-  }
+ }
 }
