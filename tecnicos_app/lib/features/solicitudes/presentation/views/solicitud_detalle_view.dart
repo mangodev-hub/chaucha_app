@@ -42,6 +42,9 @@ import '../providers/detalle_provider.dart';
 import '../widgets/detalle_widgets.dart';
 import '../widgets/editar_solicitud_dialog.dart';
 import '../widgets/solicitud_widgets.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
+import '../providers/novedades_provider.dart';
+import '../../../../core/providers/core_providers.dart';
 
 /// Acción principal del detalle según el rol y el estado.
 typedef _Accion = ({String texto, IconData icono, VoidCallback alPulsar});
@@ -109,21 +112,46 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     if (ok) await _resultado(_acciones.cancelar(), 'Solicitud cancelada.');
   }
   Future<DateTime?> _elegirFechaHora() async {
-  final ahora = DateTime.now();
-  final dia = await showDatePicker(
-    context: context,
-    initialDate: ahora.add(const Duration(days: 1)),
-    firstDate: ahora,
-    lastDate: ahora.add(const Duration(days: 90)),
-  );
-  if (dia == null || !mounted) return null;
-  final hora = await showTimePicker(
-    context: context,
-    initialTime: const TimeOfDay(hour: 9, minute: 0),
-  );
-  if (hora == null) return null;
-  return DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute);
-}
+    final ahora = DateTime.now();
+    final dia = await showDatePicker(
+      context: context,
+      initialDate: ahora.add(const Duration(days: 1)),
+      firstDate: ahora,
+      lastDate: ahora.add(const Duration(days: 90)),
+    );
+    if (dia == null || !mounted) return null;
+    final hora = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 9, minute: 0),
+    );
+    if (hora == null) return null;
+    return DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_marcarNovedadesLeidas());
+  }
+
+  Future<void> _marcarNovedadesLeidas() async {
+    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final detalle = await ref.read(
+        detalleSolicitudProvider(widget.solicitudId).future,
+      );
+      await ref.read(notificacionesRepoProvider).marcarLeidasDe(
+        uid,
+        tipos: const [...tiposDeSolicitud, 'cotizacion_aceptada'],
+        referenciaIds: [
+          widget.solicitudId,
+          for (final c in detalle.cotizaciones) c.id,
+        ],
+      );
+    } on Object {
+    }
+  }
 
 Future<void> _reagendar(String cotizacionId) async {
   final fecha = await _elegirFechaHora();

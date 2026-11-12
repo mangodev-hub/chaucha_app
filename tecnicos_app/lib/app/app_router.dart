@@ -104,6 +104,7 @@ Future<void> cerrarSesion() async {
               MisSolicitudesView(),
               iconoActivo: Icons.assignment_rounded,
               tiposNotificacion: ['cotizacion', 'tarifa', 'mensaje'],
+              marcaAlEntrar: false,
             ),
             Destino(
               'Agenda',

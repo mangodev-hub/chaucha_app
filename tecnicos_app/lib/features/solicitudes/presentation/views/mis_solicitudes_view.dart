@@ -17,6 +17,7 @@ import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dar
 import '../../data/repositories/supabase_solicitud_repository.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/listas_provider.dart';
+import '../providers/novedades_provider.dart';
 import '../widgets/editar_solicitud_dialog.dart';
 import '../widgets/solicitud_widgets.dart';
 
@@ -138,6 +139,11 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
   }
 
   Widget _contenido(List<Solicitud> solicitudes) {
+    // Novedades sin leer por solicitud (insignia de cada tarjeta).
+    final novedades =
+        ref.watch(novedadesPorSolicitudProvider).value ??
+        const <String, int>{};
+
     final activas = [
       for (final s in solicitudes)
         if (s.estado.activa) s,
@@ -205,6 +211,7 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
               for (final s in visibles)
                 SolicitudCard(
                   solicitud: s,
+                  novedades: novedades[s.id] ?? 0,
                   onTap: () => _abrir(s),
                   onEditar: s.estado.recibeCotizaciones
                       ? () => _editar(s)
