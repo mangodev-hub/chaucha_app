@@ -12,6 +12,7 @@ import '../../../../core/widgets/carrusel_aliados.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
 import '../providers/resenas_cliente_provider.dart';
 import '../providers/sesion_provider.dart';
+import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
 
 import 'dart:convert';
 
@@ -78,6 +79,7 @@ class PerfilClienteView extends ConsumerWidget {
                   children: [
                     _Cabecera(usuario.nombreCompleto),
                     const SizedBox(height: 24),
+                    const AvisoVerificacionCliente(margenInferior: 24),
                     _Estadisticas(
                       promedio: resumen?.promedio ?? 0,
                       total: resumen?.total ?? 0,
