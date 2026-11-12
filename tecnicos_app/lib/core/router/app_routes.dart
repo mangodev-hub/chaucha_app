@@ -17,6 +17,10 @@ abstract final class AppRoutes {
 
   static const String clienteNuevaSolicitud = '/cliente/nueva';
 
+  /// Agenda del cliente. No es una pestaña: se abre desde el menú de la
+  /// cuenta y desde "Mis solicitudes".
+  static const String clienteAgenda = '/cliente/agenda';
+
   static String detalleSolicitud(String id, {required bool esCliente}) =>
       '${_prefijo(esCliente)}/solicitud/$id';
 

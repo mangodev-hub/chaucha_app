@@ -1,13 +1,18 @@
+// Shell del inicio: pestañas fijas abajo en móvil (como Facebook: siempre
+// visibles, con insignias y una acción principal al centro) y pestañas en
+// la barra superior en escritorio. Las vistas se mantienen montadas en un
+// IndexedStack.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/providers/core_providers.dart';
 import '../core/providers/sincronizacion_provider.dart';
 import '../core/theme/tokens.dart';
+import '../core/widgets/marca.dart';
 import '../core/widgets/responsive_layout.dart';
-import '../features/chat/presentation/widgets/boton_chats.dart';
 import '../features/notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
 import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
@@ -32,7 +37,7 @@ class Destino {
   /// Versión rellena del ícono para la pestaña elegida.
   final IconData? iconoActivo;
 
-  /// Etiqueta corta para la barra flotante del móvil (si no, [titulo]).
+  /// Etiqueta corta para la barra inferior del móvil (si no, [titulo]).
   final String? corto;
   final List<String> tiposNotificacion;
   final Widget vista;
@@ -41,19 +46,43 @@ class Destino {
   String get etiqueta => corto ?? titulo;
 }
 
+/// Acción principal del shell ("Pedir un técnico"): en móvil es el botón
+/// redondo al centro de la barra inferior; en escritorio, un botón en la
+/// barra superior. Abre [ruta].
+class AccionCentral {
+  const AccionCentral({
+    required this.etiqueta,
+    required this.icono,
+    required this.ruta,
+    this.corto,
+  });
+
+  final String etiqueta;
+
+  /// Etiqueta corta bajo el botón redondo (si no, [etiqueta]).
+  final String? corto;
+  final IconData icono;
+  final String ruta;
+
+  String get etiquetaCorta => corto ?? etiqueta;
+}
+
 class InicioShell extends ConsumerStatefulWidget {
   const InicioShell({
     super.key,
     required this.destinos,
     required this.onCerrarSesion,
-    this.conChats = false,
-    this.esCliente = false,
+    this.accionCentral,
+    this.rutaAgenda,
   });
 
   final List<Destino> destinos;
   final VoidCallback onCerrarSesion;
-  final bool conChats;
-  final bool esCliente;
+  final AccionCentral? accionCentral;
+
+  /// Si la agenda no es una pestaña (cliente), se abre desde el menú de la
+  /// cuenta con esta ruta.
+  final String? rutaAgenda;
 
   @override
   ConsumerState<InicioShell> createState() => _InicioShellState();
@@ -80,6 +109,16 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   VoidCallback? get _alPerfil =>
       _indicePerfil < 0 ? null : () => _cambiar(_indicePerfil);
+
+  VoidCallback? get _aLaAgenda {
+    final ruta = widget.rutaAgenda;
+    return ruta == null ? null : () => context.push(ruta);
+  }
+
+  void _accion() {
+    final accion = widget.accionCentral;
+    if (accion != null) context.push(accion.ruta);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,9 +147,6 @@ class _InicioShellState extends ConsumerState<InicioShell> {
             Expanded(child: contenido),
           ],
         ),
-        floatingActionButton: widget.conChats
-            ? BotonChats(esCliente: widget.esCliente)
-            : null,
       );
     }
 
@@ -121,25 +157,25 @@ class _InicioShellState extends ConsumerState<InicioShell> {
           MenuCuenta(
             compacto: true,
             onPerfil: _alPerfil,
+            onAgenda: _aLaAgenda,
             onCerrarSesion: widget.onCerrarSesion,
           ),
           const SizedBox(width: Espacios.s),
         ],
       ),
       body: contenido,
-      floatingActionButton: widget.conChats
-          ? BotonChats(esCliente: widget.esCliente)
-          : null,
-      bottomNavigationBar: _BarraFlotante(
+      bottomNavigationBar: _BarraInferior(
         destinos: destinos,
         indice: _indice,
         onCambio: _cambiar,
+        accion: widget.accionCentral,
+        onAccion: _accion,
       ),
     );
   }
 
   Widget _barraSuperior(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
+    final accion = widget.accionCentral;
     return Container(
       decoration: const BoxDecoration(
         color: Colores.tarjeta,
@@ -154,43 +190,7 @@ class _InicioShellState extends ConsumerState<InicioShell> {
               height: 64,
               child: Row(
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Colores.primario,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.build_rounded,
-                      size: 20,
-                      color: Colores.tarjeta,
-                    ),
-                  ),
-                  const SizedBox(width: Espacios.s + 2),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('ChauchaApp', style: textos.titleMedium),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            size: 12,
-                            color: Colores.primario,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            'Quito, EC',
-                            style: textos.labelSmall?.copyWith(
-                              color: Colores.info,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                  const Marca(),
                   const SizedBox(width: Espacios.xl),
                   for (var i = 0; i < widget.destinos.length; i++)
                     Padding(
@@ -203,6 +203,17 @@ class _InicioShellState extends ConsumerState<InicioShell> {
                       ),
                     ),
                   const Spacer(),
+                  if (accion != null) ...[
+                    FilledButton.icon(
+                      onPressed: _accion,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 44),
+                      ),
+                      icon: Icon(accion.icono),
+                      label: Text(accion.etiqueta),
+                    ),
+                    const SizedBox(width: Espacios.m),
+                  ],
                   Container(
                     padding: const EdgeInsets.only(left: Espacios.m),
                     decoration: const BoxDecoration(
@@ -210,6 +221,7 @@ class _InicioShellState extends ConsumerState<InicioShell> {
                     ),
                     child: MenuCuenta(
                       onPerfil: _alPerfil,
+                      onAgenda: _aLaAgenda,
                       onCerrarSesion: widget.onCerrarSesion,
                     ),
                   ),
@@ -277,61 +289,67 @@ class _Pestana extends StatelessWidget {
   }
 }
 
-/// Barra de pestañas del móvil: una píldora blanca que flota sobre el fondo
-/// celeste, separada de los bordes. El contenido no pasa por detrás, así que
-/// ninguna lista queda tapada.
-class _BarraFlotante extends StatelessWidget {
-  const _BarraFlotante({
+/// Barra de pestañas del móvil: blanca, fija abajo, con una línea arriba.
+/// Si hay [accion], va como botón redondo verde al centro, un poco por
+/// encima de la barra.
+class _BarraInferior extends StatelessWidget {
+  const _BarraInferior({
     required this.destinos,
     required this.indice,
     required this.onCambio,
+    required this.accion,
+    required this.onAccion,
   });
 
   final List<Destino> destinos;
   final int indice;
   final ValueChanged<int> onCambio;
+  final AccionCentral? accion;
+  final VoidCallback onAccion;
 
   @override
   Widget build(BuildContext context) {
-    // Con textos muy grandes la píldora crecería demasiado: se limita la
+    final accion = this.accion;
+    final mitad = destinos.length ~/ 2;
+    final items = <Widget>[
+      for (var i = 0; i < destinos.length; i++) ...[
+        if (accion != null && i == mitad)
+          _BotonCentral(accion: accion, onTap: onAccion),
+        Expanded(
+          child: _ItemBarra(
+            destino: destinos[i],
+            activo: i == indice,
+            onTap: () => onCambio(i),
+          ),
+        ),
+      ],
+    ];
+
+    // Con textos muy grandes la barra crecería demasiado: se limita la
     // escala, como hace la barra de Material.
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
-      child: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.only(bottom: Espacios.m),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Espacios.l,
-            Espacios.xs,
-            Espacios.l,
-            0,
-          ),
-          child: Center(
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Espacios.s,
-                  vertical: Espacios.s - 2,
-                ),
-                decoration: BoxDecoration(
-                  color: Colores.tarjeta,
-                  borderRadius: BorderRadius.circular(Radios.pildora),
-                  boxShadow: Sombras.suave,
-                ),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: Colores.tarjeta,
+          border: Border(top: BorderSide(color: Colores.linea)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Espacios.s,
+              Espacios.xs,
+              Espacios.s,
+              Espacios.xs,
+            ),
+            child: Center(
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
                 child: Row(
-                  children: [
-                    for (var i = 0; i < destinos.length; i++)
-                      Expanded(
-                        child: _ItemBarra(
-                          destino: destinos[i],
-                          activo: i == indice,
-                          onTap: () => onCambio(i),
-                        ),
-                      ),
-                  ],
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: items,
                 ),
               ),
             ),
@@ -355,14 +373,15 @@ class _ItemBarra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = activo ? Colores.primario : Colores.tintaSuave;
+    final colorIcono = activo ? Colores.primarioVivo : Colores.tintaSuave;
+    final colorTexto = activo ? Colores.primario : Colores.tintaSuave;
     return Semantics(
       container: true,
       button: true,
       selected: activo,
       child: InkWell(
         onTap: onTap,
-        customBorder: const StadiumBorder(),
+        borderRadius: BorderRadius.circular(Radios.medio),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: Espacios.s),
           child: Column(
@@ -373,9 +392,9 @@ class _ItemBarra extends StatelessWidget {
                 child: activo
                     ? _IconoActivo(
                         destino.iconoActivo ?? destino.icono,
-                        color: color,
+                        color: colorIcono,
                       )
-                    : Icon(destino.icono, color: color),
+                    : Icon(destino.icono, color: colorIcono),
               ),
               const SizedBox(height: Espacios.xs),
               AnimatedDefaultTextStyle(
@@ -385,10 +404,10 @@ class _ItemBarra extends StatelessWidget {
                     (Theme.of(context).textTheme.labelMedium ??
                             const TextStyle())
                         .copyWith(
-                          color: color,
+                          color: colorTexto,
                           fontWeight: activo
-                              ? FontWeight.w700
-                              : FontWeight.w500,
+                              ? FontWeight.w800
+                              : FontWeight.w600,
                         ),
                 child: Text(
                   destino.etiqueta,
@@ -397,6 +416,71 @@ class _ItemBarra extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botón redondo verde al centro de la barra, con su etiqueta debajo. Sube
+/// un poco por encima del borde de la barra.
+class _BotonCentral extends StatelessWidget {
+  const _BotonCentral({required this.accion, required this.onTap});
+
+  final AccionCentral accion;
+  final VoidCallback onTap;
+
+  static const double _lado = 52;
+
+  @override
+  Widget build(BuildContext context) {
+    // El InkWell aporta las acciones (tocar, foco) al nodo semántico; el
+    // texto de adentro se excluye porque la etiqueta ya lo dice.
+    return Semantics(
+      container: true,
+      button: true,
+      label: accion.etiqueta,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Radios.medio),
+        child: ExcludeSemantics(
+          child: SizedBox(
+            width: 76,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Transform.translate(
+                  offset: const Offset(0, -Espacios.m),
+                  child: Container(
+                    width: _lado,
+                    height: _lado,
+                    decoration: const BoxDecoration(
+                      color: Colores.primario,
+                      shape: BoxShape.circle,
+                      boxShadow: Sombras.fuerte,
+                    ),
+                    child: Icon(
+                      accion.icono,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                Transform.translate(
+                  offset: const Offset(0, -Espacios.s),
+                  child: Text(
+                    accion.etiquetaCorta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Colores.primario,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

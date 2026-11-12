@@ -20,6 +20,7 @@ import '../features/auth/presentation/views/registro_view.dart';
 import '../features/auth/presentation/views/restablecer_view.dart';
 import '../features/auth/presentation/views/selfie_view.dart';
 import '../features/chat/presentation/views/chat_view.dart';
+import '../features/chat/presentation/views/chats_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_publico_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_tecnico_view.dart';
 import '../features/solicitudes/presentation/views/agenda_view.dart';
@@ -92,10 +93,17 @@ Future<void> cerrarSesion() async {
       ),
       GoRoute(
         path: AppRoutes.clienteInicio,
+        // Cinco destinos abajo: Inicio · Solicitudes · Pedir · Chats · Perfil.
+        // La agenda del cliente se abre desde el menú y desde Mis solicitudes.
         builder: (context, state) => InicioShell(
           onCerrarSesion: cerrarSesion,
-          conChats: true,
-          esCliente: true,
+          rutaAgenda: AppRoutes.clienteAgenda,
+          accionCentral: const AccionCentral(
+            etiqueta: 'Pedir un técnico',
+            corto: 'Pedir',
+            icono: Icons.add_rounded,
+            ruta: AppRoutes.clienteNuevaSolicitud,
+          ),
           destinos: const [
             Destino(
               'Inicio',
@@ -108,25 +116,35 @@ Future<void> cerrarSesion() async {
               Icons.assignment_outlined,
               MisSolicitudesView(),
               iconoActivo: Icons.assignment_rounded,
-              tiposNotificacion: ['cotizacion', 'tarifa', 'mensaje'],
+              corto: 'Solicitudes',
+              tiposNotificacion: ['cotizacion', 'tarifa'],
               marcaAlEntrar: false,
             ),
             Destino(
-              'Agenda',
-              Icons.event_outlined,
-              AgendaView(esCliente: true),
-              iconoActivo: Icons.event_rounded,
-              tiposNotificacion: ['tarifa'],
+              'Chats',
+              Icons.chat_bubble_outline_rounded,
+              ChatsView(esCliente: true),
+              iconoActivo: Icons.chat_bubble_rounded,
+              tiposNotificacion: tiposDeChat,
+              marcaAlEntrar: false,
             ),
             Destino(
               'Mi perfil',
               Icons.person_outline,
               PerfilClienteView(),
               iconoActivo: Icons.person_rounded,
+              corto: 'Perfil',
             ),
           ],
         ),
         routes: [
+          GoRoute(
+            path: 'agenda',
+            builder: (context, state) => Scaffold(
+              appBar: AppBar(title: const Text('Mi agenda')),
+              body: const AgendaView(esCliente: true),
+            ),
+          ),
           GoRoute(
             path: 'nueva',
             builder: (context, state) {
@@ -152,9 +170,9 @@ Future<void> cerrarSesion() async {
       ),
       GoRoute(
         path: AppRoutes.tecnicoInicio,
+        // Cinco destinos abajo: Inicio · Trabajos · Agenda · Chats · Perfil.
         builder: (context, state) => InicioShell(
           onCerrarSesion: cerrarSesion,
-          conChats: true,
           destinos: const [
             Destino(
               'Inicio',
@@ -167,9 +185,8 @@ Future<void> cerrarSesion() async {
               Icons.work_outline,
               MisTrabajosView(),
               iconoActivo: Icons.work_rounded,
+              corto: 'Trabajos',
               tiposNotificacion: [
-                'chat',
-                'mensaje',
                 'cotizacion_aceptada',
                 'tarifa_cancelada',
                 'cierre',
@@ -182,10 +199,19 @@ Future<void> cerrarSesion() async {
               iconoActivo: Icons.event_rounded,
             ),
             Destino(
+              'Chats',
+              Icons.chat_bubble_outline_rounded,
+              ChatsView(esCliente: false),
+              iconoActivo: Icons.chat_bubble_rounded,
+              tiposNotificacion: tiposDeChat,
+              marcaAlEntrar: false,
+            ),
+            Destino(
               'Mi perfil',
               Icons.person_outline,
               PerfilTecnicoView(),
               iconoActivo: Icons.person_rounded,
+              corto: 'Perfil',
             ),
           ],
         ),
