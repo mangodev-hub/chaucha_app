@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/async_value_view.dart';
@@ -16,6 +20,14 @@ class BotonChats extends StatelessWidget {
 
   final bool esCliente;
 
+  void _perfil(BuildContext context, String id) {
+    unawaited(
+      context.push(
+        esCliente ? AppRoutes.perfilTecnico(id) : AppRoutes.perfilCliente(id),
+      ),
+    );
+  }
+
   void _abrir(BuildContext context) {
     if (!ResponsiveLayout.isDesktop(context)) {
       showModalBottomSheet<void>(
@@ -26,6 +38,10 @@ class BotonChats extends StatelessWidget {
           onAbrir: (id) {
             Navigator.pop(sheet);
             abrirChat(context, id, esCliente: esCliente);
+          },
+          onVerPerfil: (id) {
+            Navigator.pop(sheet);
+            _perfil(context, id);
           },
         ),
       );
@@ -62,6 +78,10 @@ class BotonChats extends StatelessWidget {
                       abrirChat(context, id, esCliente: esCliente);
                     }
                   },
+                  onVerPerfil: (id) {
+                    cerrar();
+                    if (context.mounted) _perfil(context, id);
+                  },
                 ),
               ),
             ),
@@ -86,9 +106,10 @@ class BotonChats extends StatelessWidget {
 }
 
 class _ListaChats extends ConsumerWidget {
-  const _ListaChats({required this.onAbrir});
+  const _ListaChats({required this.onAbrir, required this.onVerPerfil});
 
   final ValueChanged<String> onAbrir;
+  final ValueChanged<String> onVerPerfil;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -121,6 +142,9 @@ class _ListaChats extends ConsumerWidget {
                       itemBuilder: (context, i) => _FilaChat(
                         chat: chats[i],
                         onTap: () => onAbrir(chats[i].conversacionId),
+                        onVerPerfil: chats[i].otroId.isEmpty
+                            ? null
+                            : () => onVerPerfil(chats[i].otroId),
                       ),
                     ),
             ),
@@ -132,10 +156,15 @@ class _ListaChats extends ConsumerWidget {
 }
 
 class _FilaChat extends StatelessWidget {
-  const _FilaChat({required this.chat, required this.onTap});
+  const _FilaChat({
+    required this.chat,
+    required this.onTap,
+    this.onVerPerfil,
+  });
 
   final ResumenChat chat;
   final VoidCallback onTap;
+  final VoidCallback? onVerPerfil;
 
   @override
   Widget build(BuildContext context) {
@@ -147,10 +176,17 @@ class _FilaChat extends StatelessWidget {
         : '${chat.esMio ? 'Tú: ' : ''}$ultimo';
     return ListTile(
       onTap: onTap,
-      leading: CircleAvatar(
-        backgroundColor: Colores.primarioSuave,
-        foregroundColor: Colores.primario,
-        child: Text(chat.otroNombre.characters.first.toUpperCase()),
+      leading: Tooltip(
+        message: 'Ver perfil',
+        child: InkResponse(
+          onTap: onVerPerfil,
+          radius: 26,
+          child: CircleAvatar(
+            backgroundColor: Colores.primarioSuave,
+            foregroundColor: Colores.primario,
+            child: Text(chat.otroNombre.characters.first.toUpperCase()),
+          ),
+        ),
       ),
       title: Text(
         chat.otroNombre,

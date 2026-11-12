@@ -144,6 +144,7 @@ class SupabaseChatRepository implements ChatRepository {
           ResumenChat(
             conversacionId: c['id'] as String,
             otroNombre: nombre.isEmpty ? 'Usuario' : nombre,
+            otroId: otroId(c),
             oficio: oficio is String ? oficio : null,
             ultimoMensaje: m?['contenido'] as String?,
             enviadoEn: m == null ? null : aFecha(m['enviado_en']),
