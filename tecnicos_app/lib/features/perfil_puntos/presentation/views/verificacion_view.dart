@@ -1,6 +1,6 @@
-// "Verifica tu identidad" en dos pasos: 1) sube tu cédula (frente y reverso)
-// y 2) tómate una selfie. Se abre como hoja inferior en móvil y como diálogo
-// en escritorio.
+// "Verifica tu identidad" en tres pasos que se desbloquean en orden:
+// 1) frente de la cédula, 2) reverso y 3) selfie. Se abre como hoja inferior
+// en móvil y como diálogo en escritorio.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,14 +20,8 @@ import '../../domain/entities/documento_tecnico.dart';
 import '../../domain/entities/verificacion.dart';
 import '../providers/verificacion_provider.dart';
 
-/// Paso con el que se abre la verificación (arranca solo al abrir).
-enum PasoVerificacion { cedula, selfie }
-
-/// Abre la verificación. Con [paso], arranca directo ese paso.
-Future<void> mostrarVerificacion(
-  BuildContext context, {
-  PasoVerificacion? paso,
-}) async {
+/// Abre la verificación. No arranca nada solo: cada paso se inicia con su botón.
+Future<void> mostrarVerificacion(BuildContext context) async {
   final Future<bool?> resultado;
   if (ResponsiveLayout.isDesktop(context)) {
     resultado = showDialog<bool>(
@@ -35,7 +29,7 @@ Future<void> mostrarVerificacion(
       builder: (context) => Dialog(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
-          child: VerificacionPanel(enDialogo: true, paso: paso),
+          child: const VerificacionPanel(enDialogo: true),
         ),
       ),
     );
@@ -44,7 +38,7 @@ Future<void> mostrarVerificacion(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => VerificacionPanel(paso: paso),
+      builder: (context) => const VerificacionPanel(),
     );
   }
   final confirmado = await resultado;
@@ -57,13 +51,10 @@ Future<void> mostrarVerificacion(
 }
 
 class VerificacionPanel extends ConsumerStatefulWidget {
-  const VerificacionPanel({super.key, this.enDialogo = false, this.paso});
+  const VerificacionPanel({super.key, this.enDialogo = false});
 
   /// En el diálogo no hay asa de arrastre: se deja margen arriba.
   final bool enDialogo;
-
-  /// Si viene, ese paso arranca solo al abrir el panel.
-  final PasoVerificacion? paso;
 
   @override
   ConsumerState<VerificacionPanel> createState() => _VerificacionPanelState();
@@ -73,48 +64,16 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
   bool _subiendoCedula = false;
   bool _enviandoSelfie = false;
 
-  @override
-  void initState() {
-    super.initState();
-    final paso = widget.paso;
-    if (paso != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _iniciar(paso);
-      });
-    }
-  }
-
-  Future<void> _iniciar(PasoVerificacion paso) async {
-    if (!mounted) return;
-    if (paso == PasoVerificacion.selfie) {
-      await _tomarSelfie();
-      return;
-    }
-    final v = await ref.read(verificacionProvider.future);
-    if (!mounted) return;
-    final faltantes = [
-      TipoDocumento.cedulaFrontal,
-      TipoDocumento.cedulaPosterior,
-    ].where(v.puedeSubir).toList();
-    if (faltantes.isNotEmpty) await _subirCedula(faltantes);
-  }
-
-  Future<void> _subirCedula(List<TipoDocumento> faltantes) async {
+  Future<void> _subirLado(TipoDocumento tipo) async {
     final camara = kIsWeb ? false : await _elegirOrigen();
-    if (camara == null) return;
-    for (final tipo in faltantes) {
-      if (!mounted) return;
-      final seguir = await _pedirLado(tipo, camara);
-      if (seguir != true || !mounted) return;
-      final Uint8List? bytes = await SelectorFotos.una(camara: camara);
-      if (bytes == null || !mounted) return;
-      setState(() => _subiendoCedula = true);
-      final ok = await ref
-          .read(subirDocumentoProvider.notifier)
-          .subir(tipo, bytes);
-      if (mounted) setState(() => _subiendoCedula = false);
-      if (!ok) return;
-    }
+    if (camara == null || !mounted) return;
+    final seguir = await _pedirLado(tipo, camara);
+    if (seguir != true || !mounted) return;
+    final Uint8List? bytes = await SelectorFotos.una(camara: camara);
+    if (bytes == null || !mounted) return;
+    setState(() => _subiendoCedula = true);
+    await ref.read(subirDocumentoProvider.notifier).subir(tipo, bytes);
+    if (mounted) setState(() => _subiendoCedula = false);
   }
 
   Future<void> _tomarSelfie() async {
@@ -267,15 +226,14 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
     String? errorSubida,
   }) {
     final textos = Theme.of(context).textTheme;
-    final cedula = [TipoDocumento.cedulaFrontal, TipoDocumento.cedulaPosterior];
-    final faltantes = cedula.where(v.puedeSubir).toList();
-    final cedulaLista = faltantes.isEmpty;
-    final cedulaIniciada = faltantes.length < cedula.length;
+    const cedula = [TipoDocumento.cedulaFrontal, TipoDocumento.cedulaPosterior];
+    final frenteListo = !v.puedeSubir(TipoDocumento.cedulaFrontal);
+    final reversoListo = !v.puedeSubir(TipoDocumento.cedulaPosterior);
+    final frente = v.documentos[TipoDocumento.cedulaFrontal];
+    final reverso = v.documentos[TipoDocumento.cedulaPosterior];
+    final ocupado = _subiendoCedula || _enviandoSelfie;
     final cedulaRechazada = cedula.any(
       (t) => v.documentos[t]?.estado == EstadoDocumento.rechazada,
-    );
-    final cedulaAprobada = cedula.every(
-      (t) => v.documentos[t]?.estado == EstadoDocumento.aprobada,
     );
     final docSelfie = v.documentos[TipoDocumento.selfie];
     final selfieRechazada = docSelfie?.estado == EstadoDocumento.rechazada;
@@ -307,37 +265,57 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
           _Aviso(tipo: TipoAviso.error, mensaje: errorSubida),
         _Paso(
           numero: 1,
-          titulo: 'Sube tu cédula',
-          ayuda: 'Foto del frente y del reverso.',
-          listo: cedulaLista,
-          activo: !cedulaLista,
-          cargando: _subiendoCedula,
-          etiquetaListo: cedulaAprobada ? 'Aprobada' : 'Enviada',
-          textoBoton: cedulaRechazada
-              ? 'Reenviar cédula'
-              : cedulaIniciada
-              ? 'Continuar'
-              : 'Subir cédula',
+          titulo: 'Frente de la cédula',
+          ayuda: 'Foto del lado donde sale tu rostro.',
+          listo: frenteListo,
+          activo: !frenteListo,
+          cargando: _subiendoCedula && !frenteListo,
+          etiquetaListo: frente?.estado == EstadoDocumento.aprobada
+              ? 'Aprobada'
+              : 'Enviada',
+          textoBoton: frente?.estado == EstadoDocumento.rechazada
+              ? 'Reenviar frente'
+              : 'Tomar frente',
           icono: Icons.upload_outlined,
-          onPressed: _subiendoCedula || _enviandoSelfie
+          onPressed: ocupado
               ? null
-              : () => _subirCedula(faltantes),
+              : () => _subirLado(TipoDocumento.cedulaFrontal),
         ),
         _Paso(
           numero: 2,
+          titulo: 'Reverso de la cédula',
+          ayuda: 'Foto del lado del código de barras.',
+          listo: reversoListo,
+          activo: frenteListo && !reversoListo,
+          cargando: _subiendoCedula && frenteListo && !reversoListo,
+          etiquetaListo: reverso?.estado == EstadoDocumento.aprobada
+              ? 'Aprobada'
+              : 'Enviada',
+          textoBoton: reverso?.estado == EstadoDocumento.rechazada
+              ? 'Reenviar reverso'
+              : 'Tomar reverso',
+          icono: Icons.upload_outlined,
+          onPressed: ocupado || !frenteListo
+              ? null
+              : () => _subirLado(TipoDocumento.cedulaPosterior),
+        ),
+        _Paso(
+          numero: 3,
           titulo: 'Tómate una selfie',
           ayuda:
               'De frente y con el rostro descubierto. Será tu foto pública '
               'y no podrás cambiarla.',
           listo: fotoOk,
-          activo: cedulaLista && !fotoOk,
+          activo: frenteListo && reversoListo && !fotoOk,
           cargando: _enviandoSelfie,
           etiquetaListo: docSelfie?.estado == EstadoDocumento.aprobada
               ? 'Aprobada'
               : 'Enviada',
           textoBoton: 'Tomar selfie',
           icono: Icons.photo_camera_outlined,
-          onPressed: _subiendoCedula || _enviandoSelfie ? null : _tomarSelfie,
+          onPressed: ocupado || !frenteListo || !reversoListo
+              ? null
+              : _tomarSelfie,
         ),
         const SizedBox(height: Espacios.s),
         Row(

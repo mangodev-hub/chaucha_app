@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/app_failure.dart';
 import '../../../../core/theme/tokens.dart';
-import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
@@ -31,16 +30,16 @@ class AvisoVerificacionCliente extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final v = ref.watch(verificacionProvider).value;
-    final cedulaHecha =
-        v != null &&
-        !v.puedeSubir(TipoDocumento.cedulaFrontal) &&
-        !v.puedeSubir(TipoDocumento.cedulaPosterior);
+    final frenteHecho =
+        v != null && !v.puedeSubir(TipoDocumento.cedulaFrontal);
+    final reversoHecho =
+        v != null && !v.puedeSubir(TipoDocumento.cedulaPosterior);
     final selfieHecha = usuario.fotoVerificada;
     final enRevision = v != null && v.todoEnviado && selfieHecha;
     final textos = Theme.of(context).textTheme;
 
-    Future<void> abrir([PasoVerificacion? paso]) async {
-      await mostrarVerificacion(context, paso: paso);
+    Future<void> abrir() async {
+      await mostrarVerificacion(context);
       await refrescarVerificacion(ref);
     }
 
@@ -53,7 +52,7 @@ class AvisoVerificacionCliente extends ConsumerWidget {
           children: [
             InkWell(
               borderRadius: BorderRadius.circular(Radios.medio),
-              onTap: () => abrir(),
+              onTap: abrir,
               child: Row(
                 children: [
                   IconoRecuadro(
@@ -90,15 +89,21 @@ class AvisoVerificacionCliente extends ConsumerWidget {
             const SizedBox(height: Espacios.s),
             _LineaPaso(
               numero: 1,
-              texto: 'Sube tu cédula',
-              hecho: cedulaHecha,
-              onTap: () => abrir(cedulaHecha ? null : PasoVerificacion.cedula),
+              texto: 'Frente de la cédula',
+              hecho: frenteHecho,
+              onTap: abrir,
             ),
             _LineaPaso(
               numero: 2,
+              texto: 'Reverso de la cédula',
+              hecho: reversoHecho,
+              onTap: abrir,
+            ),
+            _LineaPaso(
+              numero: 3,
               texto: 'Tómate una selfie',
               hecho: selfieHecha,
-              onTap: () => abrir(selfieHecha ? null : PasoVerificacion.selfie),
+              onTap: abrir,
             ),
           ],
         ),
