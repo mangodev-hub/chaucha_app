@@ -10,6 +10,7 @@ import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../providers/tarifa_chat_provider.dart';
 import '../views/chat_view.dart';
+import 'ruta_perfil_chat.dart';
 
 /// Escritorio: ventana flotante estilo Messenger. Móvil: pantalla completa.
 Future<void> abrirChat(
@@ -78,9 +79,12 @@ class _VentanaState extends ConsumerState<_Ventana> {
           if (id == null) return const SizedBox.shrink();
           final esCliente =
               ref.watch(usuarioActualProvider)?.rol == Rol.cliente;
-          final nombre = esCliente
-              ? ref.watch(contextoChatProvider(id)).value?.oferta?.tecnicoNombre
-              : null;
+          final contexto = ref.watch(contextoChatProvider(id)).value;
+          final nombre = esCliente ? contexto?.oferta?.tecnicoNombre : null;
+          final rol = ref.watch(usuarioActualProvider)?.rol;
+          final rutaPerfil = rol == Rol.admin
+              ? null
+              : rutaPerfilDelChat(contexto, soyCliente: esCliente);
           return Material(
             elevation: 10,
             color: Colores.fondo,
@@ -125,6 +129,13 @@ class _VentanaState extends ConsumerState<_Ventana> {
                                 ?.copyWith(color: Colores.tinta),
                           ),
                         ),
+                        if (rutaPerfil != null)
+                          IconButton(
+                            tooltip: 'Ver perfil',
+                            color: Colores.tintaSuave,
+                            icon: const Icon(Icons.account_circle_outlined),
+                            onPressed: () => context.push(rutaPerfil),
+                          ),
                         IconButton(
                           tooltip: _minimizada ? 'Expandir' : 'Minimizar',
                           color: Colores.tintaSuave,

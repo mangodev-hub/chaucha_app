@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/tokens.dart';
@@ -26,16 +27,34 @@ import '../providers/enviar_mensaje_provider.dart';
 import '../providers/mensajes_provider.dart';
 import '../providers/tarifa_chat_provider.dart';
 import '../widgets/mensaje_ticket.dart';
+import '../widgets/ruta_perfil_chat.dart';
 
-class ChatView extends StatelessWidget {
+class ChatView extends ConsumerWidget {
   const ChatView({super.key, required this.conversacionId});
 
   final String conversacionId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rol = ref.watch(usuarioActualProvider)?.rol;
+    final ruta = rol == Rol.admin
+        ? null
+        : rutaPerfilDelChat(
+            ref.watch(contextoChatProvider(conversacionId)).value,
+            soyCliente: rol == Rol.cliente,
+          );
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
+      appBar: AppBar(
+        title: const Text('Chat'),
+        actions: [
+          if (ruta != null)
+            IconButton(
+              tooltip: 'Ver perfil',
+              icon: const Icon(Icons.account_circle_outlined),
+              onPressed: () => context.push(ruta),
+            ),
+        ],
+      ),
       body: ChatPanel(conversacionId: conversacionId),
     );
   }
