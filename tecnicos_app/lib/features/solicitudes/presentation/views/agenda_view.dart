@@ -13,21 +13,30 @@ import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../providers/agenda_provider.dart';
+import '../widgets/calendario_agenda.dart';
 
-class AgendaView extends ConsumerWidget {
+class AgendaView extends ConsumerStatefulWidget {
   const AgendaView({super.key, required this.esCliente});
 
   final bool esCliente;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AgendaView> createState() => _AgendaViewState();
+}
+
+class _AgendaViewState extends ConsumerState<AgendaView> {
+  DateTime? _dia;
+
+  @override
+  Widget build(BuildContext context) {
+    final esCliente = widget.esCliente;
     final provider = agendaProvider(esCliente);
 
     Future<void> abrir(ItemAgenda item) async {
       await context.push(
         AppRoutes.detalleSolicitud(item.solicitud.id, esCliente: esCliente),
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       ref.invalidate(provider);
     }
 
@@ -53,6 +62,13 @@ class AgendaView extends ConsumerWidget {
       onRetry: () => ref.invalidate(provider),
       onData: (context, agenda) {
         final vacia = agenda.tickets.isEmpty && agenda.proximos.isEmpty;
+        final dia = _dia;
+        final proximos = dia == null
+            ? agenda.proximos
+            : [
+                for (final i in agenda.proximos)
+                  if (DateUtils.isSameDay(i.fecha, dia)) i,
+              ];
         return RefreshIndicator(
           onRefresh: () => esperarSinError(ref.refresh(provider.future)),
           child: vacia
@@ -80,7 +96,22 @@ class AgendaView extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           ...grupo('Tickets por confirmar', agenda.tickets),
-                          ...grupo('Próximos trabajos', agenda.proximos),
+                          if (agenda.proximos.isNotEmpty)
+                            Seccion(
+                              titulo: 'Calendario',
+                              child: CalendarioAgenda(
+                                visitas: agenda.proximos,
+                                diaElegido: dia,
+                                alElegir: (d) => setState(() => _dia = d),
+                              ),
+                            ),
+                          ...grupo('Próximos trabajos', proximos),
+                          if (dia != null && proximos.isEmpty)
+                            const EstadoMensaje(
+                              icono: Icons.event_busy_outlined,
+                              compacto: true,
+                              mensaje: 'No tienes visitas ese día.',
+                            ),
                         ],
                       ),
                     ),

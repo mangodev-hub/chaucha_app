@@ -3,6 +3,7 @@
 import '../entities/cotizacion.dart';
 import '../entities/nueva_cotizacion.dart';
 import '../entities/tarifa.dart';
+import '../entities/rango_ocupado.dart';
 
 abstract interface class CotizacionRepository {
   /// Ofertas de una solicitud, de la más antigua a la más nueva.
@@ -39,4 +40,13 @@ abstract interface class CotizacionRepository {
 
   /// El técnico cancela la visita; la solicitud vuelve a cotizada.
   Future<void> cancelarVisita(String cotizacionId);
+
+
+  /// Rangos ocupados por otras visitas aceptadas del técnico o del cliente de
+  /// esta oferta, entre [desde] y [hasta] (máximo 120 días).
+  Future<List<RangoOcupado>> horariosOcupados(
+    String cotizacionId, {
+    required DateTime desde,
+    required DateTime hasta,
+  });
 }

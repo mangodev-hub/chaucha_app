@@ -31,8 +31,10 @@ import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../chat/presentation/widgets/chat_flotante.dart';
+import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/presentation/widgets/cotizacion_widgets.dart';
+import '../../../cotizaciones/presentation/widgets/selector_franja.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_dialog.dart';
 import '../../domain/entities/detalle_solicitud.dart';
@@ -111,22 +113,15 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     );
     if (ok) await _resultado(_acciones.cancelar(), 'Solicitud cancelada.');
   }
-  Future<DateTime?> _elegirFechaHora() async {
-    final ahora = DateTime.now();
-    final dia = await showDatePicker(
-      context: context,
-      initialDate: ahora.add(const Duration(days: 1)),
-      firstDate: ahora,
-      lastDate: ahora.add(const Duration(days: 90)),
-    );
-    if (dia == null || !mounted) return null;
-    final hora = await showTimePicker(
-      context: context,
-      initialTime: const TimeOfDay(hour: 9, minute: 0),
-    );
-    if (hora == null) return null;
-    return DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute);
-  }
+
+  
+  Future<DateTime?> _elegirFechaHora(String cotizacionId) => elegirFranja(
+    context,
+    titulo: 'Nueva fecha y hora',
+    cargarOcupados: (desde, hasta) => ref
+        .read(cotizacionRepositoryProvider)
+        .horariosOcupados(cotizacionId, desde: desde, hasta: hasta),
+  );
 
   @override
   void initState() {
@@ -154,8 +149,8 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
   }
 
 Future<void> _reagendar(String cotizacionId) async {
-  final fecha = await _elegirFechaHora();
-  if (fecha == null) return;
+  final fecha = await _elegirFechaHora(cotizacionId);
+  if (fecha == null || !mounted) return;
   await _resultado(
     _acciones.proponerReagendado(cotizacionId, fecha),
     'Propuesta enviada. La otra persona debe aceptarla.',
