@@ -59,7 +59,20 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
         .read(solicitudRepositoryProvider)
         .cambiarEstado(solicitudId, EstadoSolicitud.cancelada),
   );
+Future<bool> proponerReagendado(String cotizacionId, DateTime fecha) =>
+    _ejecutar(() => ref
+        .read(cotizacionRepositoryProvider)
+        .proponerReagendado(cotizacionId, fecha));
 
+Future<bool> responderReagendado(String cotizacionId, bool acepta) =>
+    _ejecutar(() => ref
+        .read(cotizacionRepositoryProvider)
+        .responderReagendado(cotizacionId, acepta: acepta));
+
+Future<bool> cancelarVisita(String cotizacionId) =>
+    _ejecutar(() => ref
+        .read(cotizacionRepositoryProvider)
+        .cancelarVisita(cotizacionId));
   Future<bool> editar({
     required String descripcion,
     required int oficioId,

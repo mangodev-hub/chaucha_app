@@ -1,7 +1,7 @@
 // Detalle de una solicitud. La misma pantalla sirve al cliente y al técnico;
 // lo que ve y puede hacer cada uno lo decide `DetalleSolicitud`.
 //
-// Flujo: el técnico ofrece sus servicios (precio base y solución); el
+// Flujo: el técnico ofrece sus servicios (precio de la visita y solución); el
 // cliente revisa las ofertas, le escribe al que le guste y acuerdan el precio
 // por chat.
 //
@@ -108,6 +108,49 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     );
     if (ok) await _resultado(_acciones.cancelar(), 'Solicitud cancelada.');
   }
+  Future<DateTime?> _elegirFechaHora() async {
+  final ahora = DateTime.now();
+  final dia = await showDatePicker(
+    context: context,
+    initialDate: ahora.add(const Duration(days: 1)),
+    firstDate: ahora,
+    lastDate: ahora.add(const Duration(days: 90)),
+  );
+  if (dia == null || !mounted) return null;
+  final hora = await showTimePicker(
+    context: context,
+    initialTime: const TimeOfDay(hour: 9, minute: 0),
+  );
+  if (hora == null) return null;
+  return DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute);
+}
+
+Future<void> _reagendar(String cotizacionId) async {
+  final fecha = await _elegirFechaHora();
+  if (fecha == null) return;
+  await _resultado(
+    _acciones.proponerReagendado(cotizacionId, fecha),
+    'Propuesta enviada. La otra persona debe aceptarla.',
+  );
+}
+
+Future<void> _responderReagendado(String cotizacionId, bool acepta) =>
+    _resultado(
+      _acciones.responderReagendado(cotizacionId, acepta),
+      acepta ? 'Nuevo horario confirmado.' : 'Propuesta rechazada.',
+    );
+
+Future<void> _cancelarVisita(String cotizacionId) async {
+  final ok = await context.confirmar(
+    'Cancelar visita',
+    'La solicitud seguirá publicada para que el cliente elija a otro técnico.',
+    textoConfirmar: 'Sí, cancelar visita',
+    textoCancelar: 'Volver',
+    destructivo: true,
+    icono: Icons.event_busy_outlined,
+  );
+  if (ok) await _resultado(_acciones.cancelarVisita(cotizacionId), 'Visita cancelada.');
+}
 
   Future<void> _ofrecer() async {
     final perfil = await ref.read(perfilTecnicoProvider.future);
@@ -185,8 +228,16 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     );
   }
 
-  Future<void> _calificar(String destinatarioId, String nombre) async {
-    final resena = await mostrarDialogoResena(context, nombre: nombre);
+  Future<void> _calificar(
+    String destinatarioId,
+    String nombre, {
+    required bool paraTecnico,
+  }) async {
+    final resena = await mostrarDialogoResena(
+      context,
+      nombre: nombre,
+      paraTecnico: paraTecnico,
+    );
     if (resena == null) return;
     await _resultado(
       _acciones.calificar(
@@ -333,8 +384,11 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
         return (
           texto: 'Calificar al técnico',
           icono: Icons.star_outline,
-          alPulsar: () =>
-              _calificar(aceptada.tecnicoId, aceptada.tecnicoNombre),
+          alPulsar: () => _calificar(
+            aceptada.tecnicoId,
+            aceptada.tecnicoNombre,
+            paraTecnico: true,
+          ),
         );
       }
       return null;
@@ -357,7 +411,11 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
       return (
         texto: 'Calificar al cliente',
         icono: Icons.star_outline,
-        alPulsar: () => _calificar(d.solicitud.clienteId, 'el cliente'),
+                alPulsar: () => _calificar(
+          d.solicitud.clienteId,
+          'el cliente',
+          paraTecnico: false,
+        ),
       );
     }
     return null;
@@ -406,15 +464,24 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
       return [
         Seccion(
           titulo: 'Tu oferta',
-          child: CotizacionCard(
-            cotizacion: mia,
-            destacada: mia.estado == EstadoCotizacion.aceptada,
-            accionesActivas: !procesando,
-            textoChat: 'Abrir chat',
-            onChat: mia.estado == EstadoCotizacion.rechazada
-                ? null
-                : () => _chat(mia.tecnicoId),
-          ),
+child: Builder(builder: (_) {
+  final activa = mia.estado == EstadoCotizacion.aceptada &&
+      d.estado == EstadoSolicitud.aceptada;
+  return CotizacionCard(
+    cotizacion: mia,
+    destacada: mia.estado == EstadoCotizacion.aceptada,
+    accionesActivas: !procesando,
+    textoChat: 'Abrir chat',
+    onChat: mia.estado == EstadoCotizacion.rechazada
+        ? null
+        : () => _chat(mia.tecnicoId),
+    miId: ref.read(usuarioActualProvider)?.id,
+    onReagendar: activa ? () => _reagendar(mia.id) : null,
+    onResponderReagendado:
+        activa ? (a) => _responderReagendado(mia.id, a) : null,
+    onCancelarVisita: activa ? () => _cancelarVisita(mia.id) : null,
+  );
+}),
         ),
       ];
     }
@@ -435,6 +502,13 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
             accionesActivas: !procesando,
             onChat: () => _chat(aceptada.tecnicoId),
             onVerPerfil: () => _verPerfil(aceptada.tecnicoId),
+            miId: ref.read(usuarioActualProvider)?.id,
+onReagendar: d.estado == EstadoSolicitud.aceptada
+    ? () => _reagendar(aceptada.id)
+    : null,
+onResponderReagendado: d.estado == EstadoSolicitud.aceptada
+    ? (a) => _responderReagendado(aceptada.id, a)
+    : null,
           ),
         ),
         if (otras.isNotEmpty)
