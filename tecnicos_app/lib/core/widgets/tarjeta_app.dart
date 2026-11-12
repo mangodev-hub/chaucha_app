@@ -1,4 +1,5 @@
-// Tarjeta única de la app: blanca, esquinas redondeadas y sombra sutil.
+// Tarjeta única de la app: blanca, muy redondeada, sin sombra y con un borde
+// fino (estilo bento: la jerarquía sale del color y los radios).
 // Y su variante con título ([BloqueTarjeta]) para agrupar partes de un
 // formulario o de una pantalla.
 import 'package:flutter/material.dart';
@@ -15,8 +16,8 @@ class TarjetaApp extends StatelessWidget {
     this.margin = EdgeInsets.zero,
     this.color = Colores.tarjeta,
     this.colorBorde,
-    this.radio = Radios.grande,
-    this.conSombra = true,
+    this.radio = Radios.subtarjeta,
+    this.conBorde = true,
   });
 
   final Widget child;
@@ -30,7 +31,10 @@ class TarjetaApp extends StatelessWidget {
   /// Borde de color para resaltar (elegida, aceptada, activa).
   final Color? colorBorde;
   final double radio;
-  final bool conSombra;
+
+  /// Borde fino gris verdoso cuando no hay [colorBorde]. Se apaga en las
+  /// tarjetas que ya se distinguen por su color.
+  final bool conBorde;
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +45,11 @@ class TarjetaApp extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: borde,
-        boxShadow: conSombra ? Sombras.suave : null,
-        border: colorBorde == null
-            ? null
-            : Border.all(color: colorBorde, width: 1.5),
+        border: colorBorde != null
+            ? Border.all(color: colorBorde, width: 1.5)
+            : conBorde
+            ? Border.all(color: Colores.linea)
+            : null,
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -139,8 +144,8 @@ class BloqueTarjeta extends StatelessWidget {
   }
 }
 
-/// Ícono celeste oscuro en un recuadro celeste suave de esquinas redondeadas
-/// (los íconos de sección son contexto; el verde queda para la acción).
+/// Ícono celeste oscuro en un círculo celeste suave (los íconos de sección
+/// son contexto; el verde queda para la acción).
 class IconoRecuadro extends StatelessWidget {
   const IconoRecuadro({
     super.key,
@@ -160,10 +165,7 @@ class IconoRecuadro extends StatelessWidget {
     return Container(
       width: lado,
       height: lado,
-      decoration: BoxDecoration(
-        color: fondo,
-        borderRadius: BorderRadius.circular(Radios.medio),
-      ),
+      decoration: BoxDecoration(color: fondo, shape: BoxShape.circle),
       child: Icon(icono, color: color, size: lado * 0.5),
     );
   }

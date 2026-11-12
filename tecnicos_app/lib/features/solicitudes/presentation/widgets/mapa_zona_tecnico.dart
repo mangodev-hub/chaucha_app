@@ -69,7 +69,7 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
       decoration: BoxDecoration(
         color: Colores.superficie,
         borderRadius: BorderRadius.circular(Radios.muyGrande),
-        boxShadow: Sombras.suave,
+        border: Border.all(color: Colores.linea),
       ),
       child: Stack(
         children: [
@@ -123,7 +123,6 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
                         color: Colores.primario,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colores.tarjeta, width: 3),
-                        boxShadow: Sombras.suave,
                       ),
                     ),
                   ),
@@ -138,30 +137,34 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Espacios.m,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: Colores.tarjeta,
-                borderRadius: BorderRadius.circular(Radios.pildora),
-                boxShadow: Sombras.suave,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.circle, size: 8, color: Colores.primario),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Cobertura: $km km · ${cerca.length} '
-                    '${cerca.length == 1 ? 'solicitud' : 'solicitudes'}',
-                    style: textos.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Espacios.m,
+                    vertical: 6,
                   ),
-                ],
-              ),
-            ),
+                  decoration: BoxDecoration(
+                    color: Colores.tarjeta,
+                    borderRadius: BorderRadius.circular(Radios.pildora),
+                    border: Border.all(color: Colores.linea),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.circle,
+                        size: 8,
+                        color: Colores.primario,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Cobertura: $km km · ${cerca.length} '
+                        '${cerca.length == 1 ? 'solicitud' : 'solicitudes'}',
+                        style: textos.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: Espacios.s),
                 EtiquetaSector(punto: widget.centro),
               ],
@@ -219,7 +222,7 @@ class _PinSolicitud extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colores.tarjeta,
             borderRadius: BorderRadius.circular(Radios.pildora),
-            boxShadow: Sombras.suave,
+            border: Border.all(color: Colores.linea),
           ),
           child: Text(
             oficio,
@@ -237,7 +240,6 @@ class _PinSolicitud extends StatelessWidget {
             color: Colores.primarioSuave,
             shape: BoxShape.circle,
             border: Border.all(color: Colores.primario, width: 2),
-            boxShadow: Sombras.suave,
           ),
           child: const Icon(
             Icons.build_rounded,

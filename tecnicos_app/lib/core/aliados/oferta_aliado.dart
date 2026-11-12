@@ -31,7 +31,7 @@ const ofertasAliadosDemo = <OfertaAliado>[
         'Tuberías, cables y pintura para tu trabajo. Presenta tu cotización.',
     url: 'https://example.com/ferreteria',
     icono: Icons.hardware,
-    color: Colores.primarioProfundo,
+    color: Colores.fondo,
   ),
   OfertaAliado(
     patrocinador: 'Pinturas del Valle',

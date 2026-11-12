@@ -1,75 +1,94 @@
-// Tokens de diseño: colores, radios, espacios, sombras y tipografía con nombre.
+// Tokens de diseño: colores, radios, espacios y tipografía con nombre.
 //
-// Estilo: verde y celeste. El verde bosque es la marca y las acciones; el
-// verde marca (más vivo) va en el logo, los íconos activos y el progreso; el
-// celeste es lo del cliente, la información y los acentos. Fondos verde muy
-// suave, tarjetas blancas con sombra sutil y campos verdosos sin borde
-// (ver `docs/DISENO.md`). Para cambiar el aspecto de la app se cambian aquí,
-// no en cada pantalla.
+// Estilo "Bento orgánico" (ver `docs/DISENO.md`): fondo verde bosque muy
+// profundo, todo el contenido agrupado en tarjetas claras muy redondeadas,
+// tarjetas principales con una onda pintada de un segundo tono y sin
+// sombras: la jerarquía sale del contraste de color y de los radios. Paleta
+// Eco-Sky: tres verdes y dos celestes. Para cambiar el aspecto de la app se
+// cambian aquí, no en cada pantalla.
 import 'package:flutter/material.dart';
 
 abstract final class Colores {
-  // Marca: verde bosque. Botones, enlaces, pestaña activa, foco, portada.
-  /// Verde bosque. Con texto blanco cumple AA y AAA (7.4:1).
+  // Paleta principal (Eco-Sky).
+  /// Verde oscuro (`darkGreen`): botones con texto, píldoras activas,
+  /// fichas de fecha, pestaña activa. Con texto blanco cumple AAA (7.4:1).
   static const Color primario = Color(0xFF006414);
 
-  /// Nombre de la marca, pasos completados, texto sobre `primarioSuave`.
+  /// Texto verde sobre fondos verdes claros (pasos completados, la marca).
   static const Color primarioOscuro = Color(0xFF004B0F);
 
-  /// Verde marca: logo, íconos activos, barras de progreso y foco. Con
-  /// texto blanco da 3.8:1, así que no lleva texto normal encima.
+  /// Verde medio (`midGreen`): logo, íconos activos, progreso, estados
+  /// confirmados. Con texto blanco da 3.8:1: no lleva texto normal encima.
   static const Color primarioVivo = Color(0xFF009929);
 
-  /// Verde brote: puntos del calendario, check de éxito, acentos de la
-  /// portada y pasos pendientes. Solo decorativo o con texto oscuro.
+  /// Verde claro (`lightGreen`): fondo de tarjetas portada, insignias
+  /// circulares y ondas. Lleva texto oscuro (`tinta`).
   static const Color primarioClaro = Color(0xFF5CCB5F);
 
   /// Fondo de lo elegido o resaltado, mis burbujas del chat, íconos en
-  /// recuadro, avatares.
+  /// recuadro, avatares (verde claro muy aclarado).
   static const Color primarioSuave = Color(0xFFE3F6E4);
 
-  /// Verde más profundo que el bosque, para fondos de marca en escritorio.
-  static const Color primarioProfundo = Color(0xFF003D0C);
-
-  // Celeste: lo que es del cliente, información, distancia y la tuerca del
-  // logo. Con texto blanco no llega a AA: se usa con texto oscuro o como
-  // decoración; para texto celeste se usa `info`.
+  /// Azul medio (`midBlue`): contenedores de selección, bordes destacados,
+  /// pestañas inactivas, el indicador de las hojas inferiores. Con texto
+  /// blanco no llega a AA: va con texto oscuro o como decoración.
   static const Color cielo = Color(0xFF27A3DF);
+
+  /// Azul claro (`lightBlue`): tarjetas de contexto (cabeceras de detalle y
+  /// perfil, portada del técnico) y ondas. Lleva texto oscuro (`tinta`).
   static const Color cieloClaro = Color(0xFF41B6EF);
+
+  /// Celeste muy aclarado: fondos de información e íconos en recuadro.
   static const Color cieloSuave = Color(0xFFE3F3FC);
 
   /// Celeste oscuro, legible como texto sobre blanco y sobre `cieloSuave`.
   static const Color cieloOscuro = Color(0xFF0B4F73);
 
+  // Superficies.
+  /// Fondo del `Scaffold` (`appBackground`): verde bosque muy profundo. Lo
+  /// que va directo encima es blanco (`sobreOscuro`); el resto del contenido
+  /// va dentro de tarjetas claras (`HojaClara`, `TarjetaOnda`).
+  static const Color fondo = Color(0xFF0B2518);
+
+  /// Superficie clara (`surfaceLight`): la gran hoja de cada pantalla, la
+  /// barra inferior, hojas inferiores y sub-tarjetas sobre el fondo oscuro.
+  static const Color lienzo = Color(0xFFF4F9F6);
+
+  /// Tarjetas dentro de la hoja clara, diálogos y burbujas: blanco.
+  static const Color tarjeta = Color(0xFFFFFFFF);
+
+  /// Campos de texto, opciones sin elegir y filas de datos.
+  static const Color superficie = Color(0xFFE8F1EC);
+  static const Color superficieFuerte = Color(0xFFD5E3DA);
+
+  /// Borde fino de las tarjetas blancas sobre la hoja clara (sin sombras,
+  /// el borde marca el límite).
+  static const Color linea = Color(0xFFDCE8E0);
+
+  /// Fila de datos (precio, ticket, fecha): el mismo tono de los campos.
+  static const Color neutro = superficie;
+
   /// Fondo de la conversación del chat: celeste casi blanco, para que las
   /// burbujas blancas y verdes se distingan del resto de la app.
   static const Color fondoChat = Color(0xFFEEF7FC);
 
-  // Texto: verde muy oscuro y gris verdoso.
-  static const Color tinta = Color(0xFF0E2A14);
-  static const Color tintaSuave = Color(0xFF4F6654);
+  // Texto.
+  /// Texto principal sobre superficies claras (`textOnLight`).
+  static const Color tinta = Color(0xFF062B14);
 
-  // Fondos y superficies: neutros, para que el verde y el celeste resalten.
-  /// Fondo neutro (blanco roto) de las pantallas.
-  static const Color fondo = Color(0xFFF6F8F7);
+  /// Textos secundarios y placeholders (`textMuted`).
+  static const Color tintaSuave = Color(0xFF2D523B);
 
-  /// Tarjetas, diálogos, hojas inferiores y barras: blanco.
-  static const Color tarjeta = Color(0xFFFFFFFF);
+  /// Texto e íconos sobre el fondo oscuro y sobre `primario` (`textOnDark`).
+  static const Color sobreOscuro = Color(0xFFFFFFFF);
 
-  /// Campos de texto, opciones sin elegir y filas de datos: gris neutro.
-  static const Color superficie = Color(0xFFEEF2F0);
-  static const Color superficieFuerte = Color(0xFFDDE5E0);
-  static const Color linea = Color(0xFFE1E8E3);
-
-  /// Fila de datos (precio, ticket, fecha): el mismo neutro de los campos.
-  static const Color neutro = superficie;
-
-  // Acento positivo (completado, aprobado, verificado): el verde marca.
+  // Acento positivo (completado, aprobado, verificado): el verde medio.
   static const Color acento = primarioVivo;
   static const Color acentoSuave = Color(0xFFDDF5DE);
   static const Color acentoOscuro = primario;
 
-  // Semánticos.
+  // Semánticos. Fuera de la paleta a propósito: un error o un aviso tiene
+  // que distinguirse de un estado normal.
   /// Celeste legible como texto: estados "Abierta" y similares, distancia.
   static const Color info = Color(0xFF0F6E9E);
   static const Color aviso = Color(0xFFB45309);
@@ -86,9 +105,21 @@ abstract final class Colores {
 abstract final class Radios {
   static const double pequeno = 8;
   static const double medio = 12;
+
+  /// Píldoras de fecha, hora y filtros (`FichaDato`).
   static const double grande = 16;
 
-  /// Tarjeta principal de login y registro, hojas inferiores.
+  /// Sub-tarjetas (dentro de la hoja clara o de una tarjeta con onda) y
+  /// campos de texto.
+  static const double subtarjeta = 22;
+
+  /// Tarjetas bento: la hoja clara de cada pantalla y las tarjetas con onda.
+  static const double bento = 30;
+
+  /// Barra inferior y hojas inferiores (esquinas de arriba).
+  static const double hoja = 32;
+
+  /// Compatibilidad: diálogos y tarjetas grandes de login y registro.
   static const double muyGrande = 24;
   static const double pildora = 999;
 }
@@ -98,35 +129,11 @@ abstract final class Espacios {
   static const double s = 8;
   static const double m = 12;
   static const double l = 16;
+
+  /// Separación vertical entre tarjetas bento.
+  static const double bento = 18;
   static const double xl = 24;
   static const double xxl = 32;
-}
-
-abstract final class Sombras {
-  /// Sombra sutil y verdosa para tarjetas.
-  static const List<BoxShadow> suave = [
-    BoxShadow(color: Color(0x140E2A14), blurRadius: 18, offset: Offset(0, 6)),
-  ];
-
-  /// Sombra del botón principal ("destacado").
-  static const Color boton = Color(0x66006414);
-
-  /// Sombra verde más marcada para las tarjetas con fondo verde
-  /// (`TarjetaPortada`) y el botón central de la barra inferior.
-  static const List<BoxShadow> fuerte = [
-    BoxShadow(color: Color(0x40006414), blurRadius: 24, offset: Offset(0, 10)),
-  ];
-}
-
-abstract final class Degradados {
-  /// Cabeceras de detalle y perfil, y la portada del técnico: celeste suave a
-  /// celeste medio. Lleva texto oscuro (`tinta`, `cieloOscuro`), nunca blanco.
-  static const LinearGradient cielo = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Colores.cieloSuave, Color(0xFFBFE4F8), Color(0xFF9FD6F3)],
-    stops: [0, 0.55, 1],
-  );
 }
 
 /// Duraciones y curvas de las animaciones. Las pantallas y componentes piden
@@ -156,8 +163,8 @@ abstract final class Movimiento {
 }
 
 abstract final class Tipografia {
-  /// Una sola familia para todo. Se descarga con `google_fonts`; antes de
-  /// publicar hay que incluir los archivos de la fuente en la app (ver
-  /// `docs/DISENO.md`).
-  static const String familia = 'Figtree';
+  /// Una sola familia, geométrica y redondeada. Se descarga con
+  /// `google_fonts`; antes de publicar hay que incluir los archivos de la
+  /// fuente en la app (ver `docs/DISENO.md`).
+  static const String familia = 'Plus Jakarta Sans';
 }

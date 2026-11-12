@@ -11,11 +11,13 @@ import 'package:go_router/go_router.dart';
 import '../core/providers/core_providers.dart';
 import '../core/providers/sincronizacion_provider.dart';
 import '../core/theme/tokens.dart';
+import '../core/widgets/hoja_clara.dart';
 import '../core/widgets/marca.dart';
 import '../core/widgets/responsive_layout.dart';
 import '../features/notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
 import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
+import 'encabezado_saludo.dart';
 import 'menu_cuenta.dart';
 import 'pestana_solicitada.dart';
 
@@ -28,10 +30,16 @@ class Destino {
     this.corto,
     this.tiposNotificacion = const [],
     this.marcaAlEntrar = true,
+    this.saludo,
   });
 
   /// Título completo: barra superior y pestañas de escritorio.
   final String titulo;
+
+  /// Línea bajo "Hola, Nombre". Si no es null, en móvil la pestaña lleva el
+  /// saludo (`EncabezadoSaludo`, con el menú de la cuenta en el avatar) en
+  /// lugar de la barra superior.
+  final String? saludo;
   final IconData icono;
 
   /// Versión rellena del ícono para la pestaña elegida.
@@ -134,36 +142,62 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   Widget _contenido(BuildContext context) {
     final destinos = widget.destinos;
+    final escritorio = ResponsiveLayout.isDesktop(context);
+    // Sobre el fondo oscuro nada va suelto: cada pestaña vive en la gran
+    // hoja clara.
     final contenido = IndexedStack(
       index: _indice,
-      children: [for (final d in destinos) d.vista],
+      children: [
+        for (final d in destinos) _Pagina(destino: d, escritorio: escritorio),
+      ],
     );
 
-    if (ResponsiveLayout.isDesktop(context)) {
+    if (escritorio) {
       return Scaffold(
         body: Column(
           children: [
             _barraSuperior(context),
-            Expanded(child: contenido),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1240),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: Espacios.s),
+                    child: contenido,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       );
     }
 
+    final actual = destinos[_indice];
     return Scaffold(
-      appBar: AppBar(
-        title: Text(destinos[_indice].titulo),
-        actions: [
-          MenuCuenta(
-            compacto: true,
-            onPerfil: _alPerfil,
-            onAgenda: _aLaAgenda,
-            onCerrarSesion: widget.onCerrarSesion,
-          ),
-          const SizedBox(width: Espacios.s),
-        ],
+      appBar: actual.saludo != null
+          ? null
+          : AppBar(
+              title: Text(actual.titulo),
+              actions: [
+                MenuCuenta(
+                  compacto: true,
+                  onPerfil: _alPerfil,
+                  onAgenda: _aLaAgenda,
+                  onCerrarSesion: widget.onCerrarSesion,
+                ),
+                const SizedBox(width: Espacios.s),
+              ],
+            ),
+      body: SafeArea(
+        bottom: false,
+        child: AccionesShell(
+          onCerrarSesion: widget.onCerrarSesion,
+          onPerfil: _alPerfil,
+          onAgenda: _aLaAgenda,
+          child: contenido,
+        ),
       ),
-      body: contenido,
       bottomNavigationBar: _BarraInferior(
         destinos: destinos,
         indice: _indice,
@@ -176,11 +210,8 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   Widget _barraSuperior(BuildContext context) {
     final accion = widget.accionCentral;
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colores.tarjeta,
-        border: Border(bottom: BorderSide(color: Colores.linea)),
-      ),
+    return ColoredBox(
+      color: Colores.fondo,
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -190,7 +221,7 @@ class _InicioShellState extends ConsumerState<InicioShell> {
               height: 64,
               child: Row(
                 children: [
-                  const Marca(),
+                  const Marca(sobreOscuro: true),
                   const SizedBox(width: Espacios.xl),
                   for (var i = 0; i < widget.destinos.length; i++)
                     Padding(
@@ -216,10 +247,15 @@ class _InicioShellState extends ConsumerState<InicioShell> {
                   ],
                   Container(
                     padding: const EdgeInsets.only(left: Espacios.m),
-                    decoration: const BoxDecoration(
-                      border: Border(left: BorderSide(color: Colores.linea)),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: Colores.sobreOscuro.withValues(alpha: 0.2),
+                        ),
+                      ),
                     ),
                     child: MenuCuenta(
+                      sobreOscuro: true,
                       onPerfil: _alPerfil,
                       onAgenda: _aLaAgenda,
                       onCerrarSesion: widget.onCerrarSesion,
@@ -251,15 +287,13 @@ class _Pestana extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final duracion = Movimiento.de(context, Movimiento.normal);
-    final borde = BorderRadius.circular(Radios.pequeno);
+    final borde = BorderRadius.circular(Radios.pildora);
     // El fondo y el color del texto cambian con una transición.
     return AnimatedContainer(
       duration: duracion,
       curve: Movimiento.entrada,
       decoration: BoxDecoration(
-        color: activa
-            ? Colores.primarioSuave
-            : Colores.primarioSuave.withValues(alpha: 0),
+        color: activa ? Colores.lienzo : Colores.lienzo.withValues(alpha: 0),
         borderRadius: borde,
       ),
       child: Material(
@@ -277,7 +311,9 @@ class _Pestana extends StatelessWidget {
               style:
                   (Theme.of(context).textTheme.labelLarge ?? const TextStyle())
                       .copyWith(
-                        color: activa ? Colores.primario : Colores.tintaSuave,
+                        color: activa
+                            ? Colores.primario
+                            : Colores.sobreOscuro.withValues(alpha: 0.75),
                         fontWeight: FontWeight.w700,
                       ),
               child: PuntoNoLeidas(tipos: tipos, child: Text(titulo)),
@@ -289,9 +325,9 @@ class _Pestana extends StatelessWidget {
   }
 }
 
-/// Barra de pestañas del móvil: blanca, fija abajo, con una línea arriba.
-/// Si hay [accion], va como botón redondo verde al centro, un poco por
-/// encima de la barra.
+/// Barra de pestañas del móvil: superficie clara con las esquinas de arriba
+/// muy redondeadas y una onda celeste suave. Si hay [accion], va como botón
+/// redondo verde al centro, un poco por encima de la barra.
 class _BarraInferior extends StatelessWidget {
   const _BarraInferior({
     required this.destinos,
@@ -329,11 +365,10 @@ class _BarraInferior extends StatelessWidget {
     // escala, como hace la barra de Material.
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Colores.tarjeta,
-          border: Border(top: BorderSide(color: Colores.linea)),
-        ),
+      child: CustomPaint(
+        // La forma se pinta (no se recorta) para que el botón central pueda
+        // sobresalir por arriba.
+        painter: const _FondoBarra(),
         child: SafeArea(
           top: false,
           child: Padding(
@@ -360,6 +395,42 @@ class _BarraInferior extends StatelessWidget {
   }
 }
 
+/// Fondo de la barra inferior: superficie clara con las esquinas de arriba
+/// redondeadas y una onda celeste suave que entra por la derecha.
+class _FondoBarra extends CustomPainter {
+  const _FondoBarra();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final forma = RRect.fromRectAndCorners(
+      Offset.zero & size,
+      topLeft: const Radius.circular(Radios.hoja),
+      topRight: const Radius.circular(Radios.hoja),
+    );
+    canvas
+      ..drawRRect(forma, Paint()..color = Colores.lienzo)
+      ..save()
+      ..clipRRect(forma);
+    final onda = Path()
+      ..moveTo(w * 0.38, h)
+      ..cubicTo(w * 0.55, h * 0.55, w * 0.72, h * 0.95, w * 0.86, h * 0.35)
+      ..cubicTo(w * 0.92, h * 0.12, w * 0.97, h * 0.1, w, h * 0.12)
+      ..lineTo(w, h)
+      ..close();
+    canvas
+      ..drawPath(
+        onda,
+        Paint()..color = Colores.cieloClaro.withValues(alpha: 0.18),
+      )
+      ..restore();
+  }
+
+  @override
+  bool shouldRepaint(_FondoBarra anterior) => false;
+}
+
 class _ItemBarra extends StatelessWidget {
   const _ItemBarra({
     required this.destino,
@@ -373,7 +444,10 @@ class _ItemBarra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorIcono = activo ? Colores.primarioVivo : Colores.tintaSuave;
+    // Activo en verde oscuro; inactivos con el ícono celeste.
+    final colorIcono = activo
+        ? Colores.primario
+        : Colores.cielo.withValues(alpha: 0.7);
     final colorTexto = activo ? Colores.primario : Colores.tintaSuave;
     return Semantics(
       container: true,
@@ -381,9 +455,9 @@ class _ItemBarra extends StatelessWidget {
       selected: activo,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(Radios.medio),
+        borderRadius: BorderRadius.circular(Radios.subtarjeta),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: Espacios.s),
+          padding: const EdgeInsets.symmetric(vertical: Espacios.s + 2),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -431,7 +505,7 @@ class _BotonCentral extends StatelessWidget {
   final AccionCentral accion;
   final VoidCallback onTap;
 
-  static const double _lado = 52;
+  static const double _lado = 58;
 
   @override
   Widget build(BuildContext context) {
@@ -455,10 +529,12 @@ class _BotonCentral extends StatelessWidget {
                   child: Container(
                     width: _lado,
                     height: _lado,
-                    decoration: const BoxDecoration(
+                    // Aro claro para separarlo del fondo oscuro cuando
+                    // sobresale de la barra.
+                    decoration: BoxDecoration(
                       color: Colores.primario,
                       shape: BoxShape.circle,
-                      boxShadow: Sombras.fuerte,
+                      border: Border.all(color: Colores.lienzo, width: 4),
                     ),
                     child: Icon(
                       accion.icono,
@@ -503,6 +579,37 @@ class _IconoActivo extends StatelessWidget {
       builder: (context, escala, child) =>
           Transform.scale(scale: escala, child: child),
       child: Icon(icono, color: color),
+    );
+  }
+}
+
+/// Una pestaña del shell. Con [Destino.saludo], en móvil va el saludo arriba
+/// sobre el fondo oscuro; el contenido siempre va en la hoja clara.
+class _Pagina extends StatelessWidget {
+  const _Pagina({required this.destino, required this.escritorio});
+
+  final Destino destino;
+  final bool escritorio;
+
+  @override
+  Widget build(BuildContext context) {
+    final saludo = destino.saludo;
+    final hoja = HojaClara(child: destino.vista);
+    if (saludo == null || escritorio) return hoja;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Espacios.l,
+            Espacios.m,
+            Espacios.l,
+            Espacios.m,
+          ),
+          child: EncabezadoSaludo(subtitulo: saludo),
+        ),
+        Expanded(child: hoja),
+      ],
     );
   }
 }

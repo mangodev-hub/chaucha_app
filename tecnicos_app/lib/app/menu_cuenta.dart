@@ -22,11 +22,20 @@ class MenuCuenta extends ConsumerWidget {
     required this.onCerrarSesion,
     this.onAgenda,
     this.compacto = false,
+    this.sobreOscuro = false,
+    this.hijo,
   });
 
   final VoidCallback onCerrarSesion;
   final bool compacto;
+
+  /// Nombre y flecha en blanco (barra superior oscura de escritorio).
+  final bool sobreOscuro;
   final VoidCallback? onPerfil;
+
+  /// Lo que se toca para abrir el menú, en lugar del avatar por defecto
+  /// (el encabezado del inicio pasa su propio avatar con aro).
+  final Widget? hijo;
 
   /// "Mi agenda", solo cuando la agenda no es una pestaña (cliente).
   final VoidCallback? onAgenda;
@@ -136,7 +145,9 @@ class MenuCuenta extends ConsumerWidget {
         const PopupMenuDivider(),
         _item(_Op.salir, Icons.logout, 'Cerrar sesión', color: Colores.error),
       ],
-      child: compacto
+      child: hijo != null
+          ? hijo!
+          : compacto
           ? Padding(
               padding: const EdgeInsets.all(Espacios.s),
               child: avatar(32),
@@ -155,9 +166,14 @@ class MenuCuenta extends ConsumerWidget {
                     nombre,
                     style: textos.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
+                      color: sobreOscuro ? Colores.sobreOscuro : null,
                     ),
                   ),
-                  const Icon(Icons.keyboard_arrow_down, size: 20),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: sobreOscuro ? Colores.sobreOscuro : null,
+                  ),
                 ],
               ),
             ),

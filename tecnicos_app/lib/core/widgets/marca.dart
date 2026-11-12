@@ -11,7 +11,7 @@ import '../theme/tokens.dart';
 
 /// Logo de ChauchaApp: una C verde con el brazo abierto, como una llave de
 /// boca, y una tuerca celeste en la boca. Con [sobreOscuro], la C es blanca y
-/// la tuerca celeste clara (para el panel verde de escritorio).
+/// la tuerca celeste clara (fondo verde bosque de la app).
 class LogoChaucha extends StatelessWidget {
   const LogoChaucha({
     super.key,
@@ -24,7 +24,7 @@ class LogoChaucha extends StatelessWidget {
   final bool sobreOscuro;
 
   /// Color que se ve por el agujero de la tuerca: el fondo donde está el
-  /// logo. Por defecto, blanco o el verde de la marca si va sobre oscuro.
+  /// logo. Por defecto, blanco o el fondo de la app si va sobre oscuro.
   final Color? fondo;
 
   /// Pinta el logo en [canvas] ocupando [size] (cuadrado). Lo usa el widget
@@ -39,7 +39,7 @@ class LogoChaucha extends StatelessWidget {
     _PintorLogo(
       llave: sobreOscuro ? Colores.tarjeta : Colores.primarioVivo,
       tuerca: sobreOscuro ? Colores.cieloClaro : Colores.cielo,
-      agujero: fondo ?? (sobreOscuro ? Colores.primario : Colores.tarjeta),
+      agujero: fondo ?? (sobreOscuro ? Colores.fondo : Colores.tarjeta),
     ).paint(canvas, size);
   }
 
@@ -51,7 +51,7 @@ class LogoChaucha extends StatelessWidget {
         painter: _PintorLogo(
           llave: sobreOscuro ? Colores.tarjeta : Colores.primarioVivo,
           tuerca: sobreOscuro ? Colores.cieloClaro : Colores.cielo,
-          agujero: fondo ?? (sobreOscuro ? Colores.primario : Colores.tarjeta),
+          agujero: fondo ?? (sobreOscuro ? Colores.fondo : Colores.tarjeta),
         ),
       ),
     );
@@ -153,8 +153,6 @@ class Marca extends StatelessWidget {
     final logo = LogoChaucha(
       tamano: grande ? 64 : (vertical ? 64 : 32),
       sobreOscuro: sobreOscuro,
-      // En las pantallas de acceso el logo va sobre el fondo verde suave.
-      fondo: sobreOscuro ? null : (vertical ? Colores.fondo : null),
     );
 
     TextStyle? nombreEstilo(TextStyle? base) => base?.copyWith(

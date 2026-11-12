@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/router/app_routes.dart';
+import '../core/widgets/hoja_clara.dart';
 import '../core/widgets/splash_view.dart';
 import '../features/admin/presentation/views/admin_resumen_view.dart';
 import '../features/admin/presentation/views/admin_solicitudes_view.dart';
@@ -36,12 +37,12 @@ final routerProvider = Provider<GoRouter>((ref) {
   final cambiosDeSesion = ValueNotifier<SesionEstado>(ref.read(sesionProvider));
   ref.listen(sesionProvider, (_, nuevo) => cambiosDeSesion.value = nuevo);
 
-late final GoRouter router;
+  late final GoRouter router;
 
-Future<void> cerrarSesion() async {
-  await ref.read(sesionProvider.notifier).cerrarSesion();
-  router.go(AppRoutes.login);
-}
+  Future<void> cerrarSesion() async {
+    await ref.read(sesionProvider.notifier).cerrarSesion();
+    router.go(AppRoutes.login);
+  }
 
   // Detalle y chat existen bajo /cliente y bajo /tecnico.
   Widget detalle(GoRouterState state) =>
@@ -87,7 +88,7 @@ Future<void> cerrarSesion() async {
         builder: (context, state) =>
             CompletarPerfilView(onCerrarSesion: cerrarSesion),
       ),
-            GoRoute(
+      GoRoute(
         path: AppRoutes.selfie,
         builder: (context, state) => SelfieView(onCerrarSesion: cerrarSesion),
       ),
@@ -110,6 +111,7 @@ Future<void> cerrarSesion() async {
               Icons.home_outlined,
               InicioView(esCliente: true),
               iconoActivo: Icons.home_rounded,
+              saludo: '¿Qué arreglamos hoy?',
             ),
             Destino(
               'Mis solicitudes',
@@ -142,7 +144,7 @@ Future<void> cerrarSesion() async {
             path: 'agenda',
             builder: (context, state) => Scaffold(
               appBar: AppBar(title: const Text('Mi agenda')),
-              body: const AgendaView(esCliente: true),
+              body: const HojaClara(child: AgendaView(esCliente: true)),
             ),
           ),
           GoRoute(
@@ -179,6 +181,7 @@ Future<void> cerrarSesion() async {
               Icons.home_outlined,
               InicioTecnicoView(),
               iconoActivo: Icons.home_rounded,
+              saludo: 'Estos son los trabajos de tu zona',
             ),
             Destino(
               'Mis trabajos',

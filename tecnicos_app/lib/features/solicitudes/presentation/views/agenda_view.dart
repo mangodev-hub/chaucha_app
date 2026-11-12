@@ -278,7 +278,6 @@ class _FilaAgenda extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colores.tarjeta,
                   borderRadius: BorderRadius.circular(Radios.grande),
-                  boxShadow: Sombras.suave,
                   border: Border(left: BorderSide(color: color, width: 4)),
                 ),
                 child: Column(

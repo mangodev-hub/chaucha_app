@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/hoja_clara.dart';
+
 /// Cámara en vivo para la selfie. Devuelve los bytes de la foto o null si el
 /// usuario cancela. Se usa en web, donde no hay forma de forzar la cámara
 /// con image_picker.
@@ -44,9 +46,11 @@ class _SelfieCamaraState extends State<SelfieCamara> {
       setState(() => _ctrl = ctrl);
     } catch (_) {
       if (mounted) {
-        setState(() => _error =
-            'Necesitamos acceso a la cámara para tomarte la foto. '
-            'Actívala en el navegador e inténtalo de nuevo.');
+        setState(
+          () => _error =
+              'Necesitamos acceso a la cámara para tomarte la foto. '
+              'Actívala en el navegador e inténtalo de nuevo.',
+        );
       }
     }
   }
@@ -74,10 +78,12 @@ class _SelfieCamaraState extends State<SelfieCamara> {
     if (_error != null) {
       return Scaffold(
         appBar: AppBar(),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(_error!, textAlign: TextAlign.center),
+        body: HojaClara(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(_error!, textAlign: TextAlign.center),
+            ),
           ),
         ),
       );

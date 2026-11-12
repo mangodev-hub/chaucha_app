@@ -11,6 +11,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
 import '../../../../core/widgets/carrusel_aliados.dart';
+import '../../../../core/widgets/tarjeta_onda.dart';
 import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
 import '../providers/resenas_cliente_provider.dart';
@@ -21,7 +22,7 @@ import '../providers/sesion_provider.dart';
 const _azul = Colores.cielo;
 const _azulOscuro = Colores.cieloOscuro;
 const _hielo = Colores.cieloSuave;
-const _fondo = Colores.fondo;
+const _fondo = Colores.lienzo;
 const _texto = Colores.tinta;
 const _gris = Colores.tintaSuave;
 const _borde = Colores.linea;
@@ -191,14 +192,9 @@ class _Cabecera extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-                child: Container(
-                  height: 160,
-                  decoration: const BoxDecoration(gradient: Degradados.cielo),
-                ),
+              const ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                child: SizedBox(height: 160, child: FondoOnda()),
               ),
               Positioned(
                 left: 32,
@@ -255,11 +251,7 @@ class _Cabecera extends StatelessWidget {
                   const SizedBox(height: 6),
                   const Row(
                     children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 16,
-                        color: _azul,
-                      ),
+                      Icon(Icons.location_on_outlined, size: 16, color: _azul),
                       SizedBox(width: 4),
                       // Cede si no hay ancho: nunca desborda la fila.
                       Flexible(

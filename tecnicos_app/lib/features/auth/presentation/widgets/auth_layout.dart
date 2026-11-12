@@ -1,6 +1,6 @@
-// Marco común de login y registro: fondo celeste con degradado y una tarjeta
-// blanca con la marca, el título y el formulario. En escritorio agrega a la
-// izquierda un panel azul con la marca.
+// Marco común de login y registro: fondo verde bosque con una onda celeste
+// suave y una tarjeta clara con la marca, el título y el formulario. En
+// escritorio agrega a la izquierda un panel verde con la marca.
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -10,6 +10,7 @@ import '../../../../core/widgets/encabezado_pantalla.dart';
 import '../../../../core/widgets/marca.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../../core/widgets/tarjeta_onda.dart';
 
 class AuthLayout extends StatelessWidget {
   const AuthLayout({
@@ -72,18 +73,10 @@ class AuthLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ResponsiveLayout(
-        mobile: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colores.primarioSuave,
-                Colores.fondo,
-                Colores.superficie,
-              ],
-            ),
-          ),
+        mobile: FondoOnda(
+          color: Colores.fondo,
+          colorOnda: Colores.cieloClaro.withValues(alpha: 0.14),
+          forma: FormaOnda.esquina,
           child: SafeArea(
             child: _Tarjeta(
               titulo: titulo,
@@ -249,7 +242,7 @@ class _PanelMarca extends StatelessWidget {
       padding: const EdgeInsets.all(Espacios.m),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(Radios.medio),
+        borderRadius: BorderRadius.circular(Radios.subtarjeta),
       ),
       child: Row(
         children: [
@@ -258,7 +251,7 @@ class _PanelMarca extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(10),
+              shape: BoxShape.circle,
             ),
             child: Icon(icono, color: Colors.white, size: 20),
           ),
@@ -321,7 +314,7 @@ class _PanelMarca extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colores.primarioProfundo, Colores.primarioVivo],
+          colors: [Colores.fondo, Colores.primarioVivo],
         ),
       ),
       child: Padding(
@@ -409,7 +402,9 @@ class _Tarjeta extends StatelessWidget {
               maxWidth: AuthLayout._anchoMaximoTarjeta,
             ),
             child: TarjetaApp(
-              radio: Radios.muyGrande,
+              radio: Radios.bento,
+              color: Colores.lienzo,
+              conBorde: false,
               padding: const EdgeInsets.fromLTRB(
                 Espacios.xl,
                 Espacios.xxl,
@@ -440,7 +435,7 @@ class _Tarjeta extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (conMarca) ...[
-                const Center(child: Marca()),
+                const Center(child: Marca(sobreOscuro: true)),
                 const SizedBox(height: Espacios.s),
               ],
               Stack(
@@ -450,7 +445,9 @@ class _Tarjeta extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: bordeTarjeta),
                     child: TarjetaApp(
-                      radio: Radios.muyGrande,
+                      radio: Radios.bento,
+                      color: Colores.lienzo,
+                      conBorde: false,
                       // Arriba suma lo que el personaje entra en la tarjeta,
                       // para que el título no quede pegado a sus pies.
                       padding: const EdgeInsets.fromLTRB(

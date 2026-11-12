@@ -12,6 +12,7 @@ import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/hoja_clara.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../auth/domain/entities/rol.dart';
@@ -59,7 +60,10 @@ class ChatView extends ConsumerWidget {
             ),
         ],
       ),
-      body: ChatPanel(conversacionId: conversacionId),
+      body: HojaClara(
+        abajoRecto: true,
+        child: ChatPanel(conversacionId: conversacionId),
+      ),
     );
   }
 }
@@ -216,9 +220,7 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
           error: contexto.hasError
               ? AsyncValueView.mensajeDe(contexto.error!)
               : null,
-          onEmpezar: puedeEnviarTicket
-              ? () => _empezarTrabajo(oferta!)
-              : null,
+          onEmpezar: puedeEnviarTicket ? () => _empezarTrabajo(oferta!) : null,
         ),
         Expanded(
           child: ColoredBox(
@@ -226,24 +228,24 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
             child: AnchoMaximo(
               ancho: _anchoMaximo,
               child: AsyncValueView<List<Mensaje>>(
-              value: mensajes,
-              onRetry: () => ref.invalidate(mensajesProvider(id)),
-              onData: (context, mensajes) => mensajes.isEmpty
-                  ? soyCliente
-                        ? const EstadoMensaje(
-                            icono: Icons.chat_bubble_outline,
-                            titulo: 'Inicia la conversación',
-                            mensaje:
-                                'Pregunta lo que necesites y acuerden el '
-                                'precio del trabajo.',
-                          )
-                        : const EstadoMensaje(
-                            icono: Icons.mark_chat_unread_outlined,
-                            titulo: 'Esperando al cliente',
-                            mensaje:
-                                'Cuando el cliente te escriba, podrás '
-                                'responderle aquí.',
-                          )
+                value: mensajes,
+                onRetry: () => ref.invalidate(mensajesProvider(id)),
+                onData: (context, mensajes) => mensajes.isEmpty
+                    ? soyCliente
+                          ? const EstadoMensaje(
+                              icono: Icons.chat_bubble_outline,
+                              titulo: 'Inicia la conversación',
+                              mensaje:
+                                  'Pregunta lo que necesites y acuerden el '
+                                  'precio del trabajo.',
+                            )
+                          : const EstadoMensaje(
+                              icono: Icons.mark_chat_unread_outlined,
+                              titulo: 'Esperando al cliente',
+                              mensaje:
+                                  'Cuando el cliente te escriba, podrás '
+                                  'responderle aquí.',
+                            )
                     : _Mensajes(
                         mensajes: mensajes,
                         miId: miId,
@@ -434,7 +436,7 @@ class _SeparadorDia extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colores.tarjeta,
             borderRadius: BorderRadius.circular(Radios.pildora),
-            boxShadow: Sombras.suave,
+            border: Border.all(color: Colores.linea),
           ),
           child: Text(
             dia,
@@ -560,7 +562,7 @@ class _BarraEnvio extends StatelessWidget {
                           horizontal: Espacios.l + 4,
                           vertical: Espacios.m,
                         ),
-                        fillColor: Colores.fondo,
+                        fillColor: Colores.superficie,
                         border: redondeado,
                         enabledBorder: redondeado,
                         focusedBorder: redondeado.copyWith(

@@ -1,18 +1,22 @@
 // Tema visual único de la app, construido a partir de los tokens.
 //
-// Estilo (ver `docs/DISENO.md`): verde y celeste. Fondo verde muy suave,
-// tarjetas blancas con sombra sutil, botón principal verde bosque con sombra,
-// campos verdosos sin borde y con ícono; el celeste es información y acento.
+// Estilo "Bento orgánico" (ver `docs/DISENO.md`): fondo verde bosque
+// profundo, barra superior oscura con texto blanco, contenido en tarjetas
+// claras muy redondeadas, botones y campos con forma de píldora y ninguna
+// sombra (`elevation: 0` en todo).
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'tokens.dart';
 
 abstract final class AppTheme {
+  // El esquema describe las superficies claras (tarjetas, hojas, diálogos):
+  // ahí vive casi todo el texto. Lo que va directo sobre el fondo oscuro
+  // usa `Colores.sobreOscuro` de forma explícita.
   static const ColorScheme _colores = ColorScheme(
     brightness: Brightness.light,
     primary: Colores.primario,
-    onPrimary: Colors.white,
+    onPrimary: Colores.sobreOscuro,
     primaryContainer: Colores.primarioSuave,
     onPrimaryContainer: Colores.primarioOscuro,
     // Secundario: celeste. Con texto blanco no llega a AA, así que lleva
@@ -22,26 +26,24 @@ abstract final class AppTheme {
     secondaryContainer: Colores.cieloSuave,
     onSecondaryContainer: Colores.cieloOscuro,
     tertiary: Colores.info,
-    onTertiary: Colors.white,
+    onTertiary: Colores.sobreOscuro,
     error: Colores.error,
-    onError: Colors.white,
+    onError: Colores.sobreOscuro,
     errorContainer: Colores.errorSuave,
     onErrorContainer: Colores.errorOscuro,
     surface: Colores.tarjeta,
     onSurface: Colores.tinta,
     onSurfaceVariant: Colores.tintaSuave,
     surfaceContainerLowest: Colores.tarjeta,
-    surfaceContainerLow: Colores.fondo,
+    surfaceContainerLow: Colores.lienzo,
     surfaceContainer: Colores.superficie,
     surfaceContainerHigh: Colores.superficie,
     surfaceContainerHighest: Colores.superficieFuerte,
-    outline: Color(0xFFA3B5A6),
+    outline: Color(0xFF9DB5A5),
     outlineVariant: Colores.linea,
   );
 
-  static final RoundedRectangleBorder _formaMedia = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(Radios.medio),
-  );
+  static const StadiumBorder _pildora = StadiumBorder();
 
   static ThemeData get light {
     final base = ThemeData(useMaterial3: true, colorScheme: _colores);
@@ -50,67 +52,76 @@ abstract final class AppTheme {
     return base.copyWith(
       scaffoldBackgroundColor: Colores.fondo,
       textTheme: textos,
+      // Barra superior sobre el fondo oscuro: título e íconos blancos.
       appBarTheme: AppBarTheme(
         backgroundColor: Colores.fondo,
-        foregroundColor: Colores.tinta,
+        foregroundColor: Colores.sobreOscuro,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
-        titleTextStyle: textos.titleLarge,
+        titleTextStyle: textos.titleLarge?.copyWith(color: Colores.sobreOscuro),
+        iconTheme: const IconThemeData(color: Colores.sobreOscuro),
+        actionsIconTheme: const IconThemeData(color: Colores.sobreOscuro),
       ),
-      // Botón principal: verde bosque, alto y con una sombra verde
-      // ("destacado"). Desactivado, sin sombra.
+      // Botón principal: píldora verde oscuro con texto blanco en negrita.
       filledButtonTheme: FilledButtonThemeData(
-        style:
-            FilledButton.styleFrom(
-              minimumSize: const Size(0, 52),
-              shape: _formaMedia,
-              textStyle: textos.labelLarge?.copyWith(fontSize: 16),
-            ).copyWith(
-              elevation: WidgetStateProperty.resolveWith(
-                (estados) => estados.contains(WidgetState.disabled) ? 0 : 3,
-              ),
-              shadowColor: const WidgetStatePropertyAll(Sombras.boton),
-            ),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(0, 52),
+          shape: _pildora,
+          elevation: 0,
+          textStyle: textos.labelLarge?.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
-      // Botón secundario: neutro (blanco, borde gris y texto oscuro), para
+      // Botón secundario: píldora blanca con borde fino y texto oscuro, para
       // que el verde quede solo en la acción principal.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: Colores.tinta,
           backgroundColor: Colores.tarjeta,
           minimumSize: const Size(0, 48),
-          side: const BorderSide(color: Colores.linea, width: 1.5),
-          shape: _formaMedia,
+          side: const BorderSide(color: Colores.superficieFuerte, width: 1.5),
+          shape: _pildora,
           textStyle: textos.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(elevation: 0, shape: _pildora),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: Colores.primario,
-          textStyle: textos.labelLarge,
+          shape: _pildora,
+          textStyle: textos.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           selectedBackgroundColor: Colores.primario,
-          selectedForegroundColor: Colors.white,
+          selectedForegroundColor: Colores.sobreOscuro,
           side: const BorderSide(color: Colores.linea),
           textStyle: textos.labelLarge,
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: Colores.primario,
-        foregroundColor: Colors.white,
+        foregroundColor: Colores.sobreOscuro,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
         shape: StadiumBorder(),
       ),
-      // Campos verdosos, sin borde; borde verde marca al enfocarlos.
+      // Campos: relleno verdoso, sin borde y muy redondeados (los de una
+      // línea quedan como píldora); borde verde medio al enfocarlos.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colores.superficie,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: Espacios.l,
+          horizontal: Espacios.l + 4,
           vertical: Espacios.l,
         ),
         border: _bordeCampo(BorderSide.none),
@@ -125,7 +136,7 @@ abstract final class AppTheme {
         labelStyle: textos.bodyLarge?.copyWith(color: Colores.tintaSuave),
         hintStyle: textos.bodyLarge?.copyWith(color: Colores.tintaSuave),
         prefixIconColor: Colores.tintaSuave,
-        suffixIconColor: Colores.tintaSuave,
+        suffixIconColor: Colores.primario,
       ),
       cardTheme: CardThemeData(
         color: Colores.tarjeta,
@@ -133,14 +144,17 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         margin: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Radios.grande),
+          borderRadius: BorderRadius.circular(Radios.subtarjeta),
+          side: const BorderSide(color: Colores.linea),
         ),
       ),
-      // Chips: verde claro; el elegido con borde verde.
+      // Chips: píldoras verdosas; la elegida en verde suave con borde verde.
       chipTheme: ChipThemeData(
         backgroundColor: Colores.superficie,
         selectedColor: Colores.primarioSuave,
         checkmarkColor: Colores.primarioOscuro,
+        elevation: 0,
+        pressElevation: 0,
         labelStyle: textos.labelLarge?.copyWith(color: Colores.tinta),
         secondaryLabelStyle: textos.labelLarge?.copyWith(
           color: Colores.primarioOscuro,
@@ -157,7 +171,7 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colores.tarjeta,
+        backgroundColor: Colores.lienzo,
         surfaceTintColor: Colors.transparent,
         indicatorColor: Colores.primarioSuave,
         elevation: 0,
@@ -166,7 +180,7 @@ abstract final class AppTheme {
           (estados) => IconThemeData(
             color: estados.contains(WidgetState.selected)
                 ? Colores.primario
-                : Colores.tintaSuave,
+                : Colores.cielo.withValues(alpha: 0.7),
           ),
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
@@ -180,48 +194,56 @@ abstract final class AppTheme {
           ),
         ),
       ),
-      navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: Colores.tarjeta,
-        indicatorColor: Colores.primarioSuave,
-        selectedIconTheme: const IconThemeData(color: Colores.primario),
-        unselectedIconTheme: const IconThemeData(color: Colores.tintaSuave),
-        selectedLabelTextStyle: textos.labelMedium?.copyWith(
-          color: Colores.primario,
-          fontWeight: FontWeight.w700,
-        ),
-        unselectedLabelTextStyle: textos.labelMedium?.copyWith(
-          color: Colores.tintaSuave,
-        ),
-      ),
       dividerTheme: const DividerThemeData(color: Colores.linea, space: 1),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colores.tinta,
-        contentTextStyle: textos.bodyMedium?.copyWith(color: Colors.white),
-        shape: _formaMedia,
+        elevation: 0,
+        contentTextStyle: textos.bodyMedium?.copyWith(
+          color: Colores.sobreOscuro,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radios.grande),
+        ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: Colores.tarjeta,
+        backgroundColor: Colores.lienzo,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Radios.muyGrande),
+          borderRadius: BorderRadius.circular(Radios.bento),
         ),
         titleTextStyle: textos.titleLarge,
         iconColor: Colores.primario,
       ),
+      // Hojas inferiores: superficie clara, esquinas de arriba muy
+      // redondeadas y un indicador celeste tipo píldora.
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: Colores.tarjeta,
+        backgroundColor: Colores.lienzo,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        modalElevation: 0,
         showDragHandle: true,
-        dragHandleColor: Colores.superficieFuerte,
+        dragHandleColor: Colores.cielo,
+        dragHandleSize: Size(40, 4),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(Radios.muyGrande),
+            top: Radius.circular(Radios.hoja),
           ),
         ),
       ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: Colores.lienzo,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radios.subtarjeta),
+          side: const BorderSide(color: Colores.linea),
+        ),
+      ),
+      // Verde medio: se ve tanto sobre el fondo oscuro como sobre las hojas.
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: Colores.primario,
+        color: Colores.primarioVivo,
         linearTrackColor: Colores.superficieFuerte,
       ),
       sliderTheme: const SliderThemeData(
@@ -232,7 +254,7 @@ abstract final class AppTheme {
     );
   }
 
-  /// Tipografía: títulos en negrita y algo apretados.
+  /// Tipografía: títulos en negrita, cuerpo en peso medio.
   static TextTheme _textos(TextTheme base) {
     final conFuente = GoogleFonts.getTextTheme(
       Tipografia.familia,
@@ -240,24 +262,35 @@ abstract final class AppTheme {
     ).apply(bodyColor: Colores.tinta, displayColor: Colores.tinta);
 
     TextStyle? titular(TextStyle? estilo, FontWeight peso) =>
-        estilo?.copyWith(fontWeight: peso, letterSpacing: -0.5, height: 1.15);
+        estilo?.copyWith(fontWeight: peso, letterSpacing: -0.4, height: 1.15);
 
     return conFuente.copyWith(
       displaySmall: titular(conFuente.displaySmall, FontWeight.w800),
       headlineLarge: titular(conFuente.headlineLarge, FontWeight.w800),
       headlineMedium: titular(conFuente.headlineMedium, FontWeight.w800),
       headlineSmall: titular(conFuente.headlineSmall, FontWeight.w800),
-      titleLarge: titular(conFuente.titleLarge, FontWeight.w700),
+      // Títulos de tarjeta: 20-22 en negrita.
+      titleLarge: titular(
+        conFuente.titleLarge?.copyWith(fontSize: 21),
+        FontWeight.w700,
+      ),
       titleMedium: conFuente.titleMedium?.copyWith(fontWeight: FontWeight.w700),
       titleSmall: conFuente.titleSmall?.copyWith(fontWeight: FontWeight.w700),
       labelLarge: conFuente.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-      bodyLarge: conFuente.bodyLarge?.copyWith(height: 1.45),
-      bodyMedium: conFuente.bodyMedium?.copyWith(height: 1.45),
+      bodyLarge: conFuente.bodyLarge?.copyWith(
+        height: 1.45,
+        fontWeight: FontWeight.w500,
+      ),
+      bodyMedium: conFuente.bodyMedium?.copyWith(
+        height: 1.45,
+        fontWeight: FontWeight.w500,
+      ),
+      bodySmall: conFuente.bodySmall?.copyWith(fontWeight: FontWeight.w500),
     );
   }
 
   static OutlineInputBorder _bordeCampo(BorderSide lado) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(Radios.medio),
+    borderRadius: BorderRadius.circular(Radios.subtarjeta + 6),
     borderSide: lado,
   );
 }

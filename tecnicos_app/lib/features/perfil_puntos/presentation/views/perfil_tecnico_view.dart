@@ -22,6 +22,7 @@ import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../../core/widgets/tarjeta_onda.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
@@ -358,9 +359,9 @@ class _BannerVerificacion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (verificado) {
-    return const AvisoVerificacionCliente(
-      subtitulo: 'Los clientes confían más en técnicos verificados.',
-    );
+      return const AvisoVerificacionCliente(
+        subtitulo: 'Los clientes confían más en técnicos verificados.',
+      );
     }
     final textos = Theme.of(context).textTheme;
     return TarjetaApp(
@@ -450,17 +451,12 @@ class _CabeceraTecnico extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
+              const ClipRRect(
+                borderRadius: BorderRadius.vertical(
                   top: Radius.circular(Radios.grande),
                 ),
                 // Cabecera celeste: el perfil es contexto, no acción.
-                child: Container(
-                  height: 120,
-                  decoration: const BoxDecoration(
-                    gradient: Degradados.cielo,
-                  ),
-                ),
+                child: SizedBox(height: 120, child: FondoOnda()),
               ),
               Positioned(
                 left: Espacios.xl,
@@ -474,7 +470,9 @@ class _CabeceraTecnico extends StatelessWidget {
                   child: Consumer(
                     builder: (context, ref, _) => AvatarUsuario(
                       nombre: nombre,
-                      rutaFoto: ref.watch(usuarioActualProvider)?.fotoPerfilRuta,
+                      rutaFoto: ref
+                          .watch(usuarioActualProvider)
+                          ?.fotoPerfilRuta,
                       radio: 44,
                     ),
                   ),
@@ -498,7 +496,11 @@ class _CabeceraTecnico extends StatelessWidget {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [info, const SizedBox(height: Espacios.m), baja],
+                    children: [
+                      info,
+                      const SizedBox(height: Espacios.m),
+                      baja,
+                    ],
                   ),
                 );
               }

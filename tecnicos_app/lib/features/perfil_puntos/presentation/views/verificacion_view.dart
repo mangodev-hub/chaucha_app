@@ -158,8 +158,7 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
         : foto.hasError
         ? AsyncValueView.mensajeDe(foto.error!)
         : foto.value;
-    final errorSubida =
-        subida.hasError && !_subiendoCedula && !_enviandoSelfie
+    final errorSubida = subida.hasError && !_subiendoCedula && !_enviandoSelfie
         ? AsyncValueView.mensajeDe(subida.error!)
         : null;
 
@@ -257,7 +256,8 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
         else if (hayRechazo)
           const _Aviso(
             tipo: TipoAviso.error,
-            mensaje: 'Algo de lo que enviaste fue rechazado. Vuelve a enviarlo.',
+            mensaje:
+                'Algo de lo que enviaste fue rechazado. Vuelve a enviarlo.',
           ),
         if (errorFoto != null)
           _Aviso(tipo: TipoAviso.error, mensaje: errorFoto),
@@ -383,7 +383,7 @@ class _EnRevision extends StatelessWidget {
       child: TarjetaApp(
         padding: const EdgeInsets.all(Espacios.l),
         radio: Radios.medio,
-        conSombra: false,
+        conBorde: false,
         color: Colores.primarioSuave,
         colorBorde: Colores.primarioClaro,
         child: Column(
@@ -477,7 +477,7 @@ class _Paso extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: Espacios.m),
       padding: const EdgeInsets.all(Espacios.m),
       radio: Radios.medio,
-      conSombra: false,
+      conBorde: false,
       color: activo ? Colores.primarioSuave : Colores.tarjeta,
       colorBorde: activo ? Colores.primarioClaro : Colores.linea,
       child: Row(

@@ -1,11 +1,12 @@
 // Tarjeta de portada del inicio: título grande, subtítulo, un dato en una
-// píldora y una ilustración con formas a la derecha. Tiene dos variantes:
-// la verde bosque (cliente y admin: el "sol" celeste y el "brote" verde
-// asoman por la derecha) y la celeste (técnico: degradado celeste con texto
-// oscuro), para que los dos roles se distingan de un vistazo.
+// píldora verde oscuro y una ilustración a la derecha, sobre una tarjeta
+// bento con onda. Dos variantes para que los roles se distingan de un
+// vistazo: verde claro con mancha celeste (cliente y admin) y celeste claro
+// con ola verde (técnico). Las dos llevan texto oscuro.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
+import 'tarjeta_onda.dart';
 
 class TarjetaPortada extends StatelessWidget {
   const TarjetaPortada({
@@ -30,7 +31,7 @@ class TarjetaPortada extends StatelessWidget {
   /// Ícono de la ilustración de la derecha.
   final IconData icono;
 
-  /// Variante celeste con texto oscuro (inicio del técnico).
+  /// Variante celeste (inicio del técnico).
   final bool celeste;
 
   /// Con menos de este ancho la ilustración no se muestra.
@@ -41,105 +42,76 @@ class TarjetaPortada extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
     final dato = this.dato;
     final subtitulo = this.subtitulo;
-    final colorTexto = celeste ? Colores.tinta : Colores.tarjeta;
-    final colorSubtitulo = celeste ? Colores.cieloOscuro : Colores.tarjeta;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: celeste ? null : Colores.primario,
-        gradient: celeste ? Degradados.cielo : null,
-        borderRadius: BorderRadius.circular(Radios.muyGrande),
-        boxShadow: celeste ? Sombras.suave : Sombras.fuerte,
-      ),
+    return Material(
+      color: celeste ? Colores.cieloClaro : Colores.primarioClaro,
+      borderRadius: BorderRadius.circular(Radios.bento),
       clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, restricciones) {
-          final ancho = restricciones.maxWidth;
-          final conIlustracion = ancho >= _anchoMinimoIlustracion;
-          final amplia = ancho >= 600;
-          final tamanoIlustracion = amplia ? 150.0 : 108.0;
+      child: CustomPaint(
+        painter: PintorOnda(
+          color: celeste
+              ? Colores.primarioClaro.withValues(alpha: 0.45)
+              : Colores.cieloClaro.withValues(alpha: 0.55),
+          forma: celeste ? FormaOnda.inferior : FormaOnda.esquina,
+        ),
+        child: LayoutBuilder(
+          builder: (context, restricciones) {
+            final ancho = restricciones.maxWidth;
+            final conIlustracion = ancho >= _anchoMinimoIlustracion;
+            final amplia = ancho >= 600;
+            final tamanoIlustracion = amplia ? 140.0 : 100.0;
 
-          final texto = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _Titulo(
-                titulo,
-                estilo: (amplia ? textos.headlineMedium : textos.headlineSmall)
-                    ?.copyWith(color: colorTexto, height: 1.15),
-                acento: celeste ? Colores.primarioVivo : Colores.primarioClaro,
-              ),
-              if (subtitulo != null) ...[
-                const SizedBox(height: Espacios.s),
-                Text(
-                  subtitulo,
-                  style: (amplia ? textos.titleMedium : textos.bodyLarge)
-                      ?.copyWith(
-                        color: colorSubtitulo,
-                        fontWeight: FontWeight.w500,
-                      ),
+            final texto = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _Titulo(
+                  titulo,
+                  estilo:
+                      (amplia ? textos.headlineMedium : textos.headlineSmall)
+                          ?.copyWith(color: Colores.tinta, height: 1.15),
+                  acento: Colores.primario,
                 ),
+                if (subtitulo != null) ...[
+                  const SizedBox(height: Espacios.s),
+                  Text(
+                    subtitulo,
+                    style: (amplia ? textos.titleMedium : textos.bodyMedium)
+                        ?.copyWith(
+                          color: Colores.tinta,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
               ],
-            ],
-          );
+            );
 
-          return Stack(
-            children: [
-              // Formas de fondo detrás de la ilustración: el sol celeste y el
-              // brote verde (verde), o un círculo blanco translúcido (celeste).
-              if (conIlustracion) ...[
-                Positioned(
-                  right: -tamanoIlustracion * 0.45,
-                  top: -tamanoIlustracion * 0.5,
-                  child: _Circulo(
-                    tamano: tamanoIlustracion * 1.6,
-                    color: celeste
-                        ? Colores.tarjeta.withValues(alpha: 0.35)
-                        : Colores.cieloClaro,
-                  ),
-                ),
-                Positioned(
-                  right: tamanoIlustracion * 0.9,
-                  bottom: -tamanoIlustracion * 0.35,
-                  child: _Circulo(
-                    tamano: tamanoIlustracion * 0.6,
-                    color: celeste
-                        ? Colores.primarioClaro.withValues(alpha: 0.6)
-                        : Colores.primarioClaro,
-                  ),
-                ),
-              ],
-              Padding(
-                padding: EdgeInsets.all(amplia ? Espacios.xxl : Espacios.xl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: texto),
-                        if (conIlustracion) ...[
-                          const SizedBox(width: Espacios.l),
-                          _Ilustracion(
-                            icono: icono,
-                            tamano: tamanoIlustracion,
-                            celeste: celeste,
-                          ),
-                        ],
+            return Padding(
+              padding: EdgeInsets.all(amplia ? Espacios.xxl : Espacios.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: texto),
+                      if (conIlustracion) ...[
+                        const SizedBox(width: Espacios.l),
+                        _Ilustracion(icono: icono, tamano: tamanoIlustracion),
                       ],
-                    ),
-                    // La píldora va debajo, a todo el ancho: así no compite
-                    // con la ilustración y nunca se corta.
-                    if (dato != null) ...[
-                      const SizedBox(height: Espacios.l),
-                      _PildoraDato(texto: dato, icono: iconoDato),
                     ],
+                  ),
+                  // La píldora va debajo: así no compite con la ilustración
+                  // y nunca se corta.
+                  if (dato != null) ...[
+                    const SizedBox(height: Espacios.l),
+                    _PildoraDato(texto: dato, icono: iconoDato),
                   ],
-                ),
+                ],
               ),
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -173,7 +145,7 @@ class _Titulo extends StatelessWidget {
   }
 }
 
-/// Píldora blanca con el dato, en celeste oscuro (es información).
+/// Píldora verde oscuro con el dato en blanco.
 class _PildoraDato extends StatelessWidget {
   const _PildoraDato({required this.texto, this.icono});
 
@@ -189,10 +161,10 @@ class _PildoraDato extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: Espacios.m + 2,
-          vertical: Espacios.s - 1,
+          vertical: Espacios.s,
         ),
         decoration: BoxDecoration(
-          color: Colores.tarjeta,
+          color: Colores.primario,
           borderRadius: BorderRadius.circular(Radios.pildora),
         ),
         // El dato suele llegar después (cuando cargan los datos): el cambio
@@ -207,7 +179,7 @@ class _PildoraDato extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icono != null) ...[
-                  Icon(icono, size: 16, color: Colores.cielo),
+                  Icon(icono, size: 16, color: Colores.sobreOscuro),
                   const SizedBox(width: Espacios.xs + 2),
                 ],
                 Flexible(
@@ -216,7 +188,7 @@ class _PildoraDato extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colores.cieloOscuro,
+                      color: Colores.sobreOscuro,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -230,29 +202,17 @@ class _PildoraDato extends StatelessWidget {
   }
 }
 
-/// Ilustración hecha con formas: un círculo translúcido con el ícono y una
-/// insignia blanca de "verificado". Entra con un pequeño rebote.
+/// Ilustración hecha con formas: un círculo claro translúcido con el ícono y
+/// una insignia de "verificado". Entra con un pequeño rebote.
 class _Ilustracion extends StatelessWidget {
-  const _Ilustracion({
-    required this.icono,
-    required this.tamano,
-    required this.celeste,
-  });
+  const _Ilustracion({required this.icono, required this.tamano});
 
   final IconData icono;
   final double tamano;
-  final bool celeste;
 
   @override
   Widget build(BuildContext context) {
     final insignia = tamano * 0.34;
-    final colorIcono = celeste ? Colores.cieloOscuro : Colores.tarjeta;
-    final relleno = celeste
-        ? Colores.tarjeta.withValues(alpha: 0.55)
-        : Colores.tarjeta.withValues(alpha: 0.16);
-    final borde = celeste
-        ? Colores.tarjeta.withValues(alpha: 0.9)
-        : Colores.tarjeta.withValues(alpha: 0.28);
     return ExcludeSemantics(
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.8, end: 1),
@@ -268,11 +228,14 @@ class _Ilustracion extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: relleno,
-                  border: Border.all(color: borde, width: 2),
+                  color: Colores.lienzo.withValues(alpha: 0.55),
+                  border: Border.all(
+                    color: Colores.lienzo.withValues(alpha: 0.9),
+                    width: 2.5,
+                  ),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icono, size: tamano * 0.5, color: colorIcono),
+                child: Icon(icono, size: tamano * 0.5, color: Colores.primario),
               ),
               Positioned(
                 right: -tamano * 0.02,
@@ -281,14 +244,13 @@ class _Ilustracion extends StatelessWidget {
                   width: insignia,
                   height: insignia,
                   decoration: const BoxDecoration(
-                    color: Colores.tarjeta,
+                    color: Colores.primario,
                     shape: BoxShape.circle,
-                    boxShadow: Sombras.suave,
                   ),
                   child: Icon(
                     Icons.verified_rounded,
                     size: insignia * 0.62,
-                    color: Colores.acento,
+                    color: Colores.sobreOscuro,
                   ),
                 ),
               ),
@@ -296,22 +258,6 @@ class _Ilustracion extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Circulo extends StatelessWidget {
-  const _Circulo({required this.tamano, required this.color});
-
-  final double tamano;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: tamano,
-      height: tamano,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }
