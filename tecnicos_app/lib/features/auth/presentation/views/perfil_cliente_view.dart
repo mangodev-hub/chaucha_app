@@ -128,7 +128,7 @@ class _Tarjeta extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: _blanco,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(Radios.grande),
         border: Border.all(color: _borde),
       ),
       child: child,
@@ -147,7 +147,7 @@ class _Etiqueta extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: _hielo,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(Radios.grande),
       ),
       child: Text(
         texto,
@@ -193,7 +193,9 @@ class _Cabecera extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               const ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(Radios.grande),
+                ),
                 child: SizedBox(height: 160, child: FondoOnda()),
               ),
               Positioned(
@@ -319,7 +321,7 @@ class _BotonBaja extends StatelessWidget {
         backgroundColor: _rojo.withValues(alpha: 0.08),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(Radios.medio),
           side: BorderSide(color: _rojo.withValues(alpha: 0.3)),
         ),
       ),
@@ -423,7 +425,7 @@ class _Estadistica extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: _hielo,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(Radios.medio),
             ),
             child: Icon(icono, color: _azul, size: 26),
           ),
@@ -654,7 +656,7 @@ class _MapaZonaState extends State<_MapaZona> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(Radios.medio),
           child: SizedBox(
             height: 150,
             child: FlutterMap(
@@ -793,7 +795,7 @@ class _SelectorUbicacionState extends State<_SelectorUbicacion> {
               const SizedBox(height: 12),
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(Radios.medio),
                   child: FlutterMap(
                     options: MapOptions(
                       initialCenter: widget.inicial,

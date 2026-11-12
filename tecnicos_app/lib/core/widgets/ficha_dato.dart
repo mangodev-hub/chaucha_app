@@ -22,7 +22,7 @@ class FichaDato extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: Colores.primario,
-        borderRadius: BorderRadius.circular(Radios.grande),
+        borderRadius: BorderRadius.circular(Radios.medio),
       ),
       child: Text(
         texto,

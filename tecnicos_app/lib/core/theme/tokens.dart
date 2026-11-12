@@ -102,25 +102,27 @@ abstract final class Colores {
   static const Color estrella = Color(0xFFE39B00);
 }
 
+// Todo muy redondeado (estilo bento): ninguna caja baja de 12.
 abstract final class Radios {
-  static const double pequeno = 8;
-  static const double medio = 12;
+  /// Detalles chicos: miniaturas, marcas del calendario.
+  static const double pequeno = 12;
 
-  /// Píldoras de fecha, hora y filtros (`FichaDato`).
-  static const double grande = 16;
+  /// Cajas internas y fichas de fecha, hora y filtros (`FichaDato`).
+  static const double medio = 16;
 
-  /// Sub-tarjetas (dentro de la hoja clara o de una tarjeta con onda) y
-  /// campos de texto.
-  static const double subtarjeta = 22;
+  /// Sub-tarjetas (dentro de la hoja clara o de una tarjeta con onda),
+  /// filas de datos y avisos.
+  static const double grande = 22;
+  static const double subtarjeta = grande;
+
+  /// Tarjetas grandes y diálogos.
+  static const double muyGrande = 30;
 
   /// Tarjetas bento: la hoja clara de cada pantalla y las tarjetas con onda.
   static const double bento = 30;
 
   /// Barra inferior y hojas inferiores (esquinas de arriba).
   static const double hoja = 32;
-
-  /// Compatibilidad: diálogos y tarjetas grandes de login y registro.
-  static const double muyGrande = 24;
   static const double pildora = 999;
 }
 
