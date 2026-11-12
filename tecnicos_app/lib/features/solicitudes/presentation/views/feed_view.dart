@@ -94,6 +94,7 @@ class FeedView extends ConsumerWidget {
                       solicitud: item.solicitud,
                       distancia: Formatos.distancia(item.distanciaMetros),
                       yaCotice: item.yaCotice,
+                      mostrarCliente: true,
                       onTap: () => abrir(item.solicitud),
                     ),
                 ],

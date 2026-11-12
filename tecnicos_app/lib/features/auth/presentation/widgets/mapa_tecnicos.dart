@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/etiqueta_sector.dart';
+import '../../../../core/widgets/foto_perfil_caja.dart';
 import '../../domain/entities/tecnico_cercano.dart';
 
 class MapaTecnicos extends StatefulWidget {
@@ -209,22 +210,16 @@ class _Pin extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Container(
-          width: 38,
-          height: 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colores.primarioSuave,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colores.primario, width: 2),
-            boxShadow: Sombras.suave,
-          ),
-          child: Text(
-            tecnico.iniciales,
-            style: textos.labelSmall?.copyWith(
-              color: Colores.primarioOscuro,
-              fontWeight: FontWeight.w800,
-            ),
+        FotoPerfilCaja(
+          tamano: 38,
+          circular: true,
+          rutaFoto: tecnico.fotoRuta,
+          iniciales: tecnico.iniciales,
+          borde: Border.all(color: Colores.primario, width: 2),
+          sombra: Sombras.suave,
+          estiloTexto: textos.labelSmall?.copyWith(
+            color: Colores.primarioOscuro,
+            fontWeight: FontWeight.w800,
           ),
         ),
         Transform.translate(
@@ -407,19 +402,12 @@ class _TarjetaCercano extends StatelessWidget {
             onTap: onVerPerfil,
             child: Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colores.primarioSuave,
-                  borderRadius: BorderRadius.circular(Radios.medio),
-                ),
-                child: Text(
-                  tecnico.iniciales,
-                  style: textos.titleSmall?.copyWith(
-                    color: Colores.primarioOscuro,
-                  ),
+              FotoPerfilCaja(
+                tamano: 44,
+                rutaFoto: tecnico.fotoRuta,
+                iniciales: tecnico.iniciales,
+                estiloTexto: textos.titleSmall?.copyWith(
+                  color: Colores.primarioOscuro,
                 ),
               ),
               const SizedBox(width: Espacios.m),

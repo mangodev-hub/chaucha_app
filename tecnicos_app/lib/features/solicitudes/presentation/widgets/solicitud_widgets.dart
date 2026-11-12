@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/foto_perfil_caja.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/solicitud.dart';
@@ -56,6 +57,7 @@ class SolicitudCard extends StatelessWidget {
     this.onEditar,
     this.onEliminar,
     this.novedades = 0,
+    this.mostrarCliente = false,
   });
 
   final Solicitud solicitud;
@@ -68,6 +70,9 @@ class SolicitudCard extends StatelessWidget {
   final String? distancia;
   final bool yaCotice;
 
+  /// Vista del técnico: foto y nombre del cliente en lugar del ícono.
+  final bool mostrarCliente;
+
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
@@ -79,7 +84,17 @@ class SolicitudCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const IconoRecuadro(icono: Icons.handyman_outlined),
+              if (mostrarCliente)
+                FotoPerfilCaja(
+                  tamano: 44,
+                  rutaFoto: solicitud.clienteFotoRuta,
+                  iniciales: solicitud.clienteIniciales,
+                  estiloTexto: textos.titleSmall?.copyWith(
+                    color: Colores.primarioOscuro,
+                  ),
+                )
+              else
+                const IconoRecuadro(icono: Icons.handyman_outlined),
               const SizedBox(width: Espacios.m),
               Expanded(
                 child: Column(
@@ -92,7 +107,13 @@ class SolicitudCard extends StatelessWidget {
                       style: textos.titleMedium,
                     ),
                     Text(
-                      Formatos.fecha(solicitud.creadoEn),
+                      [
+                        if (mostrarCliente && solicitud.clienteNombre != null)
+                          solicitud.clienteNombre!,
+                        Formatos.fecha(solicitud.creadoEn),
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: textos.bodySmall?.copyWith(
                         color: Colores.tintaSuave,
                       ),

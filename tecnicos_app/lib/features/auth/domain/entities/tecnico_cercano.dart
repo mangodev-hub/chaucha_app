@@ -12,6 +12,7 @@ class TecnicoCercano {
     required this.ubicacion,
     required this.tarifaBase,
     required this.nivel,
+    this.fotoRuta,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class TecnicoCercano {
   final LatLng ubicacion;
   final double tarifaBase;
   final String nivel;
+  final String? fotoRuta;
 
   String get primerNombre => nombres.split(' ').first;
 

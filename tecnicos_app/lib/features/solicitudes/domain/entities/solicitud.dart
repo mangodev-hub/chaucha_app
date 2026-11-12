@@ -23,6 +23,8 @@ class Solicitud {
     required this.creadoEn,
     this.ubicacion,
     this.direccionReferencia,
+    this.clienteNombre,
+    this.clienteFotoRuta,
   });
 
   final String id;
@@ -34,4 +36,14 @@ class Solicitud {
   final String? direccionReferencia;
   final EstadoSolicitud estado;
   final DateTime creadoEn;
+
+  /// Nombre corto ("Ana P.") y foto del cliente, para las tarjetas del técnico.
+  final String? clienteNombre;
+  final String? clienteFotoRuta;
+
+  String get clienteIniciales {
+    final partes = (clienteNombre ?? '').split(' ').where((p) => p.isNotEmpty);
+    final ini = partes.take(2).map((p) => p[0]).join();
+    return ini.isEmpty ? '?' : ini.toUpperCase();
+  }
 }

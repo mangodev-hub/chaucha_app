@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
+import '../../../../core/widgets/foto_perfil_caja.dart';
 import '../../../../core/widgets/marca.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/seccion.dart';
@@ -583,19 +584,12 @@ class TecnicoCard extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colores.primarioSuave,
-                      borderRadius: BorderRadius.circular(Radios.medio),
-                    ),
-                    child: Text(
-                      t.iniciales,
-                      style: textos.titleLarge?.copyWith(
-                        color: Colores.primarioOscuro,
-                      ),
+                  FotoPerfilCaja(
+                    tamano: 64,
+                    rutaFoto: t.fotoRuta,
+                    iniciales: t.iniciales,
+                    estiloTexto: textos.titleLarge?.copyWith(
+                      color: Colores.primarioOscuro,
                     ),
                   ),
                   Positioned(
@@ -778,18 +772,11 @@ class TecnicoFila extends StatelessWidget {
     final avatar = Stack(
       clipBehavior: Clip.none,
       children: [
-        Container(
-          width: 64,
-          height: 64,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colores.primarioSuave,
-            borderRadius: BorderRadius.circular(Radios.medio),
-          ),
-          child: Text(
-            t.iniciales,
-            style: textos.titleLarge?.copyWith(color: Colores.primarioOscuro),
-          ),
+        FotoPerfilCaja(
+          tamano: 64,
+          rutaFoto: t.fotoRuta,
+          iniciales: t.iniciales,
+          estiloTexto: textos.titleLarge?.copyWith(color: Colores.primarioOscuro),
         ),
         Positioned(
           right: -4,

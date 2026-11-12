@@ -27,6 +27,7 @@ class TecnicoCercanoModel {
       ubicacion: LatLng(aDouble(_json['lat']), aDouble(_json['lng'])),
       tarifaBase: aDouble(_json['tarifa_base']),
       nivel: _json['nivel'] as String? ?? '',
+      fotoRuta: _json['foto_perfil_ruta'] as String?,
     );
   }
 }

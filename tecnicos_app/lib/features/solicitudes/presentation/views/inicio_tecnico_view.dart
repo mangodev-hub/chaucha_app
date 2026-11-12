@@ -428,6 +428,7 @@ class _NuevasCerca extends ConsumerWidget {
                       solicitud: item.solicitud,
                       distancia: Formatos.distancia(item.distanciaMetros),
                       yaCotice: item.yaCotice,
+                      mostrarCliente: true,
                       onTap: () =>
                           _abrirSolicitud(context, ref, item.solicitud),
                     ),
