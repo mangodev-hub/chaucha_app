@@ -14,8 +14,7 @@ import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/cotizacion.dart';
 import '../../domain/entities/tarifa.dart';
 
-/// Desglose del ticket: precio base de referencia, precio acordado,
-/// materiales, fecha y total.
+/// Desglose del ticket: precio de la visita y fecha.
 class DesgloseTarifa extends StatelessWidget {
   const DesgloseTarifa({
     super.key,
@@ -28,50 +27,25 @@ class DesgloseTarifa extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
     final fecha = tarifa.fechaServicio;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if ((tarifa.precioAcordado - precioBase).abs() > 0.001)
+          _Fila(
+            etiqueta: 'Precio de referencia',
+            valor: Formatos.dinero(precioBase),
+            tenue: true,
+          ),
         _Fila(
-          etiqueta: 'Precio base (referencia)',
-          valor: Formatos.dinero(precioBase),
-          tenue: true,
-        ),
-        _Fila(
-          etiqueta: 'Precio acordado',
+          etiqueta: 'Precio de la visita',
           valor: Formatos.dinero(tarifa.precioAcordado),
         ),
-        if (tarifa.materiales > 0)
-          _Fila(
-            etiqueta: 'Materiales',
-            valor: Formatos.dinero(tarifa.materiales),
-          ),
         if (fecha != null)
           _Fila(
             etiqueta: 'Fecha y hora',
             valor: '${Formatos.fechaCorta(fecha)} · ${Formatos.hora(fecha)}',
           ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: Espacios.s),
-          child: Divider(),
-        ),
-        Row(
-          children: [
-            Text('Total', style: textos.titleMedium),
-            const SizedBox(width: Espacios.s),
-            Expanded(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Text(
-                  Formatos.dinero(tarifa.total),
-                  style: textos.headlineSmall,
-                ),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -334,10 +308,8 @@ class _ConBoton extends StatelessWidget {
     );
   }
 }
-
-/// Formulario del técnico: el precio base queda fijo de referencia; el
-/// precio acordado empieza en el precio base y se puede cambiar; materiales
-/// y fecha del servicio son opcionales; el total se calcula en vivo.
+/// Formulario del técnico: el precio de referencia queda fijo; el precio de
+/// la visita empieza igual y se puede cambiar; la fecha y hora es obligatoria.
 Future<NuevaTarifa?> mostrarFormularioTarifa(
   BuildContext context, {
   required double precioBase,
@@ -362,13 +334,11 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
   late final _precio = TextEditingController(
     text: widget.precioBase.toStringAsFixed(2),
   );
-  final _materiales = TextEditingController();
   DateTime? _fecha;
 
   @override
   void dispose() {
     _precio.dispose();
-    _materiales.dispose();
     super.dispose();
   }
 
@@ -376,18 +346,12 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
       double.tryParse(c.text.trim().replaceAll(',', '.'));
 
   String? _validarPrecio(String? valor) {
-    final error = FormValidators.monto(valor, campo: 'El precio acordado');
+    final error = FormValidators.monto(valor, campo: 'El precio de la visita');
     if (error != null) return error;
     return (_leer(_precio) ?? 0) <= 0
-        ? 'El precio acordado debe ser mayor que 0.'
+        ? 'El precio de la visita debe ser mayor que 0.'
         : null;
   }
-
-  /// Los materiales son opcionales: vacío cuenta como 0.
-  String? _validarMateriales(String? valor) =>
-      (valor == null || valor.trim().isEmpty)
-      ? null
-      : FormValidators.monto(valor, campo: 'Materiales');
 
   Future<void> _elegirFecha() async {
     final hoy = DateUtils.dateOnly(DateTime.now());
@@ -396,7 +360,7 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
       initialDate: _fecha ?? hoy,
       firstDate: hoy,
       lastDate: hoy.add(const Duration(days: 90)),
-      helpText: 'Fecha del servicio',
+      helpText: 'Fecha de la visita',
     );
     if (dia == null || !mounted) return;
     final hora = await showTimePicker(
@@ -404,7 +368,7 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
       initialTime: _fecha == null
           ? const TimeOfDay(hour: 9, minute: 0)
           : TimeOfDay.fromDateTime(_fecha!),
-      helpText: 'Hora del servicio',
+      helpText: 'Hora de la visita',
     );
     if (hora == null || !mounted) return;
     setState(
@@ -422,7 +386,7 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_fecha == null) {
       context.mostrarMensaje(
-        'Elige la fecha del servicio.',
+        'Elige la fecha de la visita.',
         tipo: TipoMensaje.error,
       );
       return;
@@ -436,22 +400,17 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
     }
     Navigator.pop<NuevaTarifa>(
       context,
-      NuevaTarifa(
-        precioAcordado: _leer(_precio)!,
-        materiales: _leer(_materiales) ?? 0,
-        fechaServicio: _fecha,
-      ),
+      NuevaTarifa(precioAcordado: _leer(_precio)!, fechaServicio: _fecha),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    const teclado = TextInputType.numberWithOptions(decimal: true);
     final fecha = _fecha;
     return AlertDialog(
       icon: const Icon(Icons.receipt_long_outlined),
-      title: const Text('Empezar trabajo'),
+      title: const Text('Agendar visita'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -475,7 +434,7 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
                     const SizedBox(width: Espacios.s),
                     Expanded(
                       child: Text(
-                        'Tu precio base (solo referencia)',
+                        'Tu precio de la visita (referencia)',
                         style: textos.bodyMedium?.copyWith(
                           color: Colores.tintaSuave,
                         ),
@@ -490,11 +449,13 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
               ),
               const SizedBox(height: Espacios.l),
               CampoEtiquetado(
-                etiqueta: 'Precio del trabajo',
-                ayuda: 'Mano de obra · USD',
+                etiqueta: 'Precio de la visita',
+                ayuda: 'USD',
                 child: TextFormField(
                   controller: _precio,
-                  keyboardType: teclado,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.attach_money),
                   ),
@@ -503,26 +464,12 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
               ),
               const SizedBox(height: Espacios.s),
               Text(
-                'Parte de tu precio base. Cámbialo si acordaron otro valor.',
+                'El trabajo en sí lo acuerdan directamente con el cliente.',
                 style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
               ),
               const SizedBox(height: Espacios.l),
               CampoEtiquetado(
-                etiqueta: 'Materiales',
-                ayuda: 'Opcional',
-                child: TextFormField(
-                  controller: _materiales,
-                  keyboardType: teclado,
-                  decoration: const InputDecoration(
-                    hintText: '0.00',
-                    prefixIcon: Icon(Icons.attach_money),
-                  ),
-                  validator: _validarMateriales,
-                ),
-              ),
-              const SizedBox(height: Espacios.l),
-              CampoEtiquetado(
-                etiqueta: 'Fecha y hora del servicio',
+                etiqueta: 'Fecha y hora de la visita',
                 ayuda: 'Obligatoria',
                 child: OutlinedButton.icon(
                   onPressed: _elegirFecha,
@@ -534,61 +481,10 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
                   ),
                 ),
               ),
-              const SizedBox(height: Espacios.l),
-              ListenableBuilder(
-                listenable: Listenable.merge([_precio, _materiales]),
-                builder: (context, _) {
-                  final trabajo = _leer(_precio) ?? 0;
-                  final materiales = _leer(_materiales) ?? 0;
-                  return Container(
-                    padding: const EdgeInsets.all(Espacios.m + 2),
-                    decoration: BoxDecoration(
-                      color: Colores.primarioSuave,
-                      borderRadius: BorderRadius.circular(Radios.medio),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Total',
-                              style: textos.titleMedium?.copyWith(
-                                color: Colores.primarioOscuro,
-                              ),
-                            ),
-                            const SizedBox(width: Espacios.s),
-                            Expanded(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerRight,
-                                child: Text(
-                                  Formatos.dinero(trabajo + materiales),
-                                  style: textos.titleLarge?.copyWith(
-                                    color: Colores.primarioOscuro,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Espacios.s),
-                        Text(
-                          '${Formatos.dinero(trabajo)} trabajo + '
-                          '${Formatos.dinero(materiales)} materiales',
-                          style: textos.bodySmall?.copyWith(
-                            color: Colores.tintaSuave,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
               const SizedBox(height: Espacios.m),
               const AvisoBanner(
                 compacto: true,
-                mensaje: 'El cliente debe confirmar el ticket para empezar.',
+                mensaje: 'El cliente debe confirmar el ticket para agendar.',
               ),
             ],
           ),

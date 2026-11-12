@@ -33,7 +33,6 @@ class MensajeTicket extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    final materiales = _valor('materiales');
     final fecha = DateTime.tryParse('${mensaje.datos?['fecha_servicio']}')
         ?.toLocal();
     final estado = pendiente
@@ -62,16 +61,16 @@ class MensajeTicket extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: Espacios.m),
-                _Fila('Mano de obra', Formatos.dinero(_valor('mano_obra'))),
-                if (materiales > 0)
-                  _Fila('Materiales', Formatos.dinero(materiales)),
+                _Fila(
+                  'Precio de la visita',
+                  Formatos.dinero(_valor('total')),
+                  fuerte: true,
+                ),
                 if (fecha != null)
                   _Fila(
                     'Fecha',
                     '${Formatos.fechaCorta(fecha)} · ${Formatos.hora(fecha)}',
                   ),
-                const Divider(height: Espacios.l),
-                _Fila('Total', Formatos.dinero(_valor('total')), fuerte: true),
                 const SizedBox(height: Espacios.m),
                 if (puedeResponder)
                   Row(
