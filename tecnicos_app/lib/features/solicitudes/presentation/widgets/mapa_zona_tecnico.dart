@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/etiqueta_sector.dart';
 import '../../../../core/widgets/presionable.dart';
 import '../../../auth/presentation/widgets/mapa_tecnicos.dart';
 import '../../domain/entities/solicitud.dart';
@@ -78,10 +79,7 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
               initialCenter: widget.centro,
               initialZoom: _zoomInicial,
               interactionOptions: const InteractionOptions(
-                flags:
-                    InteractiveFlag.all &
-                    ~InteractiveFlag.rotate &
-                    ~InteractiveFlag.scrollWheelZoom,
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
               ),
             ),
             children: [
@@ -136,7 +134,10 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
           Positioned(
             top: Espacios.l,
             left: Espacios.l,
-            child: Container(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: Espacios.m,
                 vertical: 6,
@@ -160,6 +161,10 @@ class _MapaZonaTecnicoState extends State<MapaZonaTecnico> {
                   ),
                 ],
               ),
+            ),
+                const SizedBox(height: Espacios.s),
+                EtiquetaSector(punto: widget.centro),
+              ],
             ),
           ),
           Positioned(

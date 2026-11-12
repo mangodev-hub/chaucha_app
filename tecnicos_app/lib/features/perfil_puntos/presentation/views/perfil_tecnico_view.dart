@@ -34,6 +34,7 @@ import '../providers/perfil_tecnico_provider.dart';
 import '../widgets/resena_widgets.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
 import 'verificacion_view.dart';
+import '../../../../core/widgets/boton_baja.dart';
 
 class PerfilTecnicoView extends ConsumerStatefulWidget {
   const PerfilTecnicoView({super.key});
@@ -306,6 +307,7 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
         MapaUbicacion(
           punto: _ubicacion,
           radioMetros: _radio,
+          mostrarSector: true,
           onCambio: (punto) => setState(() => _ubicacion = punto),
         ),
         const SizedBox(height: Espacios.m),
@@ -380,6 +382,46 @@ class _CabeceraTecnico extends StatelessWidget {
         .take(2)
         .map((p) => p[0].toUpperCase())
         .join();
+    final info = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(nombre, style: textos.headlineSmall),
+                const SizedBox(height: Espacios.xs),
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: Colores.primario,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Quito, Ecuador',
+                      style: TextStyle(color: Colores.tintaSuave),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Espacios.s),
+                Wrap(
+                  spacing: Espacios.s,
+                  runSpacing: Espacios.xs,
+                  children: [
+                    Pildora(
+                      texto: 'Nivel ${perfil.nivelNombre}',
+                      icono: Icons.workspace_premium_outlined,
+                      color: Colores.primario,
+                    ),
+                    if (perfil.verificado)
+                      const Pildora(
+                        texto: 'Verificado',
+                        icono: Icons.verified,
+                        color: Colores.acento,
+                      ),
+                  ],
+                ),
+              ],
+            );
     return TarjetaApp(
       padding: EdgeInsets.zero,
       child: Column(
@@ -430,45 +472,29 @@ class _CabeceraTecnico extends StatelessWidget {
               Espacios.l,
               Espacios.l,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(nombre, style: textos.headlineSmall),
-                const SizedBox(height: Espacios.xs),
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
+            child: LayoutBuilder(
+              builder: (context, c) {
+                const baja = BotonBaja();
+                // Ancho suficiente: el botón va a la derecha. Si no, debajo.
+                if (c.maxWidth >= 480) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(child: info),
+                      const SizedBox(width: Espacios.m),
+                      baja,
+                    ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: Colores.primario,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'Quito, Ecuador',
-                      style: TextStyle(color: Colores.tintaSuave),
-                    ),
+                    info,
+                    const SizedBox(height: Espacios.m),
+                    baja,
                   ],
-                ),
-                const SizedBox(height: Espacios.s),
-                Wrap(
-                  spacing: Espacios.s,
-                  runSpacing: Espacios.xs,
-                  children: [
-                    Pildora(
-                      texto: 'Nivel ${perfil.nivelNombre}',
-                      icono: Icons.workspace_premium_outlined,
-                      color: Colores.primario,
-                    ),
-                    if (perfil.verificado)
-                      const Pildora(
-                        texto: 'Verificado',
-                        icono: Icons.verified,
-                        color: Colores.acento,
-                      ),
-                  ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         ],
