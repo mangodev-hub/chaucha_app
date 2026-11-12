@@ -141,7 +141,7 @@ class _PanelMarca extends StatelessWidget {
     (
       Icons.local_offer_outlined,
       'Ofertas claras',
-      'Precio base y cómo resolverá tu problema',
+      'Precio de la visita y cómo resolverá tu problema',
     ),
     (
       Icons.chat_bubble_outline,

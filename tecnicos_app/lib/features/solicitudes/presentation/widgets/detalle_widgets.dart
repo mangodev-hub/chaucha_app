@@ -163,7 +163,7 @@ class _Guia {
       EstadoSolicitud.abierta || EstadoSolicitud.cotizada => _Guia(
         Icons.local_offer_outlined,
         n == 1 ? 'Tienes 1 oferta' : 'Tienes $n ofertas',
-        'Revisa el precio base y la solución de cada técnico. Escríbele al '
+        'Revisa el precio de la visita y la solución de cada técnico. Escríbele al '
         'que te guste para acordar el precio.',
         Colores.info,
       ),
@@ -257,7 +257,7 @@ class _Guia {
       return const _Guia(
         Icons.handyman_outlined,
         'Ofrece tus servicios',
-        'Revisa el problema y la ubicación. Envía tu precio base y explica '
+        'Revisa el problema y la ubicación. Envía tu precio de la visita y explica '
             'cómo lo resolverías.',
         Colores.info,
       );

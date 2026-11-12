@@ -345,7 +345,7 @@ class _ComoFunciona extends StatelessWidget {
           paso(
             2,
             'Recibe propuestas',
-            'Los técnicos de tu zona te escriben con un precio base.',
+            'Los técnicos de tu zona te escriben con un precio de la visita.',
           ),
           paso(
             3,
