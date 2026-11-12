@@ -27,6 +27,22 @@ class LogoChaucha extends StatelessWidget {
   /// logo. Por defecto, blanco o el verde de la marca si va sobre oscuro.
   final Color? fondo;
 
+  /// Pinta el logo en [canvas] ocupando [size] (cuadrado). Lo usa el widget
+  /// y la herramienta que exporta el ícono de la app y el splash
+  /// (`tool/generar_marca.dart`).
+  static void pintar(
+    Canvas canvas,
+    Size size, {
+    bool sobreOscuro = false,
+    Color? fondo,
+  }) {
+    _PintorLogo(
+      llave: sobreOscuro ? Colores.tarjeta : Colores.primarioVivo,
+      tuerca: sobreOscuro ? Colores.cieloClaro : Colores.cielo,
+      agujero: fondo ?? (sobreOscuro ? Colores.primario : Colores.tarjeta),
+    ).paint(canvas, size);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ExcludeSemantics(
