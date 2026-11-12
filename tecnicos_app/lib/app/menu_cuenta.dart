@@ -13,19 +13,32 @@ import '../features/auth/data/repositories/supabase_auth_repository.dart';
 import '../features/auth/presentation/providers/cuenta_provider.dart';
 import '../features/auth/presentation/providers/sesion_provider.dart';
 
-enum _Op { perfil, configuracion, acerca, salir }
+enum _Op { perfil, agenda, configuracion, acerca, salir }
 
 class MenuCuenta extends ConsumerWidget {
   const MenuCuenta({
     super.key,
     required this.onPerfil,
     required this.onCerrarSesion,
+    this.onAgenda,
     this.compacto = false,
+    this.sobreOscuro = false,
+    this.hijo,
   });
 
   final VoidCallback onCerrarSesion;
   final bool compacto;
+
+  /// Nombre y flecha en blanco (barra superior oscura de escritorio).
+  final bool sobreOscuro;
   final VoidCallback? onPerfil;
+
+  /// Lo que se toca para abrir el menú, en lugar del avatar por defecto
+  /// (el encabezado del inicio pasa su propio avatar con aro).
+  final Widget? hijo;
+
+  /// "Mi agenda", solo cuando la agenda no es una pestaña (cliente).
+  final VoidCallback? onAgenda;
   static PopupMenuItem<_Op> _item(
     _Op valor,
     IconData icono,
@@ -46,6 +59,8 @@ class MenuCuenta extends ConsumerWidget {
     switch (op) {
       case _Op.perfil:
         onPerfil?.call();
+      case _Op.agenda:
+        onAgenda?.call();
       case _Op.configuracion:
         showDialog<void>(
           context: context,
@@ -118,6 +133,8 @@ class MenuCuenta extends ConsumerWidget {
         const PopupMenuDivider(),
         if (onPerfil != null)
           _item(_Op.perfil, Icons.person_outline, 'Mi perfil'),
+        if (onAgenda != null)
+          _item(_Op.agenda, Icons.event_outlined, 'Mi agenda'),
         _item(
           _Op.configuracion,
           Icons.settings_outlined,
@@ -128,7 +145,9 @@ class MenuCuenta extends ConsumerWidget {
         const PopupMenuDivider(),
         _item(_Op.salir, Icons.logout, 'Cerrar sesión', color: Colores.error),
       ],
-      child: compacto
+      child: hijo != null
+          ? hijo!
+          : compacto
           ? Padding(
               padding: const EdgeInsets.all(Espacios.s),
               child: avatar(32),
@@ -147,9 +166,14 @@ class MenuCuenta extends ConsumerWidget {
                     nombre,
                     style: textos.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
+                      color: sobreOscuro ? Colores.sobreOscuro : null,
                     ),
                   ),
-                  const Icon(Icons.keyboard_arrow_down, size: 20),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: sobreOscuro ? Colores.sobreOscuro : null,
+                  ),
                 ],
               ),
             ),

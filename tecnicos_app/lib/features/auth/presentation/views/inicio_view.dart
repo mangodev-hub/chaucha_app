@@ -15,6 +15,7 @@ import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/seccion.dart';
+import '../../../../core/widgets/tarjeta_onda.dart';
 import '../../../../core/widgets/tarjeta_portada.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
@@ -177,7 +178,8 @@ class _InicioViewState extends ConsumerState<InicioView> {
     final ancho = MediaQuery.sizeOf(context).width;
     final margen = ancho >= 1024 ? 48.0 : (ancho >= 640 ? 32.0 : Espacios.l);
     final dosColumnas = ancho >= 1000;
-    const separacion = SizedBox(height: 40);
+    // Bloques bento: cada sección es una tarjeta, separadas por un respiro.
+    const separacion = SizedBox(height: Espacios.bento);
 
     final conteo = <String, int>{};
     for (final t in tecnicos.value ?? const <TecnicoCercano>[]) {
@@ -186,41 +188,35 @@ class _InicioViewState extends ConsumerState<InicioView> {
       }
     }
 
-    final especialidades = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        EncabezadoSeccion(
-          etiqueta: 'Especialidades',
-          titulo: 'Servicios populares en Quito',
-          trailing: esCliente && oficios.hasValue
-              ? TextButton.icon(
-                  iconAlignment: IconAlignment.end,
-                  onPressed: () =>
-                      _verTodos(context, ref, oficios.value!, conteo),
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: Text('Ver todos (${oficios.value!.length})'),
-                )
+    final especialidades = TarjetaOnda.celeste(
+      titulo: 'Servicios populares',
+      accion: esCliente && oficios.hasValue
+          ? EnlaceVerTodos(
+              texto: 'Ver todos (${oficios.value!.length})',
+              onTap: () => _verTodos(context, ref, oficios.value!, conteo),
+            )
+          : null,
+      child: AsyncValueView<List<Oficio>>(
+        value: oficios,
+        onRetry: () => ref.invalidate(oficiosProvider),
+        onData: (context, lista) => Categorias(
+          oficios: lista,
+          conteo: conteo,
+          // En el teléfono, tres filas de dos.
+          maximo: ancho < 600 ? 6 : 8,
+          onTap: esCliente
+              ? (oficio) => _pedir(context, ref, oficioId: oficio.id)
               : null,
         ),
-        const SizedBox(height: Espacios.l),
-        AsyncValueView<List<Oficio>>(
-          value: oficios,
-          onRetry: () => ref.invalidate(oficiosProvider),
-          onData: (context, lista) => Categorias(
-            oficios: lista,
-            conteo: conteo,
-            onTap: esCliente
-                ? (oficio) => _pedir(context, ref, oficioId: oficio.id)
-                : null,
-          ),
-        ),
-      ],
+      ),
     );
 
-    final lista = AsyncValueView<List<TecnicoCercano>>(
-      value: tecnicos,
-      onRetry: () => ref.invalidate(tecnicosCercanosProvider),
-      onData: (context, datos) => _destacados(datos),
+    final lista = TarjetaOnda.clara(
+      child: AsyncValueView<List<TecnicoCercano>>(
+        value: tecnicos,
+        onRetry: () => ref.invalidate(tecnicosCercanosProvider),
+        onData: (context, datos) => _destacados(datos),
+      ),
     );
 
     final cuerpo = dosColumnas
@@ -277,7 +273,12 @@ class _InicioViewState extends ConsumerState<InicioView> {
           AnchoMaximo(
             ancho: 1360,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(margen, Espacios.l, margen, 40),
+              padding: EdgeInsets.fromLTRB(
+                margen,
+                Espacios.xs,
+                margen,
+                Espacios.xl,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -288,25 +289,22 @@ class _InicioViewState extends ConsumerState<InicioView> {
                     subtitulo: 'Técnicos verificados, a la puerta de tu casa.',
                     dato: switch (tecnicos.value?.length) {
                       null => 'Técnicos verificados',
-                      1 => '1 técnico cerca · en vivo',
-                      final n => '$n técnicos cerca · en vivo',
+                      1 => '1 técnico cerca',
+                      final n => '$n técnicos cerca',
                     },
                     iconoDato: Icons.near_me_rounded,
                   ),
-                  // El buscador va pegado a la portada; sin él, el cuerpo
-                  // lleva la separación normal entre secciones.
+                  separacion,
                   if (esCliente) ...[
-                    const SizedBox(height: Espacios.l),
-                    if (esCliente) ...[
-                    const SizedBox(height: Espacios.l),
-                    const AvisoVerificacionCliente(margenInferior: Espacios.l),
+                    const AvisoVerificacionCliente(
+                      margenInferior: Espacios.bento,
+                    ),
                     HeroBusqueda(
                       onNueva: (texto) =>
                           _pedir(context, ref, descripcion: texto),
                     ),
+                    separacion,
                   ],
-                  ],
-                  separacion,
                   cuerpo,
                 ],
               ),
@@ -335,6 +333,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
       ),
       error: (_, _) => const SizedBox.shrink(),
       data: (lista) => MapaTecnicos(
+        radio: Radios.bento,
         punto: punto,
         radioM: radioM,
         onCambiarRadio: ref.read(radioInicioProvider.notifier).cambiar,
@@ -365,7 +364,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
       runSpacing: Espacios.s,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Text('Técnicos calificados cerca de ti', style: textos.headlineSmall),
+        Text('Técnicos cerca de ti', style: textos.titleLarge),
         Pildora(texto: '${lista.length} en tu zona', color: Colores.primario),
       ],
     );
@@ -417,7 +416,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
           Column(
             children: [
               for (var i = 0; i < visibles.length; i++) ...[
-                if (i > 0) const SizedBox(height: Espacios.l),
+                if (i > 0) const SizedBox(height: Espacios.m),
                 TecnicoFila(
                   tecnico: visibles[i],
                   onVerPerfil: () => _verPerfil(visibles[i].id),

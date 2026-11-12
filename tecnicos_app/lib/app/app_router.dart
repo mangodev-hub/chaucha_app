@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/router/app_routes.dart';
+import '../core/widgets/hoja_clara.dart';
 import '../core/widgets/splash_view.dart';
 import '../features/admin/presentation/views/admin_resumen_view.dart';
 import '../features/admin/presentation/views/admin_solicitudes_view.dart';
@@ -20,6 +21,7 @@ import '../features/auth/presentation/views/registro_view.dart';
 import '../features/auth/presentation/views/restablecer_view.dart';
 import '../features/auth/presentation/views/selfie_view.dart';
 import '../features/chat/presentation/views/chat_view.dart';
+import '../features/chat/presentation/views/chats_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_publico_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_tecnico_view.dart';
 import '../features/solicitudes/presentation/views/agenda_view.dart';
@@ -35,12 +37,12 @@ final routerProvider = Provider<GoRouter>((ref) {
   final cambiosDeSesion = ValueNotifier<SesionEstado>(ref.read(sesionProvider));
   ref.listen(sesionProvider, (_, nuevo) => cambiosDeSesion.value = nuevo);
 
-late final GoRouter router;
+  late final GoRouter router;
 
-Future<void> cerrarSesion() async {
-  await ref.read(sesionProvider.notifier).cerrarSesion();
-  router.go(AppRoutes.login);
-}
+  Future<void> cerrarSesion() async {
+    await ref.read(sesionProvider.notifier).cerrarSesion();
+    router.go(AppRoutes.login);
+  }
 
   // Detalle y chat existen bajo /cliente y bajo /tecnico.
   Widget detalle(GoRouterState state) =>
@@ -86,52 +88,65 @@ Future<void> cerrarSesion() async {
         builder: (context, state) =>
             CompletarPerfilView(onCerrarSesion: cerrarSesion),
       ),
-            GoRoute(
+      GoRoute(
         path: AppRoutes.selfie,
         builder: (context, state) => SelfieView(onCerrarSesion: cerrarSesion),
       ),
       GoRoute(
         path: AppRoutes.clienteInicio,
+        // Cinco destinos abajo: Inicio · Solicitudes · Pedir · Chats · Perfil.
+        // La agenda del cliente se abre desde el menú y desde Mis solicitudes.
         builder: (context, state) => InicioShell(
           onCerrarSesion: cerrarSesion,
-          conChats: true,
-          esCliente: true,
+          rutaAgenda: AppRoutes.clienteAgenda,
+          accionCentral: const AccionCentral(
+            etiqueta: 'Pedir un técnico',
+            corto: 'Pedir',
+            icono: Icons.add_rounded,
+            ruta: AppRoutes.clienteNuevaSolicitud,
+          ),
           destinos: const [
             Destino(
               'Inicio',
               Icons.home_outlined,
               InicioView(esCliente: true),
               iconoActivo: Icons.home_rounded,
+              saludo: 'Bienvenido a ChauchaApp',
             ),
             Destino(
               'Mis solicitudes',
               Icons.assignment_outlined,
               MisSolicitudesView(),
               iconoActivo: Icons.assignment_rounded,
-              tiposNotificacion: [
-                'cotizacion',
-                'tarifa',
-                'mensaje',
-                'solicitud_expirada',
-              ],
+              corto: 'Solicitudes',
+              tiposNotificacion: ['cotizacion', 'tarifa', 'solicitud_expirada'],
               marcaAlEntrar: false,
             ),
             Destino(
-              'Agenda',
-              Icons.event_outlined,
-              AgendaView(esCliente: true),
-              iconoActivo: Icons.event_rounded,
-              tiposNotificacion: ['tarifa'],
+              'Chats',
+              Icons.chat_bubble_outline_rounded,
+              ChatsView(esCliente: true),
+              iconoActivo: Icons.chat_bubble_rounded,
+              tiposNotificacion: tiposDeChat,
+              marcaAlEntrar: false,
             ),
             Destino(
               'Mi perfil',
               Icons.person_outline,
               PerfilClienteView(),
               iconoActivo: Icons.person_rounded,
+              corto: 'Perfil',
             ),
           ],
         ),
         routes: [
+          GoRoute(
+            path: 'agenda',
+            builder: (context, state) => Scaffold(
+              appBar: AppBar(title: const Text('Mi agenda')),
+              body: const HojaClara(child: AgendaView(esCliente: true)),
+            ),
+          ),
           GoRoute(
             path: 'nueva',
             builder: (context, state) {
@@ -157,24 +172,24 @@ Future<void> cerrarSesion() async {
       ),
       GoRoute(
         path: AppRoutes.tecnicoInicio,
+        // Cinco destinos abajo: Inicio · Trabajos · Agenda · Chats · Perfil.
         builder: (context, state) => InicioShell(
           onCerrarSesion: cerrarSesion,
-          conChats: true,
           destinos: const [
             Destino(
               'Inicio',
               Icons.home_outlined,
               InicioTecnicoView(),
               iconoActivo: Icons.home_rounded,
+              saludo: 'Estos son los trabajos de tu zona',
             ),
             Destino(
               'Mis trabajos',
               Icons.work_outline,
               MisTrabajosView(),
               iconoActivo: Icons.work_rounded,
+              corto: 'Trabajos',
               tiposNotificacion: [
-                'chat',
-                'mensaje',
                 'cotizacion_aceptada',
                 'tarifa_cancelada',
                 'cierre',
@@ -187,10 +202,19 @@ Future<void> cerrarSesion() async {
               iconoActivo: Icons.event_rounded,
             ),
             Destino(
+              'Chats',
+              Icons.chat_bubble_outline_rounded,
+              ChatsView(esCliente: false),
+              iconoActivo: Icons.chat_bubble_rounded,
+              tiposNotificacion: tiposDeChat,
+              marcaAlEntrar: false,
+            ),
+            Destino(
               'Mi perfil',
               Icons.person_outline,
               PerfilTecnicoView(),
               iconoActivo: Icons.person_rounded,
+              corto: 'Perfil',
             ),
           ],
         ),

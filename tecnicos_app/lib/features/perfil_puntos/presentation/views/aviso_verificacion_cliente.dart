@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -196,7 +198,7 @@ Future<bool> exigirVerificado(BuildContext context, WidgetRef ref) async {
       ],
     ),
   );
-  if (ir == true && context.mounted) mostrarVerificacion(context);
+  if (ir == true && context.mounted) unawaited(mostrarVerificacion(context));
   return false;
 }
 

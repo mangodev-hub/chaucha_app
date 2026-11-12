@@ -43,11 +43,14 @@ class EtiquetaSector extends ConsumerWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 240),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: Espacios.m, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Espacios.m,
+          vertical: 6,
+        ),
         decoration: BoxDecoration(
           color: Colores.tarjeta,
           borderRadius: BorderRadius.circular(Radios.pildora),
-          boxShadow: Sombras.suave,
+          border: Border.all(color: Colores.linea),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

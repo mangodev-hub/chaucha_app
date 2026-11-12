@@ -2,8 +2,9 @@
 // del día, solicitudes nuevas cerca, su actividad y su reputación. Cada
 // sección carga por separado; si una falla, las demás se siguen viendo.
 //
-// En móvil: una columna. En escritorio: lo urgente a la izquierda y la
-// actividad y reputación a la derecha.
+// Cada sección es una tarjeta bento sobre el fondo oscuro. En móvil: una
+// columna. En escritorio: lo urgente a la izquierda y la zona y las ofertas
+// a la derecha.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,7 @@ import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../../core/widgets/tarjeta_onda.dart';
 import '../../../../core/widgets/tarjeta_portada.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../chat/domain/entities/conversacion_pendiente.dart';
@@ -59,13 +61,20 @@ class InicioTecnicoView extends ConsumerWidget {
     final escritorio = ResponsiveLayout.isDesktop(context);
 
     const urgente = [_ParaEmpezar(), _Pendientes(), _NuevasCerca()];
-    const progreso = [ _Publicidad()];
+    const progreso = [_Publicidad()];
     const derecha = [_MapaZona(), ...progreso];
 
     return RefreshIndicator(
       onRefresh: () => _recargar(ref),
       child: ListView(
-        padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
+        padding: escritorio
+            ? const EdgeInsets.all(Espacios.xl)
+            : const EdgeInsets.fromLTRB(
+                Espacios.l,
+                Espacios.xs,
+                Espacios.l,
+                Espacios.l,
+              ),
         children: [
           AnchoMaximo(
             ancho: escritorio ? 1100 : 900,
@@ -84,7 +93,7 @@ class InicioTecnicoView extends ConsumerWidget {
                           children: urgente,
                         ),
                       ),
-                      SizedBox(width: Espacios.xl),
+                      SizedBox(width: Espacios.bento),
                       Expanded(
                         flex: 2,
                         child: Column(
@@ -117,7 +126,6 @@ class _Portada extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final nombre = ref.watch(usuarioActualProvider)?.nombres;
     final chats = ref.watch(chatsPendientesProvider).value?.length;
     final trabajos = ref
         .watch(resumenTecnicoProvider)
@@ -128,9 +136,11 @@ class _Portada extends ConsumerWidget {
         ? null
         : chats + trabajos;
 
+    // Portada celeste: distingue el inicio del técnico del del cliente.
     return TarjetaPortada(
-      titulo: nombre == null ? 'Hola.' : 'Hola, $nombre.',
-      subtitulo: 'Este es tu resumen de hoy.',
+      celeste: true,
+      titulo: 'Tu resumen de hoy.',
+      subtitulo: 'Chats, trabajos y solicitudes cerca de ti.',
       icono: Icons.engineering_rounded,
       dato: switch (pendientes) {
         null => null,
@@ -155,7 +165,7 @@ class _MapaZona extends ConsumerWidget {
       perfilTecnicoProvider.select((p) => p.value?.ubicacionActual != null),
     );
     if (!tieneUbicacion) return const SizedBox.shrink();
-    return Seccion(
+    return _Bloque(
       titulo: 'Tu zona de trabajo',
       child: MapaZonaPerfil(
         onTapSolicitud: (s) => _abrirSolicitud(context, ref, s),
@@ -209,10 +219,12 @@ class _ParaEmpezar extends ConsumerWidget {
     if (hechos == pasos.length) return const SizedBox.shrink();
 
     final textos = Theme.of(context).textTheme;
-    return Seccion(
+    // Tarjeta verde con los pasos en una sub-tarjeta blanca.
+    return _Bloque(
       titulo: 'Para empezar a trabajar',
+      verde: true,
       child: TarjetaApp(
-        colorBorde: Colores.primarioClaro,
+        conBorde: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -266,7 +278,7 @@ class _Pendientes extends ConsumerWidget {
         (chats.value?.isEmpty ?? false) &&
         (resumen.value?.trabajosEnCurso.isEmpty ?? false);
 
-    return Seccion(
+    return _Bloque(
       titulo: 'Pendientes de hoy',
       child: sinPendientes
           ? const EstadoMensaje(
@@ -317,7 +329,11 @@ class _Publicidad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const Seccion(titulo: 'Para ti', child: CarruselAliados());
+      // El carrusel ya es una tarjeta: va solo, con el respiro bento.
+      const Padding(
+        padding: EdgeInsets.only(top: Espacios.bento),
+        child: CarruselAliados(),
+      );
 }
 
 Future<void> _abrirSolicitud(
@@ -392,7 +408,6 @@ class _ChatPendiente extends ConsumerWidget {
 class _NuevasCerca extends ConsumerWidget {
   const _NuevasCerca();
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(feedProvider);
@@ -400,7 +415,7 @@ class _NuevasCerca extends ConsumerWidget {
     if (feed.value case DatosFeed(:final perfil) when !perfil.estaCompleto) {
       return const SizedBox.shrink();
     }
-    return Seccion(
+    return _Bloque(
       titulo: 'Solicitudes nuevas cerca',
       child: _AsyncCompacto<DatosFeed>(
         valor: feed,
@@ -441,6 +456,7 @@ class _NuevasCerca extends ConsumerWidget {
     );
   }
 }
+
 /// Una sección que carga sola: un indicador pequeño mientras carga, un aviso
 /// compacto con "Reintentar" si falla, y el contenido cuando llegan los
 /// datos (se mantiene visible durante una recarga).
@@ -498,6 +514,31 @@ class _Mas extends StatelessWidget {
         style: Theme.of(context).textTheme.bodySmall
             ?.copyWith(color: Colores.tintaSuave),
       ),
+    );
+  }
+}
+
+/// Sección del inicio como tarjeta bento: título y contenido sobre la
+/// superficie clara con una onda celeste, o sobre verde claro con onda
+/// celeste si [verde] (lo que pide acción).
+class _Bloque extends StatelessWidget {
+  const _Bloque({
+    required this.titulo,
+    required this.child,
+    this.verde = false,
+  });
+
+  final String titulo;
+  final Widget child;
+  final bool verde;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: Espacios.bento),
+      child: verde
+          ? TarjetaOnda.verde(titulo: titulo, child: child)
+          : TarjetaOnda.clara(titulo: titulo, child: child),
     );
   }
 }

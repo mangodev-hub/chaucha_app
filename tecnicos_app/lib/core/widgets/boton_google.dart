@@ -26,12 +26,20 @@ class BotonGoogle extends StatelessWidget {
         side: const BorderSide(color: Colores.primarioClaro),
         minimumSize: const Size.fromHeight(48),
       ),
+      // El texto cede si el botón recibe menos ancho del que necesita (por
+      // ejemplo, en el primer cuadro mientras la tarjeta del login se mide).
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           SvgPicture.string(_logo, width: 20, height: 20),
           const SizedBox(width: Espacios.m),
-          const Text('Continuar con Google'),
+          const Flexible(
+            child: Text(
+              'Continuar con Google',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

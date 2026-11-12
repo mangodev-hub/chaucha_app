@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
+import '../../../../core/widgets/capa_circulos.dart';
 import '../../../../core/widgets/etiqueta_sector.dart';
 import '../../../../core/widgets/foto_perfil_caja.dart';
 import '../../domain/entities/tecnico_cercano.dart';
@@ -20,9 +21,13 @@ class MapaTecnicos extends StatefulWidget {
     this.onVerPerfil,
     this.onCambiarRadio,
     this.alto = 460,
+    this.radio = Radios.bento,
   });
 
   final double alto;
+
+  /// Radio de las esquinas (tarjeta bento).
+  final double radio;
   final LatLng punto;
   final int radioM;
   final List<TecnicoCercano> tecnicos;
@@ -67,8 +72,8 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colores.superficie,
-        borderRadius: BorderRadius.circular(Radios.muyGrande),
-        boxShadow: Sombras.suave,
+        borderRadius: BorderRadius.circular(widget.radio),
+        border: Border.all(color: Colores.linea),
       ),
       child: Stack(
         children: [
@@ -86,8 +91,8 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.eagledev.tecnicos_app',
               ),
-              CircleLayer(
-                circles: [
+              CapaCirculos(
+                circulos: [
                   CircleMarker(
                     point: widget.punto,
                     radius: _radioKm * 1000,
@@ -117,7 +122,6 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
                         color: Colores.primario,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colores.tarjeta, width: 3),
-                        boxShadow: Sombras.suave,
                       ),
                     ),
                   ),
@@ -132,12 +136,12 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ControlRadio(
-              km: _radioKm,
-              onCambio: (v) => setState(() => _radioKm = v),
-              onFin: widget.onCambiarRadio == null
-                  ? null
-                  : (v) => widget.onCambiarRadio!((v * 1000).round()),
-            ),
+                  km: _radioKm,
+                  onCambio: (v) => setState(() => _radioKm = v),
+                  onFin: widget.onCambiarRadio == null
+                      ? null
+                      : (v) => widget.onCambiarRadio!((v * 1000).round()),
+                ),
                 const SizedBox(height: Espacios.s),
                 EtiquetaSector(punto: widget.punto),
               ],
@@ -192,7 +196,7 @@ class _Pin extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colores.tarjeta,
             borderRadius: BorderRadius.circular(Radios.pildora),
-            boxShadow: Sombras.suave,
+            border: Border.all(color: Colores.linea),
           ),
           child: Text.rich(
             TextSpan(
@@ -216,7 +220,6 @@ class _Pin extends StatelessWidget {
           rutaFoto: tecnico.fotoRuta,
           iniciales: tecnico.iniciales,
           borde: Border.all(color: Colores.primario, width: 2),
-          sombra: Sombras.suave,
           estiloTexto: textos.labelSmall?.copyWith(
             color: Colores.primarioOscuro,
             fontWeight: FontWeight.w800,
@@ -236,7 +239,8 @@ class _Pin extends StatelessWidget {
 }
 
 class ControlesMapa extends StatelessWidget {
-  const ControlesMapa({super.key, 
+  const ControlesMapa({
+    super.key,
     required this.onMas,
     required this.onMenos,
     required this.onCentrar,
@@ -250,7 +254,7 @@ class ControlesMapa extends StatelessWidget {
     decoration: BoxDecoration(
       color: Colores.tarjeta,
       borderRadius: BorderRadius.circular(Radios.medio),
-      boxShadow: Sombras.suave,
+      border: Border.all(color: Colores.linea),
     ),
     child: Column(mainAxisSize: MainAxisSize.min, children: hijos),
   );
@@ -292,7 +296,12 @@ class ControlesMapa extends StatelessWidget {
 }
 
 class ControlRadio extends StatelessWidget {
-  const ControlRadio({super.key, required this.km, required this.onCambio, this.onFin});
+  const ControlRadio({
+    super.key,
+    required this.km,
+    required this.onCambio,
+    this.onFin,
+  });
 
   final double km;
   final ValueChanged<double> onCambio;
@@ -306,7 +315,7 @@ class ControlRadio extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colores.tarjeta,
         borderRadius: BorderRadius.circular(Radios.medio),
-        boxShadow: Sombras.suave,
+        border: Border.all(color: Colores.linea),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -362,7 +371,7 @@ class _TarjetaCercano extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colores.tarjeta.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(Radios.grande),
-        boxShadow: Sombras.suave,
+        border: Border.all(color: Colores.linea),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -401,48 +410,50 @@ class _TarjetaCercano extends StatelessWidget {
             borderRadius: BorderRadius.circular(Radios.medio),
             onTap: onVerPerfil,
             child: Row(
-            children: [
-              FotoPerfilCaja(
-                tamano: 44,
-                rutaFoto: tecnico.fotoRuta,
-                iniciales: tecnico.iniciales,
-                estiloTexto: textos.titleSmall?.copyWith(
-                  color: Colores.primarioOscuro,
+              children: [
+                FotoPerfilCaja(
+                  tamano: 44,
+                  rutaFoto: tecnico.fotoRuta,
+                  iniciales: tecnico.iniciales,
+                  estiloTexto: textos.titleSmall?.copyWith(
+                    color: Colores.primarioOscuro,
+                  ),
                 ),
-              ),
-              const SizedBox(width: Espacios.m),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${tecnico.nombres} ${tecnico.apellidos}'.trim(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textos.titleSmall,
-                    ),
-                    Text(
-                      detalle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textos.bodySmall?.copyWith(
-                        color: Colores.tintaSuave,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (onContactar != null) ...[
                 const SizedBox(width: Espacios.m),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-                  onPressed: onContactar,
-                  icon: const Icon(Icons.bolt, size: 18),
-                  label: const Text('Contactar'),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${tecnico.nombres} ${tecnico.apellidos}'.trim(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textos.titleSmall,
+                      ),
+                      Text(
+                        detalle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textos.bodySmall?.copyWith(
+                          color: Colores.tintaSuave,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                if (onContactar != null) ...[
+                  const SizedBox(width: Espacios.m),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                    ),
+                    onPressed: onContactar,
+                    icon: const Icon(Icons.bolt, size: 18),
+                    label: const Text('Contactar'),
+                  ),
+                ],
               ],
-            ],
-          ),
+            ),
           ),
         ],
       ),

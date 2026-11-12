@@ -4,6 +4,7 @@ import 'package:tecnicos_app/features/chat/domain/entities/contexto_chat.dart';
 import 'package:tecnicos_app/features/chat/domain/entities/conversacion.dart';
 import 'package:tecnicos_app/features/chat/domain/entities/conversacion_pendiente.dart';
 import 'package:tecnicos_app/features/chat/domain/entities/mensaje.dart';
+import 'package:tecnicos_app/features/chat/domain/entities/resumen_chat.dart';
 import 'package:tecnicos_app/features/chat/domain/repositories/chat_repository.dart';
 import 'package:tecnicos_app/features/cotizaciones/domain/entities/cotizacion.dart';
 import 'package:tecnicos_app/features/cotizaciones/domain/entities/tarifa.dart';
@@ -17,7 +18,7 @@ const conversacionDePrueba = Conversacion(
   tecnicoId: 't1',
 );
 
-const tarifaDePrueba = Tarifa(precioAcordado: 40, materiales: 10);
+const tarifaDePrueba = Tarifa(precioAcordado: 40);
 
 ContextoChat contextoDePrueba({
   EstadoCotizacion estadoOferta = EstadoCotizacion.pendiente,
@@ -62,4 +63,7 @@ class ChatFalso implements ChatRepository {
     required String solicitudId,
     required String tecnicoId,
   }) async => 'k1';
+
+  @override
+  Future<List<ResumenChat>> misChats() async => const [];
 }

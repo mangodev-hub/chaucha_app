@@ -28,7 +28,7 @@ class OpcionRol extends StatelessWidget {
       child: TarjetaApp(
         onTap: onTap,
         radio: Radios.medio,
-        conSombra: false,
+        conBorde: false,
         color: elegida ? Colores.tarjeta : Colores.superficie,
         colorBorde: elegida ? Colores.primario : Colores.superficie,
         padding: const EdgeInsets.all(Espacios.m),

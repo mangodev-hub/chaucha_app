@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../theme/tokens.dart';
+import 'capa_circulos.dart';
 import 'etiqueta_sector.dart';
 
 class MapaUbicacion extends StatefulWidget {
@@ -56,60 +58,64 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
     return SizedBox(
       height: widget.altura,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(Radios.medio),
         child: Stack(
           children: [
-        FlutterMap(
-          mapController: _controller,
-          options: MapOptions(
-            initialCenter: widget.punto,
-            initialZoom: widget.zoom,
-            onTap: widget.onCambio == null
-                ? null
-                : (_, punto) => widget.onCambio!(punto),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.eagledev.tecnicos_app',
-            ),
-            if (radio != null)
-              CircleLayer(
-                circles: [
-                  CircleMarker(
-                    point: widget.punto,
-                    radius: radio,
-                    useRadiusInMeter: true,
-                    color: colores.primary.withValues(alpha: 0.15),
-                    borderColor: colores.primary,
-                    borderStrokeWidth: 2,
-                  ),
-                ],
+            FlutterMap(
+              mapController: _controller,
+              options: MapOptions(
+                initialCenter: widget.punto,
+                initialZoom: widget.zoom,
+                onTap: widget.onCambio == null
+                    ? null
+                    : (_, punto) => widget.onCambio!(punto),
               ),
-            MarkerLayer(
-              markers: [
-                for (final otro in widget.otrosPuntos)
-                  Marker(
-                    point: otro,
-                    width: 32,
-                    height: 32,
-                    child: Icon(Icons.place, color: colores.tertiary, size: 32),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.eagledev.tecnicos_app',
+                ),
+                if (radio != null)
+                  CapaCirculos(
+                    circulos: [
+                      CircleMarker(
+                        point: widget.punto,
+                        radius: radio,
+                        useRadiusInMeter: true,
+                        color: colores.primary.withValues(alpha: 0.15),
+                        borderColor: colores.primary,
+                        borderStrokeWidth: 2,
+                      ),
+                    ],
                   ),
-                Marker(
-                  point: widget.punto,
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.topCenter,
-                  child: Icon(
-                    Icons.location_pin,
-                    color: colores.error,
-                    size: 44,
-                  ),
+                MarkerLayer(
+                  markers: [
+                    for (final otro in widget.otrosPuntos)
+                      Marker(
+                        point: otro,
+                        width: 32,
+                        height: 32,
+                        child: Icon(
+                          Icons.place,
+                          color: colores.tertiary,
+                          size: 32,
+                        ),
+                      ),
+                    Marker(
+                      point: widget.punto,
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.topCenter,
+                      child: Icon(
+                        Icons.location_pin,
+                        color: colores.error,
+                        size: 44,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
             if (widget.mostrarSector)
               Positioned(
                 top: 8,

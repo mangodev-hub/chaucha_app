@@ -10,16 +10,20 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
+import '../../../../core/widgets/capa_circulos.dart';
 import '../../../../core/widgets/carrusel_aliados.dart';
+import '../../../../core/widgets/tarjeta_onda.dart';
 import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
 import '../providers/resenas_cliente_provider.dart';
 import '../providers/sesion_provider.dart';
 
-const _azul = Colores.primarioVivo;
-const _azulOscuro = Colores.primarioProfundo;
-const _hielo = Colores.primarioSuave;
-const _fondo = Colores.fondo;
+// Regla v2: el perfil es contexto, así que va en celeste; el verde queda
+// para las acciones.
+const _azul = Colores.cielo;
+const _azulOscuro = Colores.cieloOscuro;
+const _hielo = Colores.cieloSuave;
+const _fondo = Colores.lienzo;
 const _texto = Colores.tinta;
 const _gris = Colores.tintaSuave;
 const _borde = Colores.linea;
@@ -125,7 +129,7 @@ class _Tarjeta extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: _blanco,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(Radios.grande),
         border: Border.all(color: _borde),
       ),
       child: child,
@@ -144,7 +148,7 @@ class _Etiqueta extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: _hielo,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(Radios.grande),
       ),
       child: Text(
         texto,
@@ -189,20 +193,11 @@ class _Cabecera extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+              const ClipRRect(
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(Radios.grande),
                 ),
-                child: Container(
-                  height: 160,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [_azulOscuro, _azul],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
-                ),
+                child: SizedBox(height: 160, child: FondoOnda()),
               ),
               Positioned(
                 left: 32,
@@ -238,67 +233,98 @@ class _Cabecera extends StatelessWidget {
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(176, 16, 32, 24),
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              runSpacing: 16,
-              spacing: 16,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      nombre,
-                      style: const TextStyle(
-                        color: _texto,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                      ),
+          // En pantallas angostas el nombre va debajo del avatar y el botón
+          // de baja a su propia línea; en anchas, todo a la derecha.
+          LayoutBuilder(
+            builder: (context, restricciones) {
+              final estrecho = restricciones.maxWidth < 520;
+              final datos = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    nombre,
+                    style: TextStyle(
+                      color: _texto,
+                      fontSize: estrecho ? 22 : 28,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
                     ),
-                    const SizedBox(height: 6),
-                    const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 16,
-                          color: _azul,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
+                  ),
+                  const SizedBox(height: 6),
+                  const Row(
+                    children: [
+                      Icon(Icons.location_on_outlined, size: 16, color: _azul),
+                      SizedBox(width: 4),
+                      // Cede si no hay ancho: nunca desborda la fila.
+                      Flexible(
+                        child: Text(
                           'Quito, Ecuador',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(color: _gris, fontSize: 14),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+              final baja = _BotonBaja(onPressed: () => _mostrarBaja(context));
+
+              if (estrecho) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      datos,
+                      const SizedBox(height: 16),
+                      Align(alignment: Alignment.centerLeft, child: baja),
+                    ],
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(176, 16, 32, 24),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: datos),
+                    const SizedBox(width: 16),
+                    baja,
                   ],
                 ),
-                TextButton.icon(
-                  onPressed: () => _mostrarBaja(context),
-                  icon: const Icon(Icons.person_remove_outlined, size: 18),
-                  label: const Text(
-                    'Darse de baja',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _rojo,
-                    backgroundColor: _rojo.withValues(alpha: 0.08),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: _rojo.withValues(alpha: 0.3)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BotonBaja extends StatelessWidget {
+  const _BotonBaja({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.person_remove_outlined, size: 18),
+      label: const Text(
+        'Darse de baja',
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
+      style: TextButton.styleFrom(
+        foregroundColor: _rojo,
+        backgroundColor: _rojo.withValues(alpha: 0.08),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radios.medio),
+          side: BorderSide(color: _rojo.withValues(alpha: 0.3)),
+        ),
       ),
     );
   }
@@ -400,7 +426,7 @@ class _Estadistica extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: _hielo,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(Radios.medio),
             ),
             child: Icon(icono, color: _azul, size: 26),
           ),
@@ -607,7 +633,8 @@ class _MapaZonaState extends State<_MapaZona> {
         headers: {'Accept-Language': 'es'},
       );
       if (r.statusCode != 200) return;
-      final a = (jsonDecode(r.body)['address'] as Map?) ?? const {};
+      final cuerpo = jsonDecode(r.body) as Map?;
+      final a = (cuerpo?['address'] as Map?) ?? const {};
       final calle = a['road'] as String?;
       final calleValida =
           calle != null && !RegExp(r'^[A-Za-z]?\d+[A-Za-z]?$').hasMatch(calle)
@@ -630,7 +657,7 @@ class _MapaZonaState extends State<_MapaZona> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(Radios.medio),
           child: SizedBox(
             height: 150,
             child: FlutterMap(
@@ -647,8 +674,8 @@ class _MapaZonaState extends State<_MapaZona> {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.eagledev.tecnicosapp',
                 ),
-                CircleLayer(
-                  circles: [
+                CapaCirculos(
+                  circulos: [
                     CircleMarker(
                       point: _centro,
                       radius: 500,
@@ -769,7 +796,7 @@ class _SelectorUbicacionState extends State<_SelectorUbicacion> {
               const SizedBox(height: 12),
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(Radios.medio),
                   child: FlutterMap(
                     options: MapOptions(
                       initialCenter: widget.inicial,

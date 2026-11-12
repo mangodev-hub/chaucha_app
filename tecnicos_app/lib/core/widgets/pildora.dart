@@ -1,5 +1,6 @@
-// Etiqueta corta en forma de píldora: fondo suave del color dado y texto en
-// una versión más oscura del mismo color (para que se lea bien, AA).
+// Etiqueta corta en forma de píldora: fondo suave (y opaco) del color dado y
+// texto en una versión más oscura del mismo color (para que se lea bien, AA),
+// tanto sobre blanco como sobre las tarjetas de color con onda.
 // Si cambia el estado (texto o color), el fondo y el contenido se animan.
 import 'package:flutter/material.dart';
 
@@ -29,7 +30,10 @@ class Pildora extends StatelessWidget {
         vertical: Espacios.xs,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: Color.alphaBlend(
+          color.withValues(alpha: 0.12),
+          Colores.tarjeta,
+        ),
         borderRadius: BorderRadius.circular(Radios.pildora),
       ),
       child: AnimatedSize(

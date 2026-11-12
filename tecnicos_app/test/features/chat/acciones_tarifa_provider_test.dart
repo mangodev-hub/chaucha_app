@@ -43,14 +43,12 @@ void main() {
     test('envía el ticket sobre la oferta y avisa al cliente', () async {
       final c = contenedor(contextoDePrueba());
 
-      final ok = await acciones(c)
-          .enviar(const NuevaTarifa(precioAcordado: 40, materiales: 10));
+      final ok = await acciones(c).enviar(const NuevaTarifa(precioAcordado: 40));
 
       expect(ok, isTrue);
       final (cotizacionId, tarifa) = cotizaciones.tarifasEnviadas.single;
       expect(cotizacionId, 'q1');
       expect(tarifa.precioAcordado, 40);
-      expect(tarifa.materiales, 10);
       expect(chat.enviados, isEmpty);
     });
 
@@ -130,14 +128,14 @@ void main() {
   });
 
   group('rechazar', () {
-    test('desmarca el ticket y avisa al técnico', () async {
+    test('desmarca el ticket sin escribir en el chat', () async {
       final c = contenedor(contextoDePrueba(tarifa: tarifaDePrueba));
 
       final ok = await acciones(c).rechazar();
 
       expect(ok, isTrue);
       expect(cotizaciones.tarifasRechazadas, ['q1']);
-      expect(chat.enviados.single, startsWith('Rechacé'));
+      expect(chat.enviados, isEmpty);
     });
 
     test('un ticket ya aceptado no se rechaza', () async {

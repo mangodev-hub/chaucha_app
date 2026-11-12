@@ -80,8 +80,9 @@ void main() {
 
       expect(c.precioBase, 25);
       expect(c.tarifa?.precioAcordado, 45.5);
-      expect(c.tarifa?.materiales, 10);
-      expect(c.tarifa?.total, 55.5);
+      // El total del ticket es el precio acordado: los materiales ya no
+      // forman parte del ticket.
+      expect(c.tarifa?.total, 45.5);
       expect(c.tarifa?.fechaServicio, isNotNull);
       expect(c.tarifaPendiente, isTrue);
     });
@@ -110,18 +111,16 @@ void main() {
     });
   });
 
-  test('filaNueva guarda el precio base y la solución, sin ticket', () {
+  test('filaNueva guarda la solución sin espacios extra, sin ticket', () {
     final fila = CotizacionModel.filaNueva(
       solicitudId: 's1',
       tecnicoId: 't1',
-      precioBase: 40,
       solucion: '  Reviso la instalación.  ',
     );
 
     expect(fila, {
       'solicitud_id': 's1',
       'tecnico_id': 't1',
-      'precio_base': 40.0,
       'detalle': 'Reviso la instalación.',
       'materiales': 0,
     });

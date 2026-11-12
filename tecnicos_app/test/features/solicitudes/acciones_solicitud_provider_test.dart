@@ -72,21 +72,19 @@ void main() {
   });
 
   group('enviarOferta', () {
-    test('envía el precio base y la solución sin espacios extra', () async {
+    test('envía la solución sin espacios extra', () async {
       final ok = await acciones().enviarOferta(
-        precioBase: 30,
         solucion: '  Cambio el empaque.  ',
       );
 
       expect(ok, isTrue);
       final enviada = cotizaciones.enviadas.single;
       expect(enviada.solicitudId, 's1');
-      expect(enviada.precioBase, 30);
       expect(enviada.solucion, 'Cambio el empaque.');
     });
 
     test('sin solución no envía y deja el error', () async {
-      final ok = await acciones().enviarOferta(precioBase: 30, solucion: ' ');
+      final ok = await acciones().enviarOferta(solucion: ' ');
 
       expect(ok, isFalse);
       expect(cotizaciones.enviadas, isEmpty);
@@ -95,16 +93,6 @@ void main() {
         (error! as AppFailure).message,
         'Explica cómo resolverías el problema.',
       );
-    });
-
-    test('con precio base 0 no envía', () async {
-      final ok = await acciones().enviarOferta(
-        precioBase: 0,
-        solucion: 'Cambio el empaque.',
-      );
-
-      expect(ok, isFalse);
-      expect(cotizaciones.enviadas, isEmpty);
     });
   });
 }

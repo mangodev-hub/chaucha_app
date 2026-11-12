@@ -8,6 +8,7 @@ import 'package:tecnicos_app/features/auth/domain/entities/rol.dart';
 import 'package:tecnicos_app/features/auth/domain/entities/usuario.dart';
 import 'package:tecnicos_app/features/cotizaciones/domain/entities/cotizacion.dart';
 import 'package:tecnicos_app/features/cotizaciones/domain/entities/nueva_cotizacion.dart';
+import 'package:tecnicos_app/features/cotizaciones/domain/entities/rango_ocupado.dart';
 import 'package:tecnicos_app/features/cotizaciones/domain/entities/tarifa.dart';
 import 'package:tecnicos_app/features/cotizaciones/domain/repositories/cotizacion_repository.dart';
 import 'package:tecnicos_app/features/solicitudes/domain/entities/foto_solicitud.dart';
@@ -113,6 +114,11 @@ class SolicitudesFalsas implements SolicitudRepository {
   Future<List<Solicitud>> misTrabajos() async => const [];
 
   @override
+  Future<List<Solicitud>> porIds(List<String> ids) async => [
+    for (final id in ids) solicitudDePrueba(id: id),
+  ];
+
+  @override
   Future<String> crear(NuevaSolicitud nueva) async => 'nueva';
 
   @override
@@ -164,4 +170,38 @@ class CotizacionesFalsas implements CotizacionRepository {
 
   @override
   Future<void> enviar(NuevaCotizacion nueva) async => enviadas.add(nueva);
+
+  @override
+  Future<List<Cotizacion>> deSolicitudes(List<String> solicitudIds) async => [
+    for (final c in deLaSolicitud)
+      if (solicitudIds.contains(c.solicitudId)) c,
+  ];
+
+  final reagendadosPropuestos = <(String, DateTime)>[];
+  final reagendadosRespondidos = <(String, bool)>[];
+  final visitasCanceladas = <String>[];
+  List<RangoOcupado> ocupados = const [];
+
+  @override
+  Future<void> proponerReagendado(
+    String cotizacionId,
+    DateTime nuevaFecha,
+  ) async => reagendadosPropuestos.add((cotizacionId, nuevaFecha));
+
+  @override
+  Future<void> responderReagendado(
+    String cotizacionId, {
+    required bool acepta,
+  }) async => reagendadosRespondidos.add((cotizacionId, acepta));
+
+  @override
+  Future<void> cancelarVisita(String cotizacionId) async =>
+      visitasCanceladas.add(cotizacionId);
+
+  @override
+  Future<List<RangoOcupado>> horariosOcupados(
+    String cotizacionId, {
+    required DateTime desde,
+    required DateTime hasta,
+  }) async => ocupados;
 }

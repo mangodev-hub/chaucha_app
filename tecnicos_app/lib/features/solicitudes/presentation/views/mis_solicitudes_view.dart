@@ -117,6 +117,14 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
                     Expanded(
                       child: Text('Mis solicitudes', style: textos.titleLarge),
                     ),
+                    // La agenda del cliente no es una pestaña: se abre aquí
+                    // y desde el menú de la cuenta.
+                    IconButton.outlined(
+                      tooltip: 'Mi agenda',
+                      onPressed: () => context.push(AppRoutes.clienteAgenda),
+                      icon: const Icon(Icons.event_outlined),
+                    ),
+                    const SizedBox(width: Espacios.s),
                     FilledButton.icon(
                       onPressed: _nueva,
                       icon: const Icon(Icons.add),

@@ -1,9 +1,12 @@
-// Tarjeta de portada del inicio: degradado azul, título grande en blanco,
-// subtítulo, un dato en una píldora blanca y una ilustración a la derecha.
-// Va arriba del inicio del cliente y del técnico.
+// Tarjeta de portada del inicio: título grande, subtítulo, un dato en una
+// píldora verde oscuro y una ilustración a la derecha, sobre una tarjeta
+// bento con onda. Dos variantes para que los roles se distingan de un
+// vistazo: verde claro con mancha celeste (cliente y admin) y celeste claro
+// con ola verde (técnico). Las dos llevan texto oscuro.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
+import 'tarjeta_onda.dart';
 
 class TarjetaPortada extends StatelessWidget {
   const TarjetaPortada({
@@ -13,19 +16,23 @@ class TarjetaPortada extends StatelessWidget {
     this.dato,
     this.iconoDato,
     this.icono = Icons.handyman_rounded,
+    this.celeste = false,
   });
 
-  /// Si termina en un signo (".", "?", "!"), ese signo se pinta en celeste
+  /// Si termina en un signo (".", "?", "!"), ese signo se pinta de otro color
   /// como acento.
   final String titulo;
   final String? subtitulo;
 
-  /// Texto corto en la píldora blanca ("12 técnicos cerca · en vivo").
+  /// Texto corto en la píldora ("12 técnicos cerca").
   final String? dato;
   final IconData? iconoDato;
 
   /// Ícono de la ilustración de la derecha.
   final IconData icono;
+
+  /// Variante celeste (inicio del técnico).
+  final bool celeste;
 
   /// Con menos de este ancho la ilustración no se muestra.
   static const double _anchoMinimoIlustracion = 300;
@@ -36,88 +43,87 @@ class TarjetaPortada extends StatelessWidget {
     final dato = this.dato;
     final subtitulo = this.subtitulo;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: Degradados.portada,
-        borderRadius: BorderRadius.circular(Radios.muyGrande),
-        boxShadow: Sombras.azul,
-      ),
+    return Material(
+      color: celeste ? Colores.cieloClaro : Colores.primarioClaro,
+      borderRadius: BorderRadius.circular(Radios.bento),
       clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, restricciones) {
-          final ancho = restricciones.maxWidth;
-          final conIlustracion = ancho >= _anchoMinimoIlustracion;
-          final amplia = ancho >= 600;
-          final tamanoIlustracion = amplia ? 150.0 : 108.0;
+      child: CustomPaint(
+        painter: PintorOnda(
+          color: celeste
+              ? Colores.primarioClaro.withValues(alpha: 0.45)
+              : Colores.cieloClaro.withValues(alpha: 0.55),
+          forma: celeste ? FormaOnda.inferior : FormaOnda.esquina,
+        ),
+        child: LayoutBuilder(
+          builder: (context, restricciones) {
+            final ancho = restricciones.maxWidth;
+            final conIlustracion = ancho >= _anchoMinimoIlustracion;
+            final amplia = ancho >= 600;
+            final tamanoIlustracion = amplia ? 140.0 : 100.0;
 
-          final texto = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _Titulo(
-                titulo,
-                estilo: (amplia ? textos.headlineMedium : textos.headlineSmall)
-                    ?.copyWith(color: Colores.tarjeta, height: 1.15),
-              ),
-              if (subtitulo != null) ...[
-                const SizedBox(height: Espacios.s),
-                Text(
-                  subtitulo,
-                  style: (amplia ? textos.titleMedium : textos.bodyLarge)
-                      ?.copyWith(
-                        color: Colores.tarjeta,
-                        fontWeight: FontWeight.w500,
-                      ),
+            final texto = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _Titulo(
+                  titulo,
+                  estilo:
+                      (amplia ? textos.headlineMedium : textos.headlineSmall)
+                          ?.copyWith(color: Colores.tinta, height: 1.15),
+                  acento: Colores.primario,
                 ),
+                if (subtitulo != null) ...[
+                  const SizedBox(height: Espacios.s),
+                  Text(
+                    subtitulo,
+                    style: (amplia ? textos.titleMedium : textos.bodyMedium)
+                        ?.copyWith(
+                          color: Colores.tinta,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
               ],
-              if (dato != null) ...[
-                const SizedBox(height: Espacios.l),
-                _PildoraDato(texto: dato, icono: iconoDato),
-              ],
-            ],
-          );
+            );
 
-          return Stack(
-            children: [
-              // Círculos decorativos detrás de la ilustración.
-              if (conIlustracion) ...[
-                Positioned(
-                  right: -tamanoIlustracion * 0.45,
-                  top: -tamanoIlustracion * 0.5,
-                  child: _Circulo(tamano: tamanoIlustracion * 1.6),
-                ),
-                Positioned(
-                  right: tamanoIlustracion * 0.9,
-                  bottom: -tamanoIlustracion * 0.35,
-                  child: _Circulo(tamano: tamanoIlustracion * 0.6),
-                ),
-              ],
-              Padding(
-                padding: EdgeInsets.all(amplia ? Espacios.xxl : Espacios.xl),
-                child: Row(
-                  children: [
-                    Expanded(child: texto),
-                    if (conIlustracion) ...[
-                      const SizedBox(width: Espacios.l),
-                      _Ilustracion(icono: icono, tamano: tamanoIlustracion),
+            return Padding(
+              padding: EdgeInsets.all(amplia ? Espacios.xxl : Espacios.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: texto),
+                      if (conIlustracion) ...[
+                        const SizedBox(width: Espacios.l),
+                        _Ilustracion(icono: icono, tamano: tamanoIlustracion),
+                      ],
                     ],
+                  ),
+                  // La píldora va debajo: así no compite con la ilustración
+                  // y nunca se corta.
+                  if (dato != null) ...[
+                    const SizedBox(height: Espacios.l),
+                    _PildoraDato(texto: dato, icono: iconoDato),
                   ],
-                ),
+                ],
               ),
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-/// Título con el signo final en celeste.
+/// Título con el signo final de otro color.
 class _Titulo extends StatelessWidget {
-  const _Titulo(this.titulo, {required this.estilo});
+  const _Titulo(this.titulo, {required this.estilo, required this.acento});
 
   final String titulo;
   final TextStyle? estilo;
+  final Color acento;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +136,7 @@ class _Titulo extends StatelessWidget {
         children: [
           TextSpan(
             text: titulo[titulo.length - 1],
-            style: const TextStyle(color: Colores.primarioClaro),
+            style: TextStyle(color: acento),
           ),
         ],
       ),
@@ -139,6 +145,7 @@ class _Titulo extends StatelessWidget {
   }
 }
 
+/// Píldora verde oscuro con el dato en blanco.
 class _PildoraDato extends StatelessWidget {
   const _PildoraDato({required this.texto, this.icono});
 
@@ -149,42 +156,45 @@ class _PildoraDato extends StatelessWidget {
   Widget build(BuildContext context) {
     final icono = this.icono;
     final duracion = Movimiento.de(context, Movimiento.normal);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Espacios.m + 2,
-        vertical: Espacios.s - 1,
-      ),
-      decoration: BoxDecoration(
-        color: Colores.tarjeta,
-        borderRadius: BorderRadius.circular(Radios.pildora),
-      ),
-      // El dato suele llegar después (cuando cargan los datos): el cambio se
-      // anima.
-      child: AnimatedSize(
-        duration: duracion,
-        curve: Movimiento.entrada,
-        child: AnimatedSwitcher(
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Espacios.m + 2,
+          vertical: Espacios.s,
+        ),
+        decoration: BoxDecoration(
+          color: Colores.primario,
+          borderRadius: BorderRadius.circular(Radios.pildora),
+        ),
+        // El dato suele llegar después (cuando cargan los datos): el cambio
+        // se anima.
+        child: AnimatedSize(
           duration: duracion,
-          child: Row(
-            key: ValueKey(texto),
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icono != null) ...[
-                Icon(icono, size: 16, color: Colores.primario),
-                const SizedBox(width: Espacios.xs + 2),
-              ],
-              Flexible(
-                child: Text(
-                  texto,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colores.primarioOscuro,
-                    fontWeight: FontWeight.w700,
+          curve: Movimiento.entrada,
+          child: AnimatedSwitcher(
+            duration: duracion,
+            child: Row(
+              key: ValueKey(texto),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icono != null) ...[
+                  Icon(icono, size: 16, color: Colores.sobreOscuro),
+                  const SizedBox(width: Espacios.xs + 2),
+                ],
+                Flexible(
+                  child: Text(
+                    texto,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Colores.sobreOscuro,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -192,8 +202,8 @@ class _PildoraDato extends StatelessWidget {
   }
 }
 
-/// Ilustración hecha con formas: un círculo translúcido con el ícono y una
-/// insignia blanca de "verificado". Entra con un pequeño rebote.
+/// Ilustración hecha con formas: un círculo claro translúcido con el ícono y
+/// una insignia de "verificado". Entra con un pequeño rebote.
 class _Ilustracion extends StatelessWidget {
   const _Ilustracion({required this.icono, required this.tamano});
 
@@ -218,14 +228,14 @@ class _Ilustracion extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colores.tarjeta.withValues(alpha: 0.16),
+                  color: Colores.lienzo.withValues(alpha: 0.55),
                   border: Border.all(
-                    color: Colores.tarjeta.withValues(alpha: 0.28),
-                    width: 2,
+                    color: Colores.lienzo.withValues(alpha: 0.9),
+                    width: 2.5,
                   ),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icono, size: tamano * 0.5, color: Colores.tarjeta),
+                child: Icon(icono, size: tamano * 0.5, color: Colores.primario),
               ),
               Positioned(
                 right: -tamano * 0.02,
@@ -234,38 +244,19 @@ class _Ilustracion extends StatelessWidget {
                   width: insignia,
                   height: insignia,
                   decoration: const BoxDecoration(
-                    color: Colores.tarjeta,
+                    color: Colores.primario,
                     shape: BoxShape.circle,
-                    boxShadow: Sombras.suave,
                   ),
                   child: Icon(
                     Icons.verified_rounded,
                     size: insignia * 0.62,
-                    color: Colores.acento,
+                    color: Colores.sobreOscuro,
                   ),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Circulo extends StatelessWidget {
-  const _Circulo({required this.tamano});
-
-  final double tamano;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: tamano,
-      height: tamano,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colores.tarjeta.withValues(alpha: 0.07),
       ),
     );
   }

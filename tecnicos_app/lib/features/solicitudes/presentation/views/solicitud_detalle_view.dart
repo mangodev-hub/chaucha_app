@@ -24,6 +24,7 @@ import '../../../../core/widgets/barra_accion.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/esqueleto_carga.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/hoja_clara.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/responsive_layout.dart';
@@ -114,7 +115,6 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     if (ok) await _resultado(_acciones.cancelar(), 'Solicitud cancelada.');
   }
 
-  
   Future<DateTime?> _elegirFechaHora(String cotizacionId) => elegirFranja(
     context,
     titulo: 'Nueva fecha y hora',
@@ -136,48 +136,58 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
       final detalle = await ref.read(
         detalleSolicitudProvider(widget.solicitudId).future,
       );
-      await ref.read(notificacionesRepoProvider).marcarLeidasDe(
-        uid,
-        tipos: const [...tiposDeSolicitud, 'cotizacion_aceptada'],
-        referenciaIds: [
-          widget.solicitudId,
-          for (final c in detalle.cotizaciones) c.id,
-        ],
-      );
+      await ref
+          .read(notificacionesRepoProvider)
+          .marcarLeidasDe(
+            uid,
+            tipos: const [...tiposDeSolicitud, 'cotizacion_aceptada'],
+            referenciaIds: [
+              widget.solicitudId,
+              for (final c in detalle.cotizaciones) c.id,
+            ],
+          );
     } on Object {
+      // Marcar las notificaciones como leídas es secundario: si falla, el
+      // detalle se muestra igual y no se avisa.
     }
   }
 
-Future<void> _reagendar(String cotizacionId) async {
-  final fecha = await _elegirFechaHora(cotizacionId);
-  if (fecha == null || !mounted) return;
-  await _resultado(
-    _acciones.proponerReagendado(cotizacionId, fecha),
-    'Propuesta enviada. La otra persona debe aceptarla.',
-  );
-}
-
-Future<void> _responderReagendado(String cotizacionId, bool acepta) =>
-    _resultado(
-      _acciones.responderReagendado(cotizacionId, acepta),
-      acepta ? 'Nuevo horario confirmado.' : 'Propuesta rechazada.',
+  Future<void> _reagendar(String cotizacionId) async {
+    final fecha = await _elegirFechaHora(cotizacionId);
+    if (fecha == null || !mounted) return;
+    await _resultado(
+      _acciones.proponerReagendado(cotizacionId, fecha),
+      'Propuesta enviada. La otra persona debe aceptarla.',
     );
-
-Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) async {
-  final ok = await context.confirmar(
-    'Cancelar visita',
-    esCliente
-        ? 'Se cancelará la visita y tu solicitud. Solo es posible con al menos 24 horas de anticipación.'
-        : 'La solicitud seguirá publicada para que el cliente elija a otro técnico. Solo es posible con al menos 24 horas de anticipación.',
-    textoConfirmar: 'Sí, cancelar visita',
-    textoCancelar: 'Volver',
-    destructivo: true,
-    icono: Icons.event_busy_outlined,
-  );
-  if (ok) {
-    await _resultado(_acciones.cancelarVisita(cotizacionId), 'Visita cancelada.');
   }
-}
+
+  Future<void> _responderReagendado(String cotizacionId, bool acepta) =>
+      _resultado(
+        _acciones.responderReagendado(cotizacionId, acepta),
+        acepta ? 'Nuevo horario confirmado.' : 'Propuesta rechazada.',
+      );
+
+  Future<void> _cancelarVisita(
+    String cotizacionId, {
+    bool esCliente = false,
+  }) async {
+    final ok = await context.confirmar(
+      'Cancelar visita',
+      esCliente
+          ? 'Se cancelará la visita y tu solicitud. Solo es posible con al menos 24 horas de anticipación.'
+          : 'La solicitud seguirá publicada para que el cliente elija a otro técnico. Solo es posible con al menos 24 horas de anticipación.',
+      textoConfirmar: 'Sí, cancelar visita',
+      textoCancelar: 'Volver',
+      destructivo: true,
+      icono: Icons.event_busy_outlined,
+    );
+    if (ok) {
+      await _resultado(
+        _acciones.cancelarVisita(cotizacionId),
+        'Visita cancelada.',
+      );
+    }
+  }
 
   Future<void> _ofrecer() async {
     final perfil = await ref.read(perfilTecnicoProvider.future);
@@ -348,55 +358,58 @@ Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) asyn
       bottomNavigationBar: boton == null || escritorio
           ? null
           : BarraAccion(child: boton),
-      body: AsyncValueView<DetalleSolicitud>(
-        value: valor,
-        cargando: (_) => _DetalleCargando(escritorio: escritorio),
-        onError: (context, mensaje) => EstadoMensaje(
-          icono: Icons.cloud_off_outlined,
-          tipo: TipoEstado.error,
-          titulo: 'No se pudo cargar la solicitud',
-          mensaje: mensaje,
-          textoAccion: 'Reintentar',
-          onAccion: () => ref.invalidate(detalle),
-          textoAccionSecundaria: 'Regresar',
-          onAccionSecundaria: _regresar,
-        ),
-        onData: (context, datos) => RefreshIndicator(
-          onRefresh: () => esperarSinError(ref.refresh(detalle.future)),
-          child: escritorio
-              ? _Escritorio(
-                  izquierda: [
-                    EncabezadoSolicitud(solicitud: datos.solicitud),
-                    ..._cliente(datos),
-                    ..._evidencia(datos),
-                    ..._fotosProblema(datos),
-                    ..._ubicacion(datos, altura: 280),
-                  ],
-                  derecha: [
-                    QueSigueCard(detalle: datos),
-                    if (boton != null) ...[
-                      const SizedBox(height: Espacios.l),
-                      boton,
+      body: HojaClara(
+        abajoRecto: boton != null && !escritorio,
+        child: AsyncValueView<DetalleSolicitud>(
+          value: valor,
+          cargando: (_) => _DetalleCargando(escritorio: escritorio),
+          onError: (context, mensaje) => EstadoMensaje(
+            icono: Icons.cloud_off_outlined,
+            tipo: TipoEstado.error,
+            titulo: 'No se pudo cargar la solicitud',
+            mensaje: mensaje,
+            textoAccion: 'Reintentar',
+            onAccion: () => ref.invalidate(detalle),
+            textoAccionSecundaria: 'Regresar',
+            onAccionSecundaria: _regresar,
+          ),
+          onData: (context, datos) => RefreshIndicator(
+            onRefresh: () => esperarSinError(ref.refresh(detalle.future)),
+            child: escritorio
+                ? _Escritorio(
+                    izquierda: [
+                      EncabezadoSolicitud(solicitud: datos.solicitud),
+                      ..._cliente(datos),
+                      ..._evidencia(datos),
+                      ..._fotosProblema(datos),
+                      ..._ubicacion(datos, altura: 280),
                     ],
-                    ..._ofertas(datos, procesando: procesando),
-                  ],
-                )
-              : _Movil(
-                  children: [
-                    EncabezadoSolicitud(solicitud: datos.solicitud),
-                    ..._cliente(datos),
-                    const SizedBox(height: Espacios.l),
-                    QueSigueCard(detalle: datos),
-                    // Por confirmar, la evidencia es lo que hay que revisar.
-                    if (datos.estado == EstadoSolicitud.porConfirmar)
-                      ..._evidencia(datos),
-                    ..._ofertas(datos, procesando: procesando),
-                    if (datos.estado != EstadoSolicitud.porConfirmar)
-                      ..._evidencia(datos),
-                    ..._fotosProblema(datos),
-                    ..._ubicacion(datos, altura: 220),
-                  ],
-                ),
+                    derecha: [
+                      QueSigueCard(detalle: datos),
+                      if (boton != null) ...[
+                        const SizedBox(height: Espacios.l),
+                        boton,
+                      ],
+                      ..._ofertas(datos, procesando: procesando),
+                    ],
+                  )
+                : _Movil(
+                    children: [
+                      EncabezadoSolicitud(solicitud: datos.solicitud),
+                      ..._cliente(datos),
+                      const SizedBox(height: Espacios.l),
+                      QueSigueCard(detalle: datos),
+                      // Por confirmar, la evidencia es lo que hay que revisar.
+                      if (datos.estado == EstadoSolicitud.porConfirmar)
+                        ..._evidencia(datos),
+                      ..._ofertas(datos, procesando: procesando),
+                      if (datos.estado != EstadoSolicitud.porConfirmar)
+                        ..._evidencia(datos),
+                      ..._fotosProblema(datos),
+                      ..._ubicacion(datos, altura: 220),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
@@ -447,11 +460,8 @@ Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) asyn
       return (
         texto: 'Calificar al cliente',
         icono: Icons.star_outline,
-                alPulsar: () => _calificar(
-          d.solicitud.clienteId,
-          'el cliente',
-          paraTecnico: false,
-        ),
+        alPulsar: () =>
+            _calificar(d.solicitud.clienteId, 'el cliente', paraTecnico: false),
       );
     }
     return null;
@@ -516,24 +526,28 @@ Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) asyn
       return [
         Seccion(
           titulo: 'Tu oferta',
-child: Builder(builder: (_) {
-  final activa = mia.estado == EstadoCotizacion.aceptada &&
-      d.estado == EstadoSolicitud.aceptada;
-  return CotizacionCard(
-    cotizacion: mia,
-    destacada: mia.estado == EstadoCotizacion.aceptada,
-    accionesActivas: !procesando,
-    textoChat: 'Abrir chat',
-    onChat: mia.estado == EstadoCotizacion.rechazada
-        ? null
-        : () => _chat(mia.tecnicoId),
-    miId: ref.read(usuarioActualProvider)?.id,
-    onReagendar: activa ? () => _reagendar(mia.id) : null,
-    onResponderReagendado:
-        activa ? (a) => _responderReagendado(mia.id, a) : null,
-    onCancelarVisita: activa ? () => _cancelarVisita(mia.id) : null,
-  );
-}),
+          child: Builder(
+            builder: (_) {
+              final activa =
+                  mia.estado == EstadoCotizacion.aceptada &&
+                  d.estado == EstadoSolicitud.aceptada;
+              return CotizacionCard(
+                cotizacion: mia,
+                destacada: mia.estado == EstadoCotizacion.aceptada,
+                accionesActivas: !procesando,
+                textoChat: 'Abrir chat',
+                onChat: mia.estado == EstadoCotizacion.rechazada
+                    ? null
+                    : () => _chat(mia.tecnicoId),
+                miId: ref.read(usuarioActualProvider)?.id,
+                onReagendar: activa ? () => _reagendar(mia.id) : null,
+                onResponderReagendado: activa
+                    ? (a) => _responderReagendado(mia.id, a)
+                    : null,
+                onCancelarVisita: activa ? () => _cancelarVisita(mia.id) : null,
+              );
+            },
+          ),
         ),
       ];
     }
@@ -556,14 +570,14 @@ child: Builder(builder: (_) {
             onVerPerfil: () => _verPerfil(aceptada.tecnicoId),
             miId: ref.read(usuarioActualProvider)?.id,
             onCancelarVisita: d.estado == EstadoSolicitud.aceptada
-    ? () => _cancelarVisita(aceptada.id, esCliente: true)
-    : null,
-onReagendar: d.estado == EstadoSolicitud.aceptada
-    ? () => _reagendar(aceptada.id)
-    : null,
-onResponderReagendado: d.estado == EstadoSolicitud.aceptada
-    ? (a) => _responderReagendado(aceptada.id, a)
-    : null,
+                ? () => _cancelarVisita(aceptada.id, esCliente: true)
+                : null,
+            onReagendar: d.estado == EstadoSolicitud.aceptada
+                ? () => _reagendar(aceptada.id)
+                : null,
+            onResponderReagendado: d.estado == EstadoSolicitud.aceptada
+                ? (a) => _responderReagendado(aceptada.id, a)
+                : null,
           ),
         ),
         if (otras.isNotEmpty)

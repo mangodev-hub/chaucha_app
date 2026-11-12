@@ -174,7 +174,9 @@ class SolicitudCard extends StatelessWidget {
               children: [
                 if (novedades > 0)
                   Pildora(
-                    texto: novedades == 1 ? '1 novedad' : '$novedades novedades',
+                    texto: novedades == 1
+                        ? '1 novedad'
+                        : '$novedades novedades',
                     icono: Icons.notifications_active_outlined,
                     color: Colores.aviso,
                   ),

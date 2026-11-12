@@ -86,13 +86,12 @@ class _VentanaState extends ConsumerState<_Ventana> {
               ? null
               : rutaPerfilDelChat(contexto, soyCliente: esCliente);
           return Material(
-            elevation: 10,
-            color: Colores.fondo,
+            color: Colores.lienzo,
             clipBehavior: Clip.antiAlias,
             shape: const RoundedRectangleBorder(
-              side: BorderSide(color: Colores.linea),
+              side: BorderSide(color: Colores.cielo, width: 1.5),
               borderRadius: BorderRadius.vertical(
-                top: Radius.circular(Radios.grande),
+                top: Radius.circular(Radios.bento),
               ),
             ),
             child: SizedBox(

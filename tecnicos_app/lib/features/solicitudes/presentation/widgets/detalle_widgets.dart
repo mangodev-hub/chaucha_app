@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
+import '../../../../core/widgets/cabecera_cielo.dart';
 import '../../../../core/widgets/indicador_pasos.dart';
-import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../domain/entities/detalle_solicitud.dart';
 import '../../domain/entities/solicitud.dart';
 import 'solicitud_widgets.dart';
 
-/// Oficio, estado, fecha, descripción y referencia de la dirección.
+/// Oficio, estado, fecha, descripción y referencia de la dirección, en la
+/// cabecera celeste con el técnico (Lottie) a la derecha.
 class EncabezadoSolicitud extends StatelessWidget {
   const EncabezadoSolicitud({super.key, required this.solicitud});
 
@@ -21,30 +22,15 @@ class EncabezadoSolicitud extends StatelessWidget {
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final direccion = solicitud.direccionReferencia;
-    return TarjetaApp(
-      padding: const EdgeInsets.all(Espacios.l + 4),
+    return CabeceraCielo(
+      titulo: solicitud.oficioNombre,
+      subtitulo: 'Publicada el ${Formatos.fecha(solicitud.creadoEn)}',
+      pildora: EstadoChip(solicitud.estado),
+      animacion: 'assets/lottie/tecnico.json',
+      altoAnimacion: 110,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  solicitud.oficioNombre,
-                  style: textos.headlineSmall,
-                ),
-              ),
-              const SizedBox(width: Espacios.s),
-              EstadoChip(solicitud.estado),
-            ],
-          ),
-          const SizedBox(height: Espacios.s),
-          _Dato(
-            icono: Icons.schedule,
-            texto: 'Publicada el ${Formatos.fecha(solicitud.creadoEn)}',
-          ),
-          const SizedBox(height: Espacios.m),
           Text(solicitud.descripcion, style: textos.bodyLarge),
           if (direccion != null && direccion.isNotEmpty) ...[
             const SizedBox(height: Espacios.m),
@@ -71,7 +57,7 @@ class _Dato extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 2),
-          child: Icon(icono, size: 18, color: Colores.tintaSuave),
+          child: Icon(icono, size: 18, color: Colores.cieloOscuro),
         ),
         const SizedBox(width: Espacios.s),
         Expanded(child: Text(texto, style: estilo)),
