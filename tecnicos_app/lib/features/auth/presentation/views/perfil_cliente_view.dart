@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
+import '../../../../core/widgets/capa_circulos.dart';
 import '../../../../core/widgets/carrusel_aliados.dart';
 import '../../../../core/widgets/tarjeta_onda.dart';
 import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
@@ -673,8 +674,8 @@ class _MapaZonaState extends State<_MapaZona> {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.eagledev.tecnicosapp',
                 ),
-                CircleLayer(
-                  circles: [
+                CapaCirculos(
+                  circulos: [
                     CircleMarker(
                       point: _centro,
                       radius: 500,

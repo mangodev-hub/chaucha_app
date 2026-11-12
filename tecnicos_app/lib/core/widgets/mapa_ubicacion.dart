@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../theme/tokens.dart';
+import 'capa_circulos.dart';
 import 'etiqueta_sector.dart';
 
 class MapaUbicacion extends StatefulWidget {
@@ -75,8 +76,8 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
                   userAgentPackageName: 'com.eagledev.tecnicos_app',
                 ),
                 if (radio != null)
-                  CircleLayer(
-                    circles: [
+                  CapaCirculos(
+                    circulos: [
                       CircleMarker(
                         point: widget.punto,
                         radius: radio,

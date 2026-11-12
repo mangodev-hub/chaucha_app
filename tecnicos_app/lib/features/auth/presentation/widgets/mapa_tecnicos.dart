@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
+import '../../../../core/widgets/capa_circulos.dart';
 import '../../../../core/widgets/etiqueta_sector.dart';
 import '../../domain/entities/tecnico_cercano.dart';
 
@@ -89,8 +90,8 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.eagledev.tecnicos_app',
               ),
-              CircleLayer(
-                circles: [
+              CapaCirculos(
+                circulos: [
                   CircleMarker(
                     point: widget.punto,
                     radius: _radioKm * 1000,
