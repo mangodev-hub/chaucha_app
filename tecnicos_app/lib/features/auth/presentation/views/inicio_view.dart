@@ -288,8 +288,8 @@ class _InicioViewState extends ConsumerState<InicioView> {
                     subtitulo: 'Técnicos verificados, a la puerta de tu casa.',
                     dato: switch (tecnicos.value?.length) {
                       null => 'Técnicos verificados',
-                      1 => '1 técnico cerca · en vivo',
-                      final n => '$n técnicos cerca · en vivo',
+                      1 => '1 técnico cerca',
+                      final n => '$n técnicos cerca',
                     },
                     iconoDato: Icons.near_me_rounded,
                   ),

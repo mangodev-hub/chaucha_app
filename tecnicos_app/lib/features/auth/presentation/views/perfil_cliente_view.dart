@@ -238,67 +238,98 @@ class _Cabecera extends StatelessWidget {
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(176, 16, 32, 24),
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              runSpacing: 16,
-              spacing: 16,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      nombre,
-                      style: const TextStyle(
-                        color: _texto,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
+          // En pantallas angostas el nombre va debajo del avatar y el botón
+          // de baja a su propia línea; en anchas, todo a la derecha.
+          LayoutBuilder(
+            builder: (context, restricciones) {
+              final estrecho = restricciones.maxWidth < 520;
+              final datos = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    nombre,
+                    style: TextStyle(
+                      color: _texto,
+                      fontSize: estrecho ? 22 : 28,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: _azul,
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 16,
-                          color: _azul,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Quito, Ecuador',
-                          style: TextStyle(color: _gris, fontSize: 14),
-                        ),
-                      ],
-                    ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Quito, Ecuador',
+                        style: TextStyle(color: _gris, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+              final baja = _BotonBaja(onPressed: () => _mostrarBaja(context));
+
+              if (estrecho) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      datos,
+                      const SizedBox(height: 16),
+                      Align(alignment: Alignment.centerLeft, child: baja),
+                    ],
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(176, 16, 32, 24),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: datos),
+                    const SizedBox(width: 16),
+                    baja,
                   ],
                 ),
-                TextButton.icon(
-                  onPressed: () => _mostrarBaja(context),
-                  icon: const Icon(Icons.person_remove_outlined, size: 18),
-                  label: const Text(
-                    'Darse de baja',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _rojo,
-                    backgroundColor: _rojo.withValues(alpha: 0.08),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: _rojo.withValues(alpha: 0.3)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BotonBaja extends StatelessWidget {
+  const _BotonBaja({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.person_remove_outlined, size: 18),
+      label: const Text(
+        'Darse de baja',
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
+      style: TextButton.styleFrom(
+        foregroundColor: _rojo,
+        backgroundColor: _rojo.withValues(alpha: 0.08),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: _rojo.withValues(alpha: 0.3)),
+        ),
       ),
     );
   }

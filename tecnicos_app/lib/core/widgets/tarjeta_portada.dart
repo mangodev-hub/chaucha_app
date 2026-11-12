@@ -71,10 +71,6 @@ class TarjetaPortada extends StatelessWidget {
                       ),
                 ),
               ],
-              if (dato != null) ...[
-                const SizedBox(height: Espacios.l),
-                _PildoraDato(texto: dato, icono: iconoDato),
-              ],
             ],
           );
 
@@ -101,12 +97,27 @@ class TarjetaPortada extends StatelessWidget {
               ],
               Padding(
                 padding: EdgeInsets.all(amplia ? Espacios.xxl : Espacios.xl),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(child: texto),
-                    if (conIlustracion) ...[
-                      const SizedBox(width: Espacios.l),
-                      _Ilustracion(icono: icono, tamano: tamanoIlustracion),
+                    Row(
+                      children: [
+                        Expanded(child: texto),
+                        if (conIlustracion) ...[
+                          const SizedBox(width: Espacios.l),
+                          _Ilustracion(
+                            icono: icono,
+                            tamano: tamanoIlustracion,
+                          ),
+                        ],
+                      ],
+                    ),
+                    // La píldora va debajo, a todo el ancho: así no compite
+                    // con la ilustración y nunca se corta.
+                    if (dato != null) ...[
+                      const SizedBox(height: Espacios.l),
+                      _PildoraDato(texto: dato, icono: iconoDato),
                     ],
                   ],
                 ),
