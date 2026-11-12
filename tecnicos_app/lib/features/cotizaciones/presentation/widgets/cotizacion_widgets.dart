@@ -1,4 +1,4 @@
-// Tarjeta de la oferta de un técnico (precio base y solución) con sus
+// Tarjeta de la oferta de un técnico (precio de la visita y solución) con sus
 // acciones, y el formulario con el que el técnico ofrece sus servicios.
 import 'package:flutter/material.dart';
 
@@ -37,6 +37,10 @@ class CotizacionCard extends StatelessWidget {
     this.onVerPerfil,
     this.accionesActivas = true,
     this.destacada = false,
+    this.miId,
+this.onReagendar,
+this.onResponderReagendado,
+this.onCancelarVisita,
   });
 
   final Cotizacion cotizacion;
@@ -53,6 +57,11 @@ class CotizacionCard extends StatelessWidget {
 
   /// Borde de acento para la oferta aceptada.
   final bool destacada;
+  /// Id del usuario conectado, para saber quién hizo la propuesta de fecha.
+final String? miId;
+final VoidCallback? onReagendar;
+final void Function(bool acepta)? onResponderReagendado;
+final VoidCallback? onCancelarVisita;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +89,7 @@ class CotizacionCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Precio base',
+                    'Precio de la visita',
                     style: textos.titleSmall?.copyWith(
                       color: Colores.primarioOscuro,
                     ),
@@ -118,6 +127,19 @@ class CotizacionCard extends StatelessWidget {
               confirmado: c.estado == EstadoCotizacion.aceptada,
             ),
           ],
+          if (onReagendar != null ||
+    onResponderReagendado != null ||
+    onCancelarVisita != null) ...[
+  const SizedBox(height: Espacios.m),
+  _AccionesVisita(
+    cotizacion: c,
+    miId: miId,
+    activas: accionesActivas,
+    onReagendar: onReagendar,
+    onResponder: onResponderReagendado,
+    onCancelar: onCancelarVisita,
+  ),
+],
           if (onChat != null) ...[
             const SizedBox(height: Espacios.l),
             FilledButton.icon(
@@ -184,6 +206,85 @@ class _ResumenTicket extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Reagendar (por propuesta) y cancelar la visita acordada.
+class _AccionesVisita extends StatelessWidget {
+  const _AccionesVisita({
+    required this.cotizacion,
+    required this.miId,
+    required this.activas,
+    this.onReagendar,
+    this.onResponder,
+    this.onCancelar,
+  });
+
+  final Cotizacion cotizacion;
+  final String? miId;
+  final bool activas;
+  final VoidCallback? onReagendar;
+  final void Function(bool acepta)? onResponder;
+  final VoidCallback? onCancelar;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = cotizacion;
+    // Una propuesta vencida ya no cuenta (la base tampoco la considera).
+    final f = c.fechaPropuesta;
+    final propuesta = f != null && f.isAfter(DateTime.now()) ? f : null;
+    final esMia = c.propuestaPor != null && c.propuestaPor == miId;
+    final cuando = propuesta == null
+        ? ''
+        : '${Formatos.fechaCorta(propuesta)} · ${Formatos.hora(propuesta)}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (propuesta != null) ...[
+          AvisoBanner(
+            compacto: true,
+            mensaje: esMia
+                ? 'Propusiste reagendar para $cuando. Esperando respuesta.'
+                : 'Te proponen reagendar la visita para $cuando.',
+          ),
+          const SizedBox(height: Espacios.s),
+        ],
+        if (propuesta != null && !esMia && onResponder != null)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: activas ? () => onResponder!(false) : null,
+                  child: const Text('Rechazar'),
+                ),
+              ),
+              const SizedBox(width: Espacios.s),
+              Expanded(
+                child: FilledButton(
+                  onPressed: activas ? () => onResponder!(true) : null,
+                  child: const Text('Aceptar'),
+                ),
+              ),
+            ],
+          )
+        else if (propuesta == null && onReagendar != null)
+          OutlinedButton.icon(
+            onPressed: activas ? onReagendar : null,
+            icon: const Icon(Icons.event_repeat_outlined),
+            label: const Text('Reagendar visita'),
+          ),
+        if (onCancelar != null)
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: activas ? onCancelar : null,
+            icon: const Icon(Icons.event_busy_outlined),
+            label: const Text('Cancelar visita'),
+          ),
+      ],
     );
   }
 }
@@ -273,7 +374,7 @@ class _Tecnico extends StatelessWidget {
   }
 }
 
-/// Formulario del técnico: precio base y cómo resolvería el problema.
+/// Formulario del técnico: precio de la visita y cómo resolvería el problema.
 Future<String?> mostrarFormularioOferta(
   BuildContext context, {
   required double tarifaBase,
@@ -304,10 +405,10 @@ class _FormularioOfertaState extends State<_FormularioOferta> {
   }
 
   String? _validarPrecio(String? valor) {
-    final error = FormValidators.monto(valor, campo: 'El precio base');
+    final error = FormValidators.monto(valor, campo: 'El precio de la visita');
     if (error != null) return error;
     final precio = double.parse(valor!.trim().replaceAll(',', '.'));
-    return precio <= 0 ? 'El precio base debe ser mayor que 0.' : null;
+    return precio <= 0 ? 'El precio de la visita debe ser mayor que 0.' : null;
   }
 
   void _enviar() {

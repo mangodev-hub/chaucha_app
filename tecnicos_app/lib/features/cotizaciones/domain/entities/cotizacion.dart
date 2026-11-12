@@ -1,4 +1,4 @@
-// Oferta de un técnico para una solicitud: su precio base y cómo resolvería
+// Oferta de un técnico para una solicitud: su precio de la visita y cómo resolvería
 // el problema, con su nombre y calificación. El precio final se acuerda
 // después por chat y queda en el ticket de trabajo ([tarifa]).
 import 'tarifa.dart';
@@ -17,6 +17,8 @@ class Cotizacion {
     required this.creadoEn,
     this.solucion,
     this.tarifa,
+    this.fechaPropuesta,
+    this.propuestaPor,
   });
 
   final String id;
@@ -32,6 +34,8 @@ class Cotizacion {
   final String? solucion;
   final EstadoCotizacion estado;
   final DateTime creadoEn;
+  final DateTime? fechaPropuesta;
+  final String? propuestaPor;
 
   /// Ticket de trabajo enviado por el técnico. Null si aún no lo envía (o si
   /// el cliente lo rechazó).
