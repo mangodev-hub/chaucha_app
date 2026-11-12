@@ -44,14 +44,11 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
   FutureOr<void> build() {}
 
   /// El técnico envía el ticket con el precio acordado por chat. La base
-  /// avisa al cliente en el chat. El precio base de su oferta no cambia.
+  /// avisa al cliente en el chat. El precio de la visita de su oferta no cambia.
   Future<bool> enviar(NuevaTarifa tarifa) {
     return _ejecutar(() async {
       if (tarifa.precioAcordado <= 0) {
         throw const AppFailure('El precio acordado debe ser mayor que 0.');
-      }
-      if (tarifa.materiales < 0) {
-        throw const AppFailure('Los materiales no pueden ser negativos.');
       }
       final contexto = await _contexto();
       final motivo = ReglasTarifa.motivoParaNoEnviar(
