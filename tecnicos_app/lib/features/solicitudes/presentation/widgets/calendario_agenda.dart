@@ -55,8 +55,8 @@ class _CalendarioAgendaState extends State<CalendarioAgenda> {
           );
         },
         onPageChanged: (enfoque) => _enfoque = enfoque,
-        calendarStyle: CalendarStyle(
-          selectedDecoration: const BoxDecoration(
+        calendarStyle: const CalendarStyle(
+          selectedDecoration: BoxDecoration(
             color: Colores.primario,
             shape: BoxShape.circle,
           ),
@@ -64,8 +64,8 @@ class _CalendarioAgendaState extends State<CalendarioAgenda> {
             color: Colores.primarioSuave,
             shape: BoxShape.circle,
           ),
-          todayTextStyle: const TextStyle(color: Colores.tinta),
-          markerDecoration: const BoxDecoration(
+          todayTextStyle: TextStyle(color: Colores.tinta),
+          markerDecoration: BoxDecoration(
             color: Colores.primario,
             shape: BoxShape.circle,
           ),

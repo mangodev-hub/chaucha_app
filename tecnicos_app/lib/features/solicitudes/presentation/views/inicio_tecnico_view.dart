@@ -15,6 +15,7 @@ import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/carrusel_aliados.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/responsive_layout.dart';
@@ -35,7 +36,6 @@ import '../providers/inicio_tecnico_provider.dart';
 import '../providers/listas_provider.dart';
 import '../widgets/mapa_zona_perfil.dart';
 import '../widgets/solicitud_widgets.dart';
-import '../../../../core/widgets/carrusel_aliados.dart';
 
 class InicioTecnicoView extends ConsumerWidget {
   const InicioTecnicoView({super.key});

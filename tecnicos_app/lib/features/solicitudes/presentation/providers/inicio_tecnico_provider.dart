@@ -7,12 +7,12 @@ import '../../../chat/data/repositories/supabase_chat_repository.dart';
 import '../../../chat/domain/entities/conversacion_pendiente.dart';
 import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../../../perfil_puntos/data/repositories/supabase_perfil_repository.dart';
 import '../../../perfil_puntos/domain/entities/nivel.dart';
 import '../../domain/entities/resumen_tecnico.dart';
 import '../../domain/entities/solicitud.dart';
 import 'listas_provider.dart';
-import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
 
 /// Ofertas del técnico conectado.
 final misOfertasProvider = FutureProvider.autoDispose<List<Cotizacion>>((ref) {

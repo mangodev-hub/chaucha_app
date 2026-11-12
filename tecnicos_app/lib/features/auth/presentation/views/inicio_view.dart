@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -316,6 +318,12 @@ class _InicioViewState extends ConsumerState<InicioView> {
     );
   }
 
+  void _verPerfil(String tecnicoId) => unawaited(
+    context.push(
+      AppRoutes.perfilTecnico(tecnicoId, esCliente: widget.esCliente),
+    ),
+  );
+
   Widget _mapa(AsyncValue<List<TecnicoCercano>> tecnicos, double alto) {
     final punto = ref.watch(ubicacionInicioProvider).value ?? GeoMapper.quito;
     final radioM = ref.watch(radioInicioProvider);
@@ -335,6 +343,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
         onContactar: widget.esCliente
             ? (t) => _solicitarTecnico(context, ref, t)
             : null,
+        onVerPerfil: (t) => _verPerfil(t.id),
       ),
     );
   }
@@ -411,6 +420,7 @@ class _InicioViewState extends ConsumerState<InicioView> {
                 if (i > 0) const SizedBox(height: Espacios.l),
                 TecnicoFila(
                   tecnico: visibles[i],
+                  onVerPerfil: () => _verPerfil(visibles[i].id),
                   onSolicitar: widget.esCliente
                       ? () => _solicitarTecnico(context, ref, visibles[i])
                       : null,

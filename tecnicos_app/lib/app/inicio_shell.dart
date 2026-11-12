@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/providers/core_providers.dart';
+import '../core/providers/sincronizacion_provider.dart';
 import '../core/theme/tokens.dart';
 import '../core/widgets/responsive_layout.dart';
 import '../features/chat/presentation/widgets/boton_chats.dart';
@@ -11,7 +12,6 @@ import '../features/notificaciones/presentation/providers/notificaciones_provide
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
 import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
 import 'menu_cuenta.dart';
-import '../core/providers/sincronizacion_provider.dart';
 
 class Destino {
   const Destino(

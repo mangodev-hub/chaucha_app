@@ -23,9 +23,13 @@ abstract final class AppRoutes {
   static String chat(String conversacionId, {required bool esCliente}) =>
       '${_prefijo(esCliente)}/chat/$conversacionId';
 
-  /// Perfil público de un técnico. Solo lo abre el cliente (desde una oferta).
-  static String perfilTecnico(String tecnicoId) =>
-      '$clienteInicio/tecnico/$tecnicoId';
+  /// Perfil público de un técnico: lo abren clientes y otros técnicos.
+  static String perfilTecnico(String tecnicoId, {bool esCliente = true}) =>
+      '${_prefijo(esCliente)}/tecnico/$tecnicoId';
+
+  /// Perfil público de un cliente. Solo lo abre el técnico.
+  static String perfilCliente(String clienteId) =>
+      '$tecnicoInicio/cliente/$clienteId';
 
   static String _prefijo(bool esCliente) =>
       esCliente ? clienteInicio : tecnicoInicio;
