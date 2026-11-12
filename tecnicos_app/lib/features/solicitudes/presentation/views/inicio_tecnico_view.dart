@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/pestana_solicitada.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
@@ -178,6 +179,7 @@ class _ParaEmpezar extends ConsumerWidget {
         hecho: perfil.verificado,
         titulo: 'Verifica tu identidad',
         detalle: 'Sube tu cédula y una selfie.',
+        accion: 'Verificar',
         onTap: perfil.verificado
             ? null
             : () => unawaited(mostrarVerificacion(context)),
@@ -186,13 +188,21 @@ class _ParaEmpezar extends ConsumerWidget {
         hecho: perfil.oficioIds.isNotEmpty,
         titulo: 'Elige tus oficios',
         detalle: 'En la pestaña "Mi perfil".',
-        onTap: null,
+        accion: 'Elegir',
+        onTap: () {
+          ref.read(seccionPerfilProvider.notifier).pedir('oficios');
+          ref.read(pestanaSolicitadaProvider.notifier).pedir('Mi perfil');
+        },
       ),
       (
         hecho: perfil.ubicacionActual != null,
         titulo: 'Marca tu zona de trabajo',
         detalle: 'En la pestaña "Mi perfil".',
-        onTap: null,
+        accion: 'Marcar',
+        onTap: () {
+          ref.read(seccionPerfilProvider.notifier).pedir('zona');
+          ref.read(pestanaSolicitadaProvider.notifier).pedir('Mi perfil');
+        },
       ),
     ];
     final hechos = pasos.where((p) => p.hecho).length;
@@ -228,9 +238,12 @@ class _ParaEmpezar extends ConsumerWidget {
                   ),
                 ),
                 subtitle: p.hecho ? null : Text(p.detalle),
-                trailing: p.onTap == null
+                trailing: p.hecho
                     ? null
-                    : const Icon(Icons.chevron_right, color: Colores.primario),
+                    : FilledButton.tonal(
+                        onPressed: p.onTap,
+                        child: Text(p.accion),
+                      ),
               ),
           ],
         ),
