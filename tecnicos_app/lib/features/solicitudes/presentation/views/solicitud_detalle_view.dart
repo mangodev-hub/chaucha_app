@@ -140,16 +140,20 @@ Future<void> _responderReagendado(String cotizacionId, bool acepta) =>
       acepta ? 'Nuevo horario confirmado.' : 'Propuesta rechazada.',
     );
 
-Future<void> _cancelarVisita(String cotizacionId) async {
+Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) async {
   final ok = await context.confirmar(
     'Cancelar visita',
-    'La solicitud seguirá publicada para que el cliente elija a otro técnico.',
+    esCliente
+        ? 'Se cancelará la visita y tu solicitud. Solo es posible con al menos 24 horas de anticipación.'
+        : 'La solicitud seguirá publicada para que el cliente elija a otro técnico. Solo es posible con al menos 24 horas de anticipación.',
     textoConfirmar: 'Sí, cancelar visita',
     textoCancelar: 'Volver',
     destructivo: true,
     icono: Icons.event_busy_outlined,
   );
-  if (ok) await _resultado(_acciones.cancelarVisita(cotizacionId), 'Visita cancelada.');
+  if (ok) {
+    await _resultado(_acciones.cancelarVisita(cotizacionId), 'Visita cancelada.');
+  }
 }
 
   Future<void> _ofrecer() async {
@@ -503,6 +507,9 @@ child: Builder(builder: (_) {
             onChat: () => _chat(aceptada.tecnicoId),
             onVerPerfil: () => _verPerfil(aceptada.tecnicoId),
             miId: ref.read(usuarioActualProvider)?.id,
+            onCancelarVisita: d.estado == EstadoSolicitud.aceptada
+    ? () => _cancelarVisita(aceptada.id, esCliente: true)
+    : null,
 onReagendar: d.estado == EstadoSolicitud.aceptada
     ? () => _reagendar(aceptada.id)
     : null,

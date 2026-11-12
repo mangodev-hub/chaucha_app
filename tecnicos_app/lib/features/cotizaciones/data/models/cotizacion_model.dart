@@ -8,8 +8,8 @@
 //   total            mano_obra + materiales (columna calculada)
 //   tarifa_enviada   true cuando el técnico envió el ticket
 //   fecha_servicio   día del servicio acordado (opcional)
-//   fecha_propuesta  nueva fecha propuesta al reagendar (null si no hay)
-//   propuesta_por    quién propuso la nueva fecha (null si no hay)
+//   reagenda_inicio  nueva fecha propuesta al reagendar (null si no hay)
+//   reagenda_por     quién propuso la nueva fecha (null si no hay)
 //
 // Las ofertas antiguas (antes de `precio_base`) guardaban su precio en
 // mano_obra + materiales, y no tienen ticket.
@@ -22,8 +22,8 @@ abstract final class CotizacionModel {
   /// Columnas que se piden en el `select`, con el join al técnico.
   static const String columnas =
       'id, solicitud_id, tecnico_id, precio_base, detalle, mano_obra, '
-      'materiales, total, tarifa_enviada, fecha_servicio, fecha_propuesta, '
-      'propuesta_por, estado, creado_en, '
+      'materiales, total, tarifa_enviada, fecha_servicio, reagenda_inicio, '
+      'reagenda_por, estado, creado_en, '
       'perfiles_tecnicos!fk_cotizaciones_tecnico(calificacion_promedio, '
       'usuarios!fk_perfiles_usuario(nombres, apellidos))';
 
@@ -37,7 +37,7 @@ abstract final class CotizacionModel {
     final materiales = aDouble(json['materiales']);
     final solucion = (json['detalle'] as String?)?.trim();
     final fecha = json['fecha_servicio'];
-    final propuesta = json['fecha_propuesta'];
+    final propuesta = json['reagenda_inicio'];
     return Cotizacion(
       id: json['id'] as String,
       solicitudId: json['solicitud_id'] as String,
@@ -55,7 +55,7 @@ abstract final class CotizacionModel {
             )
           : null,
       fechaPropuesta: propuesta is String ? aFecha(propuesta).toLocal() : null,
-      propuestaPor: json['propuesta_por'] as String?,
+      propuestaPor: json['reagenda_por'] as String?,
       estado: EstadoCotizacionDb.desdeDb(json['estado'] as String),
       creadoEn: aFecha(json['creado_en']),
     );

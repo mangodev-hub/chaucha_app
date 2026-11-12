@@ -38,9 +38,9 @@ class CotizacionCard extends StatelessWidget {
     this.accionesActivas = true,
     this.destacada = false,
     this.miId,
-this.onReagendar,
-this.onResponderReagendado,
-this.onCancelarVisita,
+    this.onReagendar,
+    this.onResponderReagendado,
+    this.onCancelarVisita,
   });
 
   final Cotizacion cotizacion;
@@ -57,16 +57,20 @@ this.onCancelarVisita,
 
   /// Borde de acento para la oferta aceptada.
   final bool destacada;
+
   /// Id del usuario conectado, para saber quién hizo la propuesta de fecha.
-final String? miId;
-final VoidCallback? onReagendar;
-final void Function(bool acepta)? onResponderReagendado;
-final VoidCallback? onCancelarVisita;
+  final String? miId;
+  final VoidCallback? onReagendar;
+  final void Function(bool acepta)? onResponderReagendado;
+  final VoidCallback? onCancelarVisita;
 
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final c = cotizacion;
+    final falta = c.tarifa?.fechaServicio?.difference(DateTime.now());
+    final puedeCambiar = falta == null || falta >= const Duration(hours: 24);
+    final f = c.fechaPropuesta;
     final solucion = c.solucion;
     return TarjetaApp(
       margin: const EdgeInsets.only(bottom: Espacios.m),
@@ -128,18 +132,18 @@ final VoidCallback? onCancelarVisita;
             ),
           ],
           if (onReagendar != null ||
-    onResponderReagendado != null ||
-    onCancelarVisita != null) ...[
-  const SizedBox(height: Espacios.m),
-  _AccionesVisita(
-    cotizacion: c,
-    miId: miId,
-    activas: accionesActivas,
-    onReagendar: onReagendar,
-    onResponder: onResponderReagendado,
-    onCancelar: onCancelarVisita,
-  ),
-],
+              onResponderReagendado != null ||
+              onCancelarVisita != null) ...[
+            const SizedBox(height: Espacios.m),
+            _AccionesVisita(
+              cotizacion: c,
+              miId: miId,
+              activas: accionesActivas,
+              onReagendar: onReagendar,
+              onResponder: onResponderReagendado,
+              onCancelar: onCancelarVisita,
+            ),
+          ],
           if (onChat != null) ...[
             const SizedBox(height: Espacios.l),
             FilledButton.icon(
@@ -231,6 +235,11 @@ class _AccionesVisita extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = cotizacion;
+
+    // Reagendar y cancelar exigen 24 h de anticipación (la base también lo valida).
+    final falta = c.tarifa?.fechaServicio?.difference(DateTime.now());
+    final puedeCambiar = falta == null || falta >= const Duration(hours: 24);
+
     // Una propuesta vencida ya no cuenta (la base tampoco la considera).
     final f = c.fechaPropuesta;
     final propuesta = f != null && f.isAfter(DateTime.now()) ? f : null;
@@ -269,13 +278,13 @@ class _AccionesVisita extends StatelessWidget {
               ),
             ],
           )
-        else if (propuesta == null && onReagendar != null)
+        else if (propuesta == null && onReagendar != null && puedeCambiar)
           OutlinedButton.icon(
             onPressed: activas ? onReagendar : null,
             icon: const Icon(Icons.event_repeat_outlined),
             label: const Text('Reagendar visita'),
           ),
-        if (onCancelar != null)
+        if (onCancelar != null && puedeCambiar)
           TextButton.icon(
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
@@ -283,6 +292,12 @@ class _AccionesVisita extends StatelessWidget {
             onPressed: activas ? onCancelar : null,
             icon: const Icon(Icons.event_busy_outlined),
             label: const Text('Cancelar visita'),
+          ),
+        if (!puedeCambiar && (onReagendar != null || onCancelar != null))
+          Text(
+            'Ya no se puede reagendar ni cancelar: faltan menos de 24 horas.',
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: Colores.tintaSuave),
           ),
       ],
     );
