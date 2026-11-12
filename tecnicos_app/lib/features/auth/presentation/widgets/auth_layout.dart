@@ -1,6 +1,9 @@
 // Marco común de login y registro: fondo verde bosque con una onda celeste
 // suave y una tarjeta clara con la marca, el título y el formulario. En
-// escritorio agrega a la izquierda un panel verde con la marca.
+// escritorio agrega a la izquierda un panel verde con la marca, que termina
+// en un borde ondulado (dos curvas que ondulan despacio) sobre el formulario.
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -89,29 +92,187 @@ class AuthLayout extends StatelessWidget {
             ),
           ),
         ),
-        desktop: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: _PanelMarca(
-                detallado: esRegistro || panelDetallado,
-                animacion: animacionEscritorio,
-              ),
-            ),
-            Expanded(
-              child: _FormularioEscritorio(
-                titulo: titulo,
-                subtitulo: subtitulo,
-                ancho: anchoEscritorio,
-                centrado: !esRegistro,
-                child: child,
-              ),
-            ),
-          ],
+        desktop: _EscritorioOndulado(
+          panel: _PanelMarca(
+            detallado: esRegistro || panelDetallado,
+            animacion: animacionEscritorio,
+          ),
+          formulario: _FormularioEscritorio(
+            titulo: titulo,
+            subtitulo: subtitulo,
+            ancho: anchoEscritorio,
+            centrado: !esRegistro,
+            child: child,
+          ),
         ),
       ),
     );
   }
+}
+
+/// Degradado vertical del panel de la marca. Al ser vertical, la franja
+/// ondulada que lo prolonga hacia la derecha empalma sin que se note.
+const _degradadoPanel = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Colores.fondo, Colores.primarioVivo],
+);
+
+/// Escritorio: las dos mitades de siempre (panel de la marca y formulario),
+/// pero el panel no termina en una línea recta: lo prolonga una franja con
+/// dos curvas que entra sobre el formulario, con una onda celeste
+/// translúcida detrás. Las dos ondulan despacio y desfasadas; con "reducir
+/// animaciones" quedan quietas.
+class _EscritorioOndulado extends StatefulWidget {
+  const _EscritorioOndulado({required this.panel, required this.formulario});
+
+  final Widget panel;
+  final Widget formulario;
+
+  /// Cuánto entra la onda verde sobre la mitad del formulario.
+  static const double entrada = 48;
+
+  /// Cuánto entra la onda celeste (asoma detrás de la verde).
+  static const double entradaCeleste = 76;
+
+  /// Una vuelta completa de la ondulación.
+  static const Duration ciclo = Duration(seconds: 8);
+
+  @override
+  State<_EscritorioOndulado> createState() => _EscritorioOnduladoState();
+}
+
+class _EscritorioOnduladoState extends State<_EscritorioOndulado>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ondula = AnimationController(
+    vsync: this,
+    duration: _EscritorioOndulado.ciclo,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Respeta "reducir animaciones": la onda queda quieta.
+    final quieta = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (quieta) {
+      _ondula.stop();
+    } else if (!_ondula.isAnimating) {
+      _ondula.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ondula.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const entrada = _EscritorioOndulado.entrada;
+    const entradaCeleste = _EscritorioOndulado.entradaCeleste;
+    return LayoutBuilder(
+      builder: (context, restricciones) {
+        final mitad = restricciones.maxWidth / 2;
+        return Stack(
+          children: [
+            // El formulario, con margen a la izquierda para que la onda no
+            // tape los campos.
+            Positioned(
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: mitad,
+              // Fondo blanco en toda la mitad: las ondas entran sobre blanco.
+              child: ColoredBox(
+                color: Colores.tarjeta,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: entradaCeleste - 16),
+                  child: widget.formulario,
+                ),
+              ),
+            ),
+            // Onda celeste translúcida, detrás de la verde y desfasada.
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: mitad + entradaCeleste,
+              child: ClipPath(
+                clipper: _RecorteOndulado(
+                  ondula: _ondula,
+                  entrada: entradaCeleste,
+                  fase: math.pi * 0.6,
+                ),
+                child: ColoredBox(
+                  color: Colores.cieloClaro.withValues(alpha: 0.35),
+                ),
+              ),
+            ),
+            // El panel verde con su borde ondulado. El panel conserva su
+            // ancho (la mitad); la franja que entra repite su degradado.
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: mitad + entrada,
+              child: ClipPath(
+                clipper: _RecorteOndulado(ondula: _ondula, entrada: entrada),
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(gradient: _degradadoPanel),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: entrada),
+                    child: widget.panel,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Recorta el borde derecho como una onda: una curva que sale y otra que
+/// vuelve a lo alto de la pantalla (un período de seno), desplazándose con
+/// [ondula]. El borde se mueve entre `ancho - entrada` y `ancho`.
+class _RecorteOndulado extends CustomClipper<Path> {
+  _RecorteOndulado({required this.ondula, required this.entrada, this.fase = 0})
+    : super(reclip: ondula);
+
+  final Animation<double> ondula;
+  final double entrada;
+  final double fase;
+
+  @override
+  Path getClip(Size size) {
+    final w = size.width;
+    final h = size.height;
+    final desfase = fase + ondula.value * 2 * math.pi;
+    double borde(double y) =>
+        w -
+        entrada / 2 +
+        (entrada / 2) * math.sin(2 * math.pi * y / h + desfase);
+
+    final ruta = Path()
+      ..moveTo(0, 0)
+      ..lineTo(borde(0), 0);
+    const paso = 6.0;
+    for (var y = paso; y < h; y += paso) {
+      ruta.lineTo(borde(y), y);
+    }
+    return ruta
+      ..lineTo(borde(h), h)
+      ..lineTo(0, h)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(_RecorteOndulado anterior) =>
+      anterior.entrada != entrada ||
+      anterior.fase != fase ||
+      anterior.ondula != ondula;
 }
 
 class _FormularioEscritorio extends StatelessWidget {
@@ -310,13 +471,7 @@ class _PanelMarca extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
     final animacion = this.animacion;
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colores.fondo, Colores.primarioVivo],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: _degradadoPanel),
       child: Padding(
         padding: const EdgeInsets.all(48),
         child: Column(
