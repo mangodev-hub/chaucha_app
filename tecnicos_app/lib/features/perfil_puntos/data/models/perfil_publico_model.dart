@@ -7,8 +7,12 @@ abstract final class PerfilPublicoModel {
   /// Columnas de `perfiles_tecnicos` con los joins a nivel, usuario y oficios.
   static const String columnasPerfil =
       'usuario_id, verificado, calificacion_promedio, total_resenas, '
-      'niveles_gamificacion(nombre), usuarios!fk_perfiles_usuario(nombres, apellidos), '
+      'niveles_gamificacion(nombre), usuarios!fk_perfiles_usuario(nombres, apellidos, foto_perfil_ruta, creado_en), '
       'tecnico_oficios(oficios(nombre))';
+
+  /// Columnas de `usuarios` para el perfil público de un cliente.
+  static const String columnasCliente =
+      'id, nombres, apellidos, foto_perfil_ruta, creado_en, verificado';
 
   /// Columnas de `resenas` con el autor. `resenas` tiene dos claves hacia
   /// `usuarios` (autor y destinatario), así que se nombra la del autor.
@@ -42,8 +46,40 @@ abstract final class PerfilPublicoModel {
       totalResenas: aInt(perfil['total_resenas']),
       oficios: oficios,
       resenas: [for (final fila in resenas) _resena(fila)],
+      fotoRuta: usuario?['foto_perfil_ruta'] as String?,
+      miembroDesde: _fecha(usuario?['creado_en']),
     );
   }
+
+  /// Perfil público de un cliente: sin nivel ni oficios; la calificación sale
+  /// de las reseñas recibidas.
+  static PerfilPublico desdeCliente(
+    Map<String, dynamic> usuario,
+    List<Map<String, dynamic>> resenas,
+  ) {
+    final nombre = '${usuario['nombres'] ?? ''} ${usuario['apellidos'] ?? ''}'
+        .trim();
+    final lista = [for (final fila in resenas) _resena(fila)];
+    final promedio = lista.isEmpty
+        ? 0.0
+        : lista.fold<int>(0, (s, r) => s + r.calificacion) / lista.length;
+    return PerfilPublico(
+      tecnicoId: usuario['id'] as String,
+      nombre: nombre.isEmpty ? 'Cliente' : nombre,
+      verificado: usuario['verificado'] as bool? ?? false,
+      nivelNombre: '',
+      calificacionPromedio: promedio,
+      totalResenas: lista.length,
+      oficios: const [],
+      resenas: lista,
+      fotoRuta: usuario['foto_perfil_ruta'] as String?,
+      miembroDesde: _fecha(usuario['creado_en']),
+      esTecnico: false,
+    );
+  }
+
+  static DateTime? _fecha(Object? v) =>
+      v is String ? DateTime.tryParse(v)?.toLocal() : null;
 
   static ResenaPublica _resena(Map<String, dynamic> fila) {
     final comentario = (fila['comentario'] as String?)?.trim();

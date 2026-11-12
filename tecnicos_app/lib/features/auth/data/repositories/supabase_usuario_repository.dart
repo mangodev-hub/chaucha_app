@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,7 +10,6 @@ import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/usuario_repository.dart';
 import '../models/rol_db.dart';
 import '../models/usuario_model.dart';
-import 'dart:async';
 
 final usuarioRepositoryProvider = Provider<UsuarioRepository>(
   (ref) => SupabaseUsuarioRepository(ref.watch(supabaseClientProvider)),

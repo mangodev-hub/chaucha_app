@@ -10,8 +10,9 @@ import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/aviso_banner.dart';
+import '../../../../core/widgets/avatar_usuario.dart';
 import '../../../../core/widgets/barra_accion.dart';
+import '../../../../core/widgets/boton_baja.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
@@ -31,11 +32,10 @@ import '../../domain/entities/perfil_publico.dart';
 import '../../domain/entities/perfil_tecnico.dart';
 import '../providers/perfil_publico_provider.dart';
 import '../providers/perfil_tecnico_provider.dart';
+import '../widgets/certificaciones_widgets.dart';
 import '../widgets/resena_widgets.dart';
-import '../../../../core/widgets/avatar_usuario.dart';
-import 'verificacion_view.dart';
-import '../../../../core/widgets/boton_baja.dart';
 import 'aviso_verificacion_cliente.dart';
+import 'verificacion_view.dart';
 
 class PerfilTecnicoView extends ConsumerStatefulWidget {
   const PerfilTecnicoView({super.key});
@@ -157,6 +157,7 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
           const _ActividadTecnico(),
           const SizedBox(height: Espacios.l),
           _NivelYResenas(perfil: perfil),
+          const SeccionCertificaciones(),
           const SizedBox(height: Espacios.l),
         ];
         final banner = _BannerVerificacion(verificado: perfil.verificado);
@@ -416,6 +417,7 @@ class _CabeceraTecnico extends StatelessWidget {
                         icono: Icons.verified,
                         color: Colores.acento,
                       ),
+                    InsigniaSiCertificado(tecnicoId: perfil.usuarioId),
                   ],
                 ),
               ],

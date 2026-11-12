@@ -10,10 +10,16 @@ class PerfilPublico {
     required this.totalResenas,
     required this.oficios,
     required this.resenas,
+    this.fotoRuta,
+    this.miembroDesde,
+    this.esTecnico = true,
   });
 
   final String tecnicoId;
   final String nombre;
+  final String? fotoRuta;
+  final DateTime? miembroDesde;
+  final bool esTecnico;
   final bool verificado;
   final String nivelNombre;
   final double calificacionPromedio;
