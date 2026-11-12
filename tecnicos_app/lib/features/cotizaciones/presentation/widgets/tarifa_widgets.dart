@@ -308,6 +308,7 @@ class _ConBoton extends StatelessWidget {
     );
   }
 }
+
 /// Formulario del técnico: el precio de referencia queda fijo; el precio de
 /// la visita empieza igual y se puede cambiar; la fecha y hora es obligatoria.
 Future<NuevaTarifa?> mostrarFormularioTarifa(

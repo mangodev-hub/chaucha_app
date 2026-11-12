@@ -30,12 +30,13 @@ abstract interface class CotizacionRepository {
   Future<void> rechazarTarifa(String cotizacionId);
 
   Future<List<Cotizacion>> deSolicitudes(List<String> solicitudIds);
+
   /// Propone otra fecha para la visita; la otra persona debe aceptarla.
-Future<void> proponerReagendado(String cotizacionId, DateTime nuevaFecha);
+  Future<void> proponerReagendado(String cotizacionId, DateTime nuevaFecha);
 
-/// La otra persona acepta o rechaza la propuesta.
-Future<void> responderReagendado(String cotizacionId, {required bool acepta});
+  /// La otra persona acepta o rechaza la propuesta.
+  Future<void> responderReagendado(String cotizacionId, {required bool acepta});
 
-/// El técnico cancela la visita; la solicitud vuelve a cotizada.
-Future<void> cancelarVisita(String cotizacionId);
+  /// El técnico cancela la visita; la solicitud vuelve a cotizada.
+  Future<void> cancelarVisita(String cotizacionId);
 }

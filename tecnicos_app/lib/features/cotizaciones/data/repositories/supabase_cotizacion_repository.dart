@@ -125,9 +125,9 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
   Future<void> proponerReagendado(String cotizacionId, DateTime nuevaFecha) {
     return supabaseGuard(() async {
       await _client.rpc(
-        'reagendar_visita',
+        'proponer_reagenda',
         params: {
-          'p_cotizacion': cotizacionId,
+          'p_cotizacion_id': cotizacionId,
           'p_nueva_fecha': nuevaFecha.toUtc().toIso8601String(),
         },
       );
@@ -141,8 +141,8 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
   }) {
     return supabaseGuard(() async {
       await _client.rpc(
-        'responder_reagendado',
-        params: {'p_cotizacion': cotizacionId, 'p_acepta': acepta},
+        'responder_reagenda',
+        params: {'p_cotizacion_id': cotizacionId, 'p_acepta': acepta},
       );
     });
   }
@@ -152,7 +152,7 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
     return supabaseGuard(() async {
       await _client.rpc(
         'cancelar_visita',
-        params: {'p_cotizacion': cotizacionId},
+        params: {'p_cotizacion_id': cotizacionId},
       );
     });
   }
