@@ -55,12 +55,14 @@ class SolicitudCard extends StatelessWidget {
     this.yaCotice = false,
     this.onEditar,
     this.onEliminar,
+    this.novedades = 0,
   });
 
   final Solicitud solicitud;
   final VoidCallback onTap;
   final VoidCallback? onEditar;
   final VoidCallback? onEliminar;
+  final int novedades;
 
   /// Distancia ya formateada ("1.2 km"), solo en el feed del técnico.
   final String? distancia;
@@ -143,12 +145,18 @@ class SolicitudCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: textos.bodyMedium,
           ),
-          if (distancia != null || yaCotice) ...[
+          if (distancia != null || yaCotice || novedades > 0) ...[
             const SizedBox(height: Espacios.m),
             Wrap(
               spacing: Espacios.s,
               runSpacing: Espacios.xs,
               children: [
+                if (novedades > 0)
+                  Pildora(
+                    texto: novedades == 1 ? '1 novedad' : '$novedades novedades',
+                    icono: Icons.notifications_active_outlined,
+                    color: Colores.aviso,
+                  ),
                 if (distancia != null)
                   Pildora(
                     texto: 'a $distancia',

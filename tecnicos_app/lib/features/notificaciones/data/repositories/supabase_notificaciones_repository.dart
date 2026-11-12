@@ -34,4 +34,19 @@ class SupabaseNotificacionesRepository {
     if (referenciaId != null) q = q.eq('referencia_id', referenciaId);
     await q;
   }
+
+  Future<void> marcarLeidasDe(
+    String uid, {
+    required List<String> tipos,
+    required List<String> referenciaIds,
+  }) async {
+    if (referenciaIds.isEmpty) return;
+    await _db
+        .from('notificaciones')
+        .update({'leida': true})
+        .eq('usuario_id', uid)
+        .eq('leida', false)
+        .inFilter('tipo', tipos)
+        .inFilter('referencia_id', referenciaIds);
+  }
 }

@@ -21,6 +21,7 @@ class Destino {
     this.iconoActivo,
     this.corto,
     this.tiposNotificacion = const [],
+    this.marcaAlEntrar = true,
   });
 
   /// Título completo: barra superior y pestañas de escritorio.
@@ -34,6 +35,7 @@ class Destino {
   final String? corto;
   final List<String> tiposNotificacion;
   final Widget vista;
+  final bool marcaAlEntrar;
 
   String get etiqueta => corto ?? titulo;
 }
@@ -61,8 +63,9 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   void _cambiar(int indice) {
     setState(() => _indice = indice);
-    final tipos = widget.destinos[indice].tiposNotificacion;
-    if (tipos.isEmpty) return;
+    final destino = widget.destinos[indice];
+    if (destino.tiposNotificacion.isEmpty || !destino.marcaAlEntrar) return;
+    final tipos = destino.tiposNotificacion;
     final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
     if (uid == null) return;
     unawaited(
