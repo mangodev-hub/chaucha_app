@@ -8,6 +8,7 @@ class Usuario {
     required this.apellidos,
     required this.creadoEn,
     this.fotoPerfilRuta,
+    this.fotoRostroValidada = false,
     this.perfilCompleto = true,
     this.verificado = false,
   });
@@ -18,9 +19,11 @@ class Usuario {
   final String apellidos;
   final bool perfilCompleto;
   final bool verificado;
-
   final String? fotoPerfilRuta;
+  final bool fotoRostroValidada;
   final DateTime creadoEn;
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
+
+  bool get fotoVerificada => fotoPerfilRuta != null && fotoRostroValidada;
 }

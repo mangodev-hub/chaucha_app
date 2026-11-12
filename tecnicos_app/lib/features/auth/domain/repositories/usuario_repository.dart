@@ -5,9 +5,12 @@ import '../entities/usuario.dart';
 abstract interface class UsuarioRepository {
   /// Devuelve null si el usuario no tiene perfil registrado.
   Future<Usuario?> obtenerPorId(String id);
+  
   Future<void> completarPerfil({
     required String cedula,
     required String codigoDactilar,
     required Rol rol,
   });
+  
+  Future<String?> registrarSelfie({required String ruta});
 }

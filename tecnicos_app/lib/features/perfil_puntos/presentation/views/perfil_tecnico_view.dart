@@ -32,6 +32,7 @@ import '../../domain/entities/perfil_tecnico.dart';
 import '../providers/perfil_publico_provider.dart';
 import '../providers/perfil_tecnico_provider.dart';
 import '../widgets/resena_widgets.dart';
+import '../../../../core/widgets/avatar_usuario.dart';
 import 'verificacion_view.dart';
 
 class PerfilTecnicoView extends ConsumerStatefulWidget {
@@ -411,14 +412,11 @@ class _CabeceraTecnico extends StatelessWidget {
                     color: Colores.tarjeta,
                     shape: BoxShape.circle,
                   ),
-                  child: CircleAvatar(
-                    radius: 44,
-                    backgroundColor: Colores.primarioSuave,
-                    child: Text(
-                      iniciales,
-                      style: textos.headlineSmall?.copyWith(
-                        color: Colores.primarioOscuro,
-                      ),
+                  child: Consumer(
+                    builder: (context, ref, _) => AvatarUsuario(
+                      nombre: nombre,
+                      rutaFoto: ref.watch(usuarioActualProvider)?.fotoPerfilRuta,
+                      radio: 44,
                     ),
                   ),
                 ),
