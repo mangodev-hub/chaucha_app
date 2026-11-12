@@ -112,7 +112,7 @@ void main() {
       await _montar(tester, tamano);
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Hola, Carlos Daniel.'), findsOneWidget);
+      expect(find.text('Tu resumen de hoy.'), findsOneWidget);
       expect(find.text('Para empezar a trabajar'), findsOneWidget);
 
       // Baja hasta el final por si algo de abajo se rompe al aparecer.

@@ -8,6 +8,8 @@ import '../../../../core/widgets/marca.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../../core/widgets/tarjeta_onda.dart';
+import '../../../../core/widgets/tarjeta_opcion.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../domain/entities/tecnico_cercano.dart';
 
@@ -60,16 +62,19 @@ class _HeroBusquedaState extends State<HeroBusqueda> {
     widget.onNueva(texto.isEmpty ? null : texto);
   }
 
+  /// Buscador en píldora: ícono, campo sin borde y, a la derecha, el botón
+  /// redondo verde que publica la solicitud.
   Widget _campo(TextTheme textos) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
-    height: 52,
+    padding: const EdgeInsets.only(left: Espacios.l + 2, right: 6),
+    height: 56,
     decoration: BoxDecoration(
-      color: Colores.superficie,
-      borderRadius: BorderRadius.circular(Radios.medio),
+      color: Colores.tarjeta,
+      borderRadius: BorderRadius.circular(Radios.pildora),
+      border: Border.all(color: Colores.linea),
     ),
     child: Row(
       children: [
-        const Icon(Icons.search, color: Colores.primario, size: 24),
+        const Icon(Icons.search_rounded, color: Colores.tintaSuave, size: 22),
         const SizedBox(width: Espacios.m),
         Expanded(
           child: TextField(
@@ -78,10 +83,30 @@ class _HeroBusquedaState extends State<HeroBusqueda> {
             onSubmitted: (_) => _enviar(),
             style: textos.bodyLarge,
             decoration: InputDecoration.collapsed(
-              hintText: '¿Qué necesitas arreglar hoy? Ej. fugas, cerradura...',
+              hintText: 'Ej. fuga de agua, cerradura...',
               hintStyle: textos.bodyLarge?.copyWith(
                 color: Colores.tintaSuave,
                 overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: Espacios.s),
+        Semantics(
+          button: true,
+          label: 'Nueva solicitud',
+          child: Material(
+            color: Colores.primario,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _enviar,
+              child: const SizedBox.square(
+                dimension: 44,
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colores.sobreOscuro,
+                ),
               ),
             ),
           ),
@@ -91,11 +116,11 @@ class _HeroBusquedaState extends State<HeroBusqueda> {
   );
 
   Widget _ubicacion(TextTheme textos) => Container(
-    height: 52,
-    padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
+    height: 56,
+    padding: const EdgeInsets.symmetric(horizontal: Espacios.l + 2),
     decoration: BoxDecoration(
-      color: Colores.primarioSuave,
-      borderRadius: BorderRadius.circular(Radios.medio),
+      color: Colores.cieloSuave,
+      borderRadius: BorderRadius.circular(Radios.pildora),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -125,47 +150,26 @@ class _HeroBusquedaState extends State<HeroBusqueda> {
     ),
   );
 
-  Widget _boton() => SizedBox(
-    height: 52,
-    child: FilledButton.icon(
-      style: FilledButton.styleFrom(minimumSize: const Size(180, 52)),
-      onPressed: _enviar,
-      icon: const Icon(Icons.add),
-      label: const Text('Nueva Solicitud'),
-    ),
-  );
-
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    return TarjetaApp(
-      padding: const EdgeInsets.all(Espacios.l + 4),
+    return TarjetaOnda.clara(
+      titulo: 'Cuéntanos qué pasa',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           LayoutBuilder(
             builder: (context, restricciones) {
-              if (restricciones.maxWidth >= 900) {
+              if (restricciones.maxWidth >= 760) {
                 return Row(
                   children: [
                     Expanded(child: _campo(textos)),
                     const SizedBox(width: Espacios.m),
                     _ubicacion(textos),
-                    const SizedBox(width: Espacios.l),
-                    _boton(),
                   ],
                 );
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _campo(textos),
-                  const SizedBox(height: Espacios.m),
-                  _ubicacion(textos),
-                  const SizedBox(height: Espacios.m),
-                  _boton(),
-                ],
-              );
+              return _campo(textos);
             },
           ),
           const SizedBox(height: Espacios.l),
@@ -184,7 +188,7 @@ class _HeroBusquedaState extends State<HeroBusqueda> {
               ),
               for (final (icono, etiqueta, texto) in _frecuentes)
                 InkWell(
-                  borderRadius: BorderRadius.circular(Radios.pequeno),
+                  borderRadius: BorderRadius.circular(Radios.pildora),
                   onTap: () {
                     _texto.text = texto;
                     _foco.requestFocus();
@@ -195,13 +199,13 @@ class _HeroBusquedaState extends State<HeroBusqueda> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colores.superficie,
-                      borderRadius: BorderRadius.circular(Radios.pequeno),
+                      color: Colores.cieloSuave,
+                      borderRadius: BorderRadius.circular(Radios.pildora),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(icono, size: 14, color: Colores.tintaSuave),
+                        Icon(icono, size: 14, color: Colores.cieloOscuro),
                         const SizedBox(width: 6),
                         Text(etiqueta, style: textos.labelMedium),
                       ],
@@ -254,6 +258,53 @@ class EncabezadoSeccion extends StatelessWidget {
         ),
         ?trailing,
       ],
+    );
+  }
+}
+
+/// Enlace "Ver todos" en la esquina de una tarjeta con onda: píldora clara
+/// con texto oscuro y una flecha.
+class EnlaceVerTodos extends StatelessWidget {
+  const EnlaceVerTodos({super.key, required this.texto, required this.onTap});
+
+  final String texto;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colores.lienzo.withValues(alpha: 0.85),
+      shape: const StadiumBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Espacios.m,
+            Espacios.xs + 2,
+            Espacios.s,
+            Espacios.xs + 2,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                texto,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Colores.tinta,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: Espacios.xs),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                size: 16,
+                color: Colores.tinta,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -347,7 +398,7 @@ class Categorias extends StatelessWidget {
         // nada: un ancho de tarjeta negativo rompe el layout y deja al
         // rastreador del mouse en estado inválido en web.
         if (!ancho.isFinite || ancho <= 0) return const SizedBox.shrink();
-        final columnas = ancho >= 700 ? 4 : (ancho >= 360 ? 3 : 2);
+        final columnas = ancho >= 700 ? 4 : (ancho >= 480 ? 3 : 2);
         final anchoTarjeta = ((ancho - Espacios.m * (columnas - 1)) / columnas)
             .clamp(0.0, ancho);
         return Wrap(
@@ -408,44 +459,11 @@ class _Categoria extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    return TarjetaApp(
+    return TarjetaOpcion(
+      titulo: oficio.nombre,
+      subtitulo: cerca > 0 ? '$cerca activos' : 'Sin técnicos',
+      icono: _icono(oficio.nombre),
       onTap: onTap,
-      padding: const EdgeInsets.all(Espacios.l),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colores.primarioSuave,
-                borderRadius: BorderRadius.circular(Radios.medio),
-              ),
-              child: Icon(
-                _icono(oficio.nombre),
-                color: Colores.primario,
-                size: 28,
-              ),
-            ),
-          ),
-          const SizedBox(height: Espacios.m),
-          Text(
-            oficio.nombre,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: textos.titleSmall,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            cerca > 0 ? '$cerca activos' : 'Sin técnicos',
-            textAlign: TextAlign.center,
-            style: textos.labelSmall?.copyWith(color: Colores.tintaSuave),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -503,10 +521,12 @@ class _Pastilla extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: activa ? Colores.primario : Colores.tarjeta,
-      borderRadius: BorderRadius.circular(Radios.medio),
+      shape: StadiumBorder(
+        side: BorderSide(color: activa ? Colores.primario : Colores.linea),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(Radios.medio),
+        customBorder: const StadiumBorder(),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: Espacios.l,
@@ -784,21 +804,21 @@ class TecnicoFila extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: 64,
-          height: 64,
+          width: 60,
+          height: 60,
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colores.primarioSuave,
-            borderRadius: BorderRadius.circular(Radios.medio),
+          decoration: const BoxDecoration(
+            color: Colores.cieloSuave,
+            shape: BoxShape.circle,
           ),
           child: Text(
             t.iniciales,
-            style: textos.titleLarge?.copyWith(color: Colores.primarioOscuro),
+            style: textos.titleLarge?.copyWith(color: Colores.cieloOscuro),
           ),
         ),
         Positioned(
-          right: -4,
-          bottom: -4,
+          right: 0,
+          bottom: 0,
           child: Container(
             width: 16,
             height: 16,
@@ -915,7 +935,7 @@ class TecnicoFila extends StatelessWidget {
 
     return TarjetaApp(
       onTap: onVerPerfil,
-      padding: const EdgeInsets.all(Espacios.l + 4),
+      padding: const EdgeInsets.all(Espacios.l),
       child: LayoutBuilder(
         builder: (context, restricciones) {
           if (restricciones.maxWidth >= 640) {
@@ -983,10 +1003,10 @@ class BannerConfianza extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: Colores.primarioSuave,
-            borderRadius: BorderRadius.circular(Radios.grande),
+            color: Colores.lienzo.withValues(alpha: 0.8),
+            shape: BoxShape.circle,
           ),
-          child: Icon(datos.$1, color: Colores.primario, size: 26),
+          child: Icon(datos.$1, color: Colores.primario, size: 24),
         ),
         const SizedBox(width: Espacios.l),
         Expanded(
@@ -998,7 +1018,7 @@ class BannerConfianza extends StatelessWidget {
               Text(
                 datos.$3,
                 style: textos.bodyMedium?.copyWith(
-                  color: Colores.tintaSuave,
+                  color: Colores.tinta,
                   height: 1.5,
                 ),
               ),
@@ -1008,9 +1028,8 @@ class BannerConfianza extends StatelessWidget {
       ],
     );
 
-    return TarjetaApp(
-      radio: Radios.muyGrande,
-      padding: const EdgeInsets.all(Espacios.xxl),
+    return TarjetaOnda.verde(
+      titulo: 'Contrata tranquilo',
       child: LayoutBuilder(
         builder: (context, restricciones) {
           if (restricciones.maxWidth >= 640) {
@@ -1045,10 +1064,11 @@ class PieInicio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    final suave = textos.bodySmall?.copyWith(color: Colores.tintaSuave);
+    final suave = textos.bodySmall?.copyWith(
+      color: Colores.sobreOscuro.withValues(alpha: 0.7),
+    );
     return Container(
       width: double.infinity,
-      color: Colores.tarjeta,
       padding: const EdgeInsets.symmetric(
         horizontal: Espacios.xl,
         vertical: Espacios.xl,
@@ -1061,11 +1081,14 @@ class PieInicio extends StatelessWidget {
           spacing: Espacios.xl,
           runSpacing: Espacios.l,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            // Wrap y no Row: en el teléfono el lema baja debajo de la marca
+            // en lugar de desbordar.
+            Wrap(
+              spacing: Espacios.m,
+              runSpacing: Espacios.s,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                const Marca(),
-                const SizedBox(width: Espacios.m),
+                const Marca(sobreOscuro: true),
                 Text(
                   'Plataforma de servicios para el hogar • Quito, Ecuador',
                   style: suave,

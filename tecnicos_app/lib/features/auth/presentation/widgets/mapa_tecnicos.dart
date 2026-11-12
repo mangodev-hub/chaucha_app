@@ -19,9 +19,13 @@ class MapaTecnicos extends StatefulWidget {
     this.onVerPerfil,
     this.onCambiarRadio,
     this.alto = 460,
+    this.radio = Radios.bento,
   });
 
   final double alto;
+
+  /// Radio de las esquinas (tarjeta bento).
+  final double radio;
   final LatLng punto;
   final int radioM;
   final List<TecnicoCercano> tecnicos;
@@ -66,7 +70,7 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colores.superficie,
-        borderRadius: BorderRadius.circular(Radios.muyGrande),
+        borderRadius: BorderRadius.circular(widget.radio),
         border: Border.all(color: Colores.linea),
       ),
       child: Stack(

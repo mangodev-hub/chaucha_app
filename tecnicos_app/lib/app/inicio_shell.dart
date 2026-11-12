@@ -583,8 +583,9 @@ class _IconoActivo extends StatelessWidget {
   }
 }
 
-/// Una pestaña del shell. Con [Destino.saludo], en móvil va el saludo arriba
-/// sobre el fondo oscuro; el contenido siempre va en la hoja clara.
+/// Una pestaña del shell. Las pestañas comunes van en la hoja clara. Las
+/// que tienen [Destino.saludo] (los inicios) se arman con tarjetas bento
+/// directo sobre el fondo oscuro, y en móvil llevan el saludo arriba.
 class _Pagina extends StatelessWidget {
   const _Pagina({required this.destino, required this.escritorio});
 
@@ -594,8 +595,8 @@ class _Pagina extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final saludo = destino.saludo;
-    final hoja = HojaClara(child: destino.vista);
-    if (saludo == null || escritorio) return hoja;
+    if (saludo == null) return HojaClara(child: destino.vista);
+    if (escritorio) return destino.vista;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -608,7 +609,7 @@ class _Pagina extends StatelessWidget {
           ),
           child: EncabezadoSaludo(subtitulo: saludo),
         ),
-        Expanded(child: hoja),
+        Expanded(child: destino.vista),
       ],
     );
   }

@@ -111,7 +111,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               Icons.home_outlined,
               InicioView(esCliente: true),
               iconoActivo: Icons.home_rounded,
-              saludo: '¿Qué arreglamos hoy?',
+              saludo: 'Bienvenido a ChauchaApp',
             ),
             Destino(
               'Mis solicitudes',
