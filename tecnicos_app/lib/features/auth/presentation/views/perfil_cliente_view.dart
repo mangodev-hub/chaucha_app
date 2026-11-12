@@ -1,22 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
 import '../../../../core/widgets/carrusel_aliados.dart';
+import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
 import '../providers/resenas_cliente_provider.dart';
 import '../providers/sesion_provider.dart';
-import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
-
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
 
 const _azul = Colores.primarioVivo;
 const _azulOscuro = Colores.primarioProfundo;
@@ -488,11 +486,11 @@ class _Ubicacion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Tarjeta(
+    return const _Tarjeta(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.location_on_outlined, color: _azul, size: 20),
               SizedBox(width: 8),
@@ -506,10 +504,10 @@ class _Ubicacion extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const _MapaZona(),
-          const SizedBox(height: 12),
-          const Text(
+          SizedBox(height: 12),
+          _MapaZona(),
+          SizedBox(height: 12),
+          Text(
             'Se usa para encontrar técnicos cercanos sin exponer tu domicilio particular.',
             style: TextStyle(color: _gris, fontSize: 13),
           ),
