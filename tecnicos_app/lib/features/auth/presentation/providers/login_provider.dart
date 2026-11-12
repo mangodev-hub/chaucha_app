@@ -27,6 +27,7 @@ class LoginNotifier extends AsyncNotifier<void> {
     required String email,
     required String password,
   }) async {
+    if (state.isLoading) return;
     state = const AsyncLoading();
     final resultado = await asyncGuard(
       () => ref

@@ -32,6 +32,20 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   void _avisarFallo() => setState(() => _fallos++);
 
+  /// Tramo de la animación del técnico según el campo con foco: mira el correo
+  /// mientras se escribe y se tapa los ojos con la contraseña.
+  String _tramo = 'idle';
+
+  void _alCambiarFoco(String tramo, {required bool enfocado}) {
+    setState(() {
+      if (enfocado) {
+        _tramo = tramo;
+      } else if (_tramo == tramo) {
+        _tramo = 'idle';
+      }
+    });
+  }
+
   final _email = TextEditingController();
   final _password = TextEditingController();
 
@@ -64,12 +78,17 @@ class _LoginViewState extends ConsumerState<LoginView> {
         ? null
         : AsyncValueView.mensajeDe(estadoLogin.error!);
 
+    final textos = Theme.of(context).textTheme;
+
     return AuthLayout(
-      titulo: 'Iniciar sesión',
+      titulo: 'Hola de nuevo',
       tituloCentrado: true,
-      subtitulo: 'Ingresa tus datos para gestionar tus servicios del hogar.',
+      subtitulo: 'Entra para ver tus solicitudes y chats.',
       anchoEscritorio: 440,
       panelDetallado: true,
+      animacionEscritorio: 'assets/lottie/tecnico.json',
+      animacionMovil: 'assets/lottie/tecnico_login.json',
+      tramoAnimacion: _tramo,
       child: AutofillGroup(
         child: Form(
           key: _formKey,
@@ -84,28 +103,43 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 ),
               CampoEtiquetado(
                 etiqueta: 'Correo electrónico',
-                child: TextFormField(
-                  controller: _email,
-                  decoration: const InputDecoration(
-                    hintText: 'ejemplo@correo.com',
-                    prefixIcon: Icon(Icons.mail_outline),
+                // Solo escucha el foco del campo: no lo pide ni cambia el Tab.
+                child: Focus(
+                  canRequestFocus: false,
+                  skipTraversal: true,
+                  onFocusChange: (enfocado) =>
+                      _alCambiarFoco('email', enfocado: enfocado),
+                  child: TextFormField(
+                    controller: _email,
+                    decoration: const InputDecoration(
+                      hintText: 'ejemplo@correo.com',
+                      prefixIcon: Icon(Icons.mail_outline),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    textInputAction: TextInputAction.next,
+                    validator: FormValidators.email,
                   ),
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  textInputAction: TextInputAction.next,
-                  validator: FormValidators.email,
                 ),
               ),
               const SizedBox(height: Espacios.xl),
               CampoEtiquetado(
                 etiqueta: 'Contraseña',
-                child: CampoContrasena(
-                  controller: _password,
-                  hintText: 'Tu contraseña',
-                  autofillHints: const [AutofillHints.password],
-                  onFieldSubmitted: (_) => _enviar(),
-                  validator: (valor) =>
-                      FormValidators.requerido(valor, campo: 'La contraseña'),
+                child: Focus(
+                  canRequestFocus: false,
+                  skipTraversal: true,
+                  onFocusChange: (enfocado) =>
+                      _alCambiarFoco('password', enfocado: enfocado),
+                  child: CampoContrasena(
+                    controller: _password,
+                    hintText: 'Tu contraseña',
+                    autofillHints: const [AutofillHints.password],
+                    onFieldSubmitted: (_) => _enviar(),
+                    validator: (valor) => FormValidators.requerido(
+                      valor,
+                      campo: 'La contraseña',
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: Espacios.s),
@@ -134,9 +168,29 @@ class _LoginViewState extends ConsumerState<LoginView> {
                     : () => ref.read(loginProvider.notifier).iniciarConGoogle(),
               ),
               const SizedBox(height: Espacios.l),
-              OutlinedButton(
-                onPressed: () => context.go(AppRoutes.registro),
-                child: const Text('Crear cuenta nueva'),
+              // Enlace en verde y negrita, como en el lienzo del rediseño.
+              Center(
+                child: TextButton(
+                  onPressed: () => context.go(AppRoutes.registro),
+                  child: Text.rich(
+                    TextSpan(
+                      text: '¿No tienes cuenta? ',
+                      style: textos.bodyMedium?.copyWith(
+                        color: Colores.tintaSuave,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      children: const [
+                        TextSpan(
+                          text: 'Regístrate',
+                          style: TextStyle(
+                            color: Colores.primario,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

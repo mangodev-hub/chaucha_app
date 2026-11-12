@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/animacion_lottie.dart';
 import '../../../../core/widgets/encabezado_pantalla.dart';
 import '../../../../core/widgets/marca.dart';
 import '../../../../core/widgets/responsive_layout.dart';
@@ -20,9 +21,30 @@ class AuthLayout extends StatelessWidget {
     this.anchoEscritorio = 400,
     this.esRegistro = false,
     this.panelDetallado = false,
+    this.animacionEscritorio,
+    this.animacionMovil,
+    this.tramoAnimacion,
   });
 
   static const double _anchoMaximoTarjeta = 460;
+
+  /// Caja visible (ancho / alto) de `tecnico.json`, el técnico que saluda en
+  /// el panel de escritorio: recorta el margen vacío de su lienzo (1200 × 896),
+  /// donde el personaje ocupa el centro.
+  static const double _proporcionEscritorio = 0.7;
+
+  /// Medidas de `tecnico_login.json`, el técnico de móvil (lienzo de 800 × 594,
+  /// con los antebrazos cruzados en el borde inferior). Si se cambia el
+  /// dibujo, se ajustan aquí.
+  ///
+  /// Caja visible: el dibujo ocupa todo el ancho del lienzo.
+  static const double _proporcionMovil = 800 / 594;
+
+  /// Alto del personaje en móvil y la fracción de ese alto donde se apoyan sus
+  /// antebrazos. La tarjeta empieza ahí, así el personaje queda acodado sobre
+  /// su borde superior.
+  static const double _altoPersonajeMovil = 150;
+  static const double _apoyoPersonaje = 0.96;
 
   final String titulo;
   final String? subtitulo;
@@ -32,6 +54,18 @@ class AuthLayout extends StatelessWidget {
   /// En escritorio: panel azul con beneficios y título alineado a la izquierda.
   final bool esRegistro;
   final bool panelDetallado;
+
+  /// Animación Lottie opcional del panel azul de escritorio: ocupa su centro
+  /// (en lugar de los beneficios y el dibujo) y se repite entera.
+  final String? animacionEscritorio;
+
+  /// Animación Lottie opcional de móvil: el personaje queda apoyado sobre el
+  /// borde superior de la tarjeta, con el logo arriba.
+  final String? animacionMovil;
+
+  /// Tramo (marcador) de [animacionMovil] que se reproduce, por ejemplo
+  /// "email" mientras se escribe el correo. Sin tramo, se repite entera.
+  final String? tramoAnimacion;
   final Widget child;
 
   @override
@@ -56,6 +90,8 @@ class AuthLayout extends StatelessWidget {
               subtitulo: subtitulo,
               tituloCentrado: tituloCentrado,
               conMarca: true,
+              animacion: animacionMovil,
+              tramoAnimacion: tramoAnimacion,
               child: child,
             ),
           ),
@@ -64,7 +100,10 @@ class AuthLayout extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: _PanelMarca(detallado: esRegistro || panelDetallado),
+              child: _PanelMarca(
+                detallado: esRegistro || panelDetallado,
+                animacion: animacionEscritorio,
+              ),
             ),
             Expanded(
               child: _FormularioEscritorio(
@@ -128,9 +167,10 @@ class _FormularioEscritorio extends StatelessWidget {
 }
 
 class _PanelMarca extends StatelessWidget {
-  const _PanelMarca({this.detallado = false});
+  const _PanelMarca({this.detallado = false, this.animacion});
 
   final bool detallado;
+  final String? animacion;
 
   static const _beneficios = [
     (
@@ -150,7 +190,7 @@ class _PanelMarca extends StatelessWidget {
     ),
   ];
 
-  Text _titular(TextStyle? estilo) => Text.rich(
+  Text _titular(TextStyle? estilo, {TextAlign? alineacion}) => Text.rich(
     const TextSpan(
       children: [
         TextSpan(text: 'Técnicos de '),
@@ -161,8 +201,43 @@ class _PanelMarca extends StatelessWidget {
         TextSpan(text: ' a tu puerta en Quito.'),
       ],
     ),
+    textAlign: alineacion,
     style: estilo?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
   );
+
+  /// Animación grande al centro del panel con el titular debajo. El tamaño se
+  /// adapta al panel (deja lugar para el titular, no se sale por los lados) y
+  /// no pasa de 440 de alto.
+  Widget _contenidoAnimado(TextTheme textos, String ruta) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final alto = [
+          c.maxHeight - 140,
+          c.maxWidth / AuthLayout._proporcionEscritorio,
+          440.0,
+        ].reduce((a, b) => a < b ? a : b);
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (alto >= 120)
+              AnimacionLottie(
+                ruta: ruta,
+                alto: alto,
+                proporcion: AuthLayout._proporcionEscritorio,
+              ),
+            const SizedBox(height: Espacios.xl),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: _titular(
+                textos.headlineSmall,
+                alineacion: TextAlign.center,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _beneficio(
     TextTheme textos,
@@ -240,6 +315,7 @@ class _PanelMarca extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
+    final animacion = this.animacion;
     return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -257,12 +333,15 @@ class _PanelMarca extends StatelessWidget {
               child: Marca(grande: true, sobreOscuro: true),
             ),
             Expanded(
-              child: Center(
-                child: detallado
-                    ? _contenidoDetallado(textos)
-                    : _titular(textos.displaySmall),
-              ),
+              child: animacion != null
+                  ? _contenidoAnimado(textos, animacion)
+                  : Center(
+                      child: detallado
+                          ? _contenidoDetallado(textos)
+                          : _titular(textos.displaySmall),
+                    ),
             ),
+            if (animacion == null)
               LayoutBuilder(
                 builder: (context, c) => SvgPicture.asset(
                   'assets/img/tecnicos.svg',
@@ -284,52 +363,115 @@ class _Tarjeta extends StatelessWidget {
     required this.subtitulo,
     required this.tituloCentrado,
     required this.conMarca,
+    required this.animacion,
+    required this.tramoAnimacion,
     required this.child,
   });
 
+  final String? tramoAnimacion;
   final String titulo;
   final String? subtitulo;
   final bool tituloCentrado;
   final bool conMarca;
+  final String? animacion;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    final animacion = this.animacion;
+    final formulario = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (conMarca && animacion == null) ...[
+          const Marca.vertical(),
+          const SizedBox(height: Espacios.xl),
+        ],
+        EncabezadoPantalla(
+          titulo: titulo,
+          subtitulo: subtitulo,
+          centrado: tituloCentrado,
+          grande: tituloCentrado,
+        ),
+        const SizedBox(height: Espacios.xl),
+        child,
+      ],
+    );
+
+    if (animacion == null) {
+      return Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Espacios.l,
+            vertical: Espacios.xl,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AuthLayout._anchoMaximoTarjeta,
+            ),
+            child: TarjetaApp(
+              radio: Radios.muyGrande,
+              padding: const EdgeInsets.fromLTRB(
+                Espacios.xl,
+                Espacios.xxl,
+                Espacios.xl,
+                Espacios.xl,
+              ),
+              child: formulario,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Con animación: logo arriba, el personaje apoyado sobre el borde superior
+    // de la tarjeta (superpuesto con un Stack) y el formulario dentro. Si no
+    // alcanza el alto (pantalla baja o teclado abierto), se baja con scroll.
+    const alto = AuthLayout._altoPersonajeMovil;
+    const bordeTarjeta = alto * AuthLayout._apoyoPersonaje;
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Espacios.l,
-          vertical: Espacios.xl,
-        ),
+        padding: const EdgeInsets.all(Espacios.l),
         child: ConstrainedBox(
           constraints: const BoxConstraints(
             maxWidth: AuthLayout._anchoMaximoTarjeta,
           ),
-          child: TarjetaApp(
-            radio: Radios.muyGrande,
-            padding: const EdgeInsets.fromLTRB(
-              Espacios.xl,
-              Espacios.xxl,
-              Espacios.xl,
-              Espacios.xl,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (conMarca) ...[
-                  const Marca.vertical(),
-                  const SizedBox(height: Espacios.xl),
-                ],
-                EncabezadoPantalla(
-                  titulo: titulo,
-                  subtitulo: subtitulo,
-                  centrado: tituloCentrado,
-                  grande: tituloCentrado,
-                ),
-                const SizedBox(height: Espacios.xl),
-                child,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (conMarca) ...[
+                const Center(child: Marca()),
+                const SizedBox(height: Espacios.s),
               ],
-            ),
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.topCenter,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: bordeTarjeta),
+                    child: TarjetaApp(
+                      radio: Radios.muyGrande,
+                      // Arriba suma lo que el personaje entra en la tarjeta,
+                      // para que el título no quede pegado a sus pies.
+                      padding: const EdgeInsets.fromLTRB(
+                        Espacios.l,
+                        Espacios.l + (alto - bordeTarjeta),
+                        Espacios.l,
+                        Espacios.l,
+                      ),
+                      child: formulario,
+                    ),
+                  ),
+                  // Va después de la tarjeta para dibujarse encima de su borde.
+                  AnimacionLottie(
+                    ruta: animacion,
+                    alto: alto,
+                    proporcion: AuthLayout._proporcionMovil,
+                    tramo: tramoAnimacion,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
