@@ -1,16 +1,17 @@
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/media/selector_fotos.dart';
+import '../../../../core/media/selfie_camara.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../providers/selfie_provider.dart';
 import '../widgets/auth_layout.dart';
-import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import '../../../../core/media/selfie_camara.dart';
 
 class SelfieView extends ConsumerWidget {
   const SelfieView({super.key, required this.onCerrarSesion});
