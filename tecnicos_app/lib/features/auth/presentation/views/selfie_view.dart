@@ -8,16 +8,22 @@ import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../providers/selfie_provider.dart';
 import '../widgets/auth_layout.dart';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../../core/media/selfie_camara.dart';
 
 class SelfieView extends ConsumerWidget {
   const SelfieView({super.key, required this.onCerrarSesion});
 
   final Future<void> Function() onCerrarSesion;
 
-  Future<void> _tomar(WidgetRef ref) async {
-    final bytes = await SelectorFotos.una(camara: true);
-    if (bytes != null) await ref.read(selfieProvider.notifier).enviar(bytes);
-  }
+Future<void> _tomar(BuildContext context, WidgetRef ref) async {
+  final Uint8List? bytes = kIsWeb
+      ? await Navigator.of(context).push<Uint8List>(
+          MaterialPageRoute(builder: (_) => const SelfieCamara()))
+      : await SelectorFotos.una(camara: true);
+  if (bytes != null) await ref.read(selfieProvider.notifier).enviar(bytes);
+}
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,7 +51,7 @@ class SelfieView extends ConsumerWidget {
             texto: 'Tomar selfie',
             icono: Icons.camera_alt_outlined,
             cargando: cargando,
-            onPressed: () => _tomar(ref),
+            onPressed: () => _tomar(context, ref),
           ),
           TextButton(
             onPressed: cargando ? null : onCerrarSesion,
