@@ -753,9 +753,17 @@ class TecnicoCard extends StatelessWidget {
 
 /// Técnico en una fila: datos a la izquierda, tarifa y botones a la derecha.
 class TecnicoFila extends StatelessWidget {
-  const TecnicoFila({super.key, required this.tecnico, this.onSolicitar});
+  const TecnicoFila({
+    super.key,
+    required this.tecnico,
+    this.onSolicitar,
+    this.onVerPerfil,
+  });
 
   final TecnicoCercano tecnico;
+
+  /// Abre el perfil público del técnico al tocar la tarjeta.
+  final VoidCallback? onVerPerfil;
 
   /// Null para el técnico (solo el cliente puede solicitar).
   final VoidCallback? onSolicitar;
@@ -901,6 +909,7 @@ class TecnicoFila extends StatelessWidget {
     );
 
     return TarjetaApp(
+      onTap: onVerPerfil,
       padding: const EdgeInsets.all(Espacios.l + 4),
       child: LayoutBuilder(
         builder: (context, restricciones) {

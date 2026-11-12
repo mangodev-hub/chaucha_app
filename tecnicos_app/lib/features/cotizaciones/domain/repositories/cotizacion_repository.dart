@@ -2,8 +2,8 @@
 // lanzan [AppFailure] si fallan.
 import '../entities/cotizacion.dart';
 import '../entities/nueva_cotizacion.dart';
-import '../entities/tarifa.dart';
 import '../entities/rango_ocupado.dart';
+import '../entities/tarifa.dart';
 
 abstract interface class CotizacionRepository {
   /// Ofertas de una solicitud, de la más antigua a la más nueva.

@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/media/selector_fotos.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/refrescar.dart';
@@ -35,18 +36,17 @@ import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.d
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/presentation/widgets/cotizacion_widgets.dart';
 import '../../../cotizaciones/presentation/widgets/selector_franja.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_dialog.dart';
 import '../../domain/entities/detalle_solicitud.dart';
 import '../../domain/entities/foto_solicitud.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/detalle_provider.dart';
+import '../providers/novedades_provider.dart';
 import '../widgets/detalle_widgets.dart';
 import '../widgets/editar_solicitud_dialog.dart';
 import '../widgets/solicitud_widgets.dart';
-import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
-import '../providers/novedades_provider.dart';
-import '../../../../core/providers/core_providers.dart';
 
 /// Acción principal del detalle según el rol y el estado.
 typedef _Accion = ({String texto, IconData icono, VoidCallback alPulsar});
@@ -301,8 +301,14 @@ Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) asyn
     context.go(esCliente ? AppRoutes.clienteInicio : AppRoutes.tecnicoInicio);
   }
 
-  void _verPerfil(String tecnicoId) =>
-      unawaited(context.push(AppRoutes.perfilTecnico(tecnicoId)));
+  void _verPerfil(String tecnicoId) => unawaited(
+    context.push(
+      AppRoutes.perfilTecnico(
+        tecnicoId,
+        esCliente: ref.read(usuarioActualProvider)?.rol != Rol.tecnico,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -360,6 +366,7 @@ Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) asyn
               ? _Escritorio(
                   izquierda: [
                     EncabezadoSolicitud(solicitud: datos.solicitud),
+                    ..._cliente(datos),
                     ..._evidencia(datos),
                     ..._fotosProblema(datos),
                     ..._ubicacion(datos, altura: 280),
@@ -376,6 +383,7 @@ Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) asyn
               : _Movil(
                   children: [
                     EncabezadoSolicitud(solicitud: datos.solicitud),
+                    ..._cliente(datos),
                     const SizedBox(height: Espacios.l),
                     QueSigueCard(detalle: datos),
                     // Por confirmar, la evidencia es lo que hay que revisar.
@@ -446,6 +454,22 @@ Future<void> _cancelarVisita(String cotizacionId, {bool esCliente = false}) asyn
       );
     }
     return null;
+  }
+
+  List<Widget> _cliente(DetalleSolicitud d) {
+    if (ref.read(usuarioActualProvider)?.rol != Rol.tecnico) return const [];
+    return [
+      Padding(
+        padding: const EdgeInsets.only(top: Espacios.m),
+        child: OutlinedButton.icon(
+          onPressed: () => unawaited(
+            context.push(AppRoutes.perfilCliente(d.solicitud.clienteId)),
+          ),
+          icon: const Icon(Icons.person_outline),
+          label: const Text('Ver perfil del cliente'),
+        ),
+      ),
+    ];
   }
 
   List<Widget> _evidencia(DetalleSolicitud d) {

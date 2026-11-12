@@ -6,6 +6,7 @@ import '../core/theme/tokens.dart';
 import '../core/utils/formatos.dart';
 import '../core/validators/form_validators.dart';
 import '../core/widgets/async_value_view.dart';
+import '../core/widgets/avatar_usuario.dart';
 import '../core/widgets/campos.dart';
 import '../core/widgets/mensajes.dart';
 import '../features/auth/data/repositories/supabase_auth_repository.dart';
@@ -67,23 +68,11 @@ class MenuCuenta extends ConsumerWidget {
     final correo = ref.watch(authRepositoryProvider).correoActual;
     final textos = Theme.of(context).textTheme;
     final nombre = usuario?.nombres ?? '';
-    final inicial = nombre.isEmpty ? '?' : nombre[0].toUpperCase();
 
-    Widget avatar(double lado) => Container(
-      width: lado,
-      height: lado,
-      alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: Colores.primario,
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        inicial,
-        style: textos.labelLarge?.copyWith(
-          color: Colores.tarjeta,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+    Widget avatar(double lado) => AvatarUsuario(
+      nombre: usuario?.nombreCompleto ?? nombre,
+      rutaFoto: usuario?.fotoPerfilRuta,
+      radio: lado / 2,
     );
 
     return PopupMenuButton<_Op>(

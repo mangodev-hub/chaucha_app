@@ -28,7 +28,6 @@ import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dar
 import '../../domain/entities/nueva_solicitud.dart';
 import '../providers/crear_solicitud_provider.dart';
 import '../widgets/solicitud_publicada.dart';
-import '../../../auth/presentation/providers/sesion_provider.dart';
 
 class CrearSolicitudView extends ConsumerStatefulWidget {
   const CrearSolicitudView({super.key, this.oficioId, this.descripcion});

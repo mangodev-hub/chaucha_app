@@ -15,10 +15,10 @@ import '../features/auth/presentation/views/completar_perfil_view.dart';
 import '../features/auth/presentation/views/inicio_view.dart';
 import '../features/auth/presentation/views/login_view.dart';
 import '../features/auth/presentation/views/perfil_cliente_view.dart';
-import '../features/auth/presentation/views/selfie_view.dart';
 import '../features/auth/presentation/views/recuperar_view.dart';
 import '../features/auth/presentation/views/registro_view.dart';
 import '../features/auth/presentation/views/restablecer_view.dart';
+import '../features/auth/presentation/views/selfie_view.dart';
 import '../features/chat/presentation/views/chat_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_publico_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_tecnico_view.dart';
@@ -195,6 +195,18 @@ Future<void> cerrarSesion() async {
             builder: (context, state) => detalle(state),
           ),
           GoRoute(path: 'chat/:id', builder: (context, state) => chat(state)),
+          GoRoute(
+            path: 'tecnico/:id',
+            builder: (context, state) =>
+                PerfilPublicoView(tecnicoId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'cliente/:id',
+            builder: (context, state) => PerfilPublicoView(
+              tecnicoId: state.pathParameters['id']!,
+              esCliente: true,
+            ),
+          ),
         ],
       ),
       GoRoute(

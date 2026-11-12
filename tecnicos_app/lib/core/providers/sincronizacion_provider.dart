@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'core_providers.dart';
 import '../../features/solicitudes/presentation/providers/agenda_provider.dart';
 import '../../features/solicitudes/presentation/providers/feed_provider.dart';
 import '../../features/solicitudes/presentation/providers/listas_provider.dart';
+import 'core_providers.dart';
 
 final sincronizacionProvider = Provider.autoDispose<void>((ref) {
   final cliente = ref.watch(supabaseClientProvider);

@@ -16,6 +16,7 @@ class MapaTecnicos extends StatefulWidget {
     required this.radioM,
     required this.tecnicos,
     this.onContactar,
+    this.onVerPerfil,
     this.onCambiarRadio,
     this.alto = 460,
   });
@@ -25,6 +26,7 @@ class MapaTecnicos extends StatefulWidget {
   final int radioM;
   final List<TecnicoCercano> tecnicos;
   final ValueChanged<TecnicoCercano>? onContactar;
+  final ValueChanged<TecnicoCercano>? onVerPerfil;
   final ValueChanged<int>? onCambiarRadio;
 
   @override
@@ -159,6 +161,9 @@ class _MapaTecnicosState extends State<MapaTecnicos> {
                 onContactar: widget.onContactar == null
                     ? null
                     : () => widget.onContactar!(cercano),
+                onVerPerfil: widget.onVerPerfil == null
+                    ? null
+                    : () => widget.onVerPerfil!(cercano),
               ),
             ),
         ],
@@ -236,7 +241,7 @@ class _Pin extends StatelessWidget {
 }
 
 class ControlesMapa extends StatelessWidget {
-  const ControlesMapa({
+  const ControlesMapa({super.key, 
     required this.onMas,
     required this.onMenos,
     required this.onCentrar,
@@ -292,7 +297,7 @@ class ControlesMapa extends StatelessWidget {
 }
 
 class ControlRadio extends StatelessWidget {
-  const ControlRadio({required this.km, required this.onCambio, this.onFin});
+  const ControlRadio({super.key, required this.km, required this.onCambio, this.onFin});
 
   final double km;
   final ValueChanged<double> onCambio;
@@ -333,10 +338,15 @@ class ControlRadio extends StatelessWidget {
 }
 
 class _TarjetaCercano extends StatelessWidget {
-  const _TarjetaCercano({required this.tecnico, this.onContactar});
+  const _TarjetaCercano({
+    required this.tecnico,
+    this.onContactar,
+    this.onVerPerfil,
+  });
 
   final TecnicoCercano tecnico;
   final VoidCallback? onContactar;
+  final VoidCallback? onVerPerfil;
 
   @override
   Widget build(BuildContext context) {
@@ -392,7 +402,10 @@ class _TarjetaCercano extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Espacios.m),
-          Row(
+          InkWell(
+            borderRadius: BorderRadius.circular(Radios.medio),
+            onTap: onVerPerfil,
+            child: Row(
             children: [
               Container(
                 width: 44,
@@ -441,6 +454,7 @@ class _TarjetaCercano extends StatelessWidget {
                 ),
               ],
             ],
+          ),
           ),
         ],
       ),

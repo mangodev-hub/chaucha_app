@@ -28,6 +28,15 @@ abstract final class Formatos {
         '${dos(fecha.day)}/${dos(fecha.month)}/${fecha.year}';
   }
 
+  /// "Nov 2026" (miembro desde).
+  static String mesAnio(DateTime f) {
+    const m = [
+      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+    ];
+    return '${m[f.month - 1]} ${f.year}';
+  }
+
   static String hora(DateTime fecha) =>
       '${fecha.hour.toString().padLeft(2, '0')}:'
       '${fecha.minute.toString().padLeft(2, '0')}';
