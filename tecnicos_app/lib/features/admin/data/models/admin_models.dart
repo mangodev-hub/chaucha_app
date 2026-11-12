@@ -54,11 +54,13 @@ abstract final class SolicitudAdminModel {
   }
 }
 
-/// `documentos_tecnico` con el técnico (perfil → usuario → identidad).
+/// `documentos_tecnico` con su dueño (usuario → identidad). La llave
+/// `tecnico_id` apunta a `usuarios` (no a `perfiles_tecnicos`) porque los
+/// clientes también suben documentos para verificarse.
 abstract final class RevisionTecnicoModel {
   static const String columnas =
       '${DocumentoTecnicoModel.columnas}, tecnico_id, '
-      'perfiles_tecnicos(usuarios!fk_perfiles_usuario(nombres, apellidos, identidades(cedula)))';
+      'usuarios!fk_documentos_tecnico(nombres, apellidos, identidades(cedula))';
 
   /// Agrupa las filas por técnico, conservando el orden de llegada.
   static List<RevisionTecnico> agrupar(
@@ -74,13 +76,11 @@ abstract final class RevisionTecnicoModel {
       final url = urls[doc.ruta];
       (documentos[tecnicoId] ??= []).add(url == null ? doc : doc.conUrl(url));
       if (!nombres.containsKey(tecnicoId)) {
-        final usuario = anidado(
-          anidado(fila['perfiles_tecnicos'])?['usuarios'],
-        );
+        final usuario = anidado(fila['usuarios']);
         final nombre =
             '${usuario?['nombres'] ?? ''} ${usuario?['apellidos'] ?? ''}'
                 .trim();
-        nombres[tecnicoId] = nombre.isEmpty ? 'Técnico' : nombre;
+        nombres[tecnicoId] = nombre.isEmpty ? 'Usuario' : nombre;
         cedulas[tecnicoId] =
             anidado(usuario?['identidades'])?['cedula'] as String?;
       }
