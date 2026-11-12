@@ -12,6 +12,7 @@ import '../features/notificaciones/presentation/providers/notificaciones_provide
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
 import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
 import 'menu_cuenta.dart';
+import 'pestana_solicitada.dart';
 
 class Destino {
   const Destino(
@@ -83,6 +84,12 @@ class _InicioShellState extends ConsumerState<InicioShell> {
   @override
   Widget build(BuildContext context) {
     ref.watch(sincronizacionProvider);
+    ref.listen(pestanaSolicitadaProvider, (_, titulo) {
+      if (titulo == null) return;
+      final i = widget.destinos.indexWhere((d) => d.titulo == titulo);
+      if (i >= 0) _cambiar(i);
+      ref.read(pestanaSolicitadaProvider.notifier).limpiar();
+    });
     return EscuchaNotificaciones(child: _contenido(context));
   }
 

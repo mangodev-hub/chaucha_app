@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../app/pestana_solicitada.dart';
 import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/tokens.dart';
@@ -50,6 +51,8 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
 
   final _formKey = GlobalKey<FormState>();
   final _tarifa = TextEditingController();
+  final _claveOficios = GlobalKey();
+  final _claveZona = GlobalKey();
 
   // Estado del formulario. Se llena una sola vez, con el primer perfil cargado.
   bool _inicializado = false;
@@ -65,6 +68,23 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
     ref.listenManual(perfilTecnicoProvider, (_, estado) {
       if (estado case AsyncData(:final value)) _inicializar(value);
     }, fireImmediately: true);
+    ref.listenManual(seccionPerfilProvider, (_, seccion) {
+      if (seccion == null) return;
+      ref.read(seccionPerfilProvider.notifier).limpiar();
+      // Espera al cambio de pestaña para que la sección ya esté visible.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final contexto =
+            (seccion == 'zona' ? _claveZona : _claveOficios).currentContext;
+        if (contexto == null) return;
+        unawaited(
+          Scrollable.ensureVisible(
+            contexto,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          ),
+        );
+      });
+    });
   }
 
   @override
@@ -175,17 +195,23 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
             validator: (v) => FormValidators.monto(v, campo: 'La tarifa'),
           ),
         );
-        final oficios = BloqueTarjeta(
-          icono: Icons.handyman_outlined,
-          titulo: 'Mis oficios',
-          subtitulo: 'Verás solicitudes de los oficios que elijas.',
-          child: _oficios(),
+        final oficios = KeyedSubtree(
+          key: _claveOficios,
+          child: BloqueTarjeta(
+            icono: Icons.handyman_outlined,
+            titulo: 'Mis oficios',
+            subtitulo: 'Verás solicitudes de los oficios que elijas.',
+            child: _oficios(),
+          ),
         );
-        final zona = BloqueTarjeta(
-          icono: Icons.map_outlined,
-          titulo: 'Zona de trabajo',
-          subtitulo: 'Toca el mapa para mover tu punto de partida.',
-          child: _zona(),
+        final zona = KeyedSubtree(
+          key: _claveZona,
+          child: BloqueTarjeta(
+            icono: Icons.map_outlined,
+            titulo: 'Zona de trabajo',
+            subtitulo: 'Toca el mapa para mover tu punto de partida.',
+            child: _zona(),
+          ),
         );
 
         if (escritorio) {
