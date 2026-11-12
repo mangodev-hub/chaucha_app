@@ -69,11 +69,30 @@ class SupabaseDocumentoRepository implements DocumentoRepository {
         ruta: ruta,
         bytes: bytes,
       );
-      await _client.from(_tabla).insert({
-        'tecnico_id': uid,
-        'tipo': tipo.valorDb,
-        'ruta_archivo': ruta,
-      });
+      final previo = await _client
+          .from(_tabla)
+          .select('tipo')
+          .eq('tecnico_id', uid)
+          .eq('tipo', tipo.valorDb)
+          .maybeSingle();
+      if (previo == null) {
+        await _client.from(_tabla).insert({
+          'tecnico_id': uid,
+          'tipo': tipo.valorDb,
+          'ruta_archivo': ruta,
+        });
+      } else {
+        await _client
+            .from(_tabla)
+            .update({
+              'ruta_archivo': ruta,
+              'estado': 'pendiente',
+              'revisado_por': null,
+              'revisado_en': null,
+            })
+            .eq('tecnico_id', uid)
+            .eq('tipo', tipo.valorDb);
+      }
     });
   }
 }
