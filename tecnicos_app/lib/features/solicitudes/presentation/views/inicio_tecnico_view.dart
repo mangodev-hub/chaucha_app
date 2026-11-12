@@ -17,7 +17,6 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
-import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
@@ -25,12 +24,9 @@ import '../../../../core/widgets/tarjeta_portada.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../chat/domain/entities/conversacion_pendiente.dart';
 import '../../../chat/presentation/widgets/chat_flotante.dart';
-import '../../../perfil_puntos/domain/entities/nivel.dart';
-import '../../../perfil_puntos/domain/entities/perfil_tecnico.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_publico_provider.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 import '../../../perfil_puntos/presentation/views/verificacion_view.dart';
-import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
 import '../../domain/entities/feed.dart';
 import '../../domain/entities/resumen_tecnico.dart';
 import '../../domain/entities/solicitud.dart';
@@ -39,6 +35,7 @@ import '../providers/inicio_tecnico_provider.dart';
 import '../providers/listas_provider.dart';
 import '../widgets/mapa_zona_perfil.dart';
 import '../widgets/solicitud_widgets.dart';
+import '../../../../core/widgets/carrusel_aliados.dart';
 
 class InicioTecnicoView extends ConsumerWidget {
   const InicioTecnicoView({super.key});
@@ -61,7 +58,7 @@ class InicioTecnicoView extends ConsumerWidget {
     final escritorio = ResponsiveLayout.isDesktop(context);
 
     const urgente = [_ParaEmpezar(), _Pendientes(), _NuevasCerca()];
-    const progreso = [_Actividad(), _Reputacion()];
+    const progreso = [ _Publicidad()];
     const derecha = [_MapaZona(), ...progreso];
 
     return RefreshIndicator(
@@ -302,6 +299,14 @@ class _Pendientes extends ConsumerWidget {
   }
 }
 
+class _Publicidad extends StatelessWidget {
+  const _Publicidad();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Seccion(titulo: 'Para ti', child: CarruselAliados());
+}
+
 Future<void> _abrirSolicitud(
   BuildContext context,
   WidgetRef ref,
@@ -374,7 +379,6 @@ class _ChatPendiente extends ConsumerWidget {
 class _NuevasCerca extends ConsumerWidget {
   const _NuevasCerca();
 
-  static const int _cuantas = 3;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -406,7 +410,7 @@ class _NuevasCerca extends ConsumerWidget {
             children: [
               CuadriculaAdaptable(
                 children: [
-                  for (final item in recientes.take(_cuantas))
+                  for (final item in recientes)
                     SolicitudCard(
                       solicitud: item.solicitud,
                       distancia: Formatos.distancia(item.distanciaMetros),
@@ -416,12 +420,6 @@ class _NuevasCerca extends ConsumerWidget {
                     ),
                 ],
               ),
-              if (recientes.length > _cuantas)
-                _Mas(
-                  texto:
-                      'Hay ${recientes.length - _cuantas} más en la pestaña '
-                      '"Solicitudes cerca".',
-                ),
             ],
           );
         },
@@ -429,246 +427,6 @@ class _NuevasCerca extends ConsumerWidget {
     );
   }
 }
-
-// Tu actividad
-
-class _Actividad extends ConsumerWidget {
-  const _Actividad();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Seccion(
-      titulo: 'Tu actividad',
-      child: _AsyncCompacto<ResumenTecnico>(
-        valor: ref.watch(resumenTecnicoProvider),
-        onReintentar: () => ref.invalidate(resumenTecnicoProvider),
-        contenido: (r) => CuadriculaAdaptable(
-          anchoMinimo: 0,
-          children: [
-            _Dato(
-              icono: Icons.local_offer_outlined,
-              color: Colores.info,
-              valor: '${r.ofertasPendientes}',
-              etiqueta: 'Ofertas pendientes',
-            ),
-            _Dato(
-              icono: Icons.receipt_long_outlined,
-              color: Colores.aviso,
-              valor: '${r.ticketsPorConfirmar}',
-              etiqueta: 'Tickets por confirmar',
-            ),
-            _Dato(
-              icono: Icons.task_alt,
-              color: Colores.acento,
-              valor: '${r.completados}',
-              etiqueta: 'Trabajos completados',
-            ),
-            _Dato(
-              icono: Icons.payments_outlined,
-              color: Colores.primario,
-              valor: Formatos.dinero(r.ganadoEsteMes),
-              etiqueta: 'Ganado este mes',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Dato extends StatelessWidget {
-  const _Dato({
-    required this.icono,
-    required this.color,
-    required this.valor,
-    required this.etiqueta,
-  });
-
-  final IconData icono;
-  final Color color;
-  final String valor;
-  final String etiqueta;
-
-  @override
-  Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    return TarjetaApp(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icono, color: color),
-          const SizedBox(height: Espacios.s),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(valor, style: textos.headlineSmall),
-          ),
-          Text(
-            etiqueta,
-            maxLines: 2,
-            style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Tu reputación
-
-class _Reputacion extends ConsumerWidget {
-  const _Reputacion();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final miId = ref.watch(usuarioActualProvider)?.id;
-    return Seccion(
-      titulo: 'Tu reputación',
-      child: _AsyncCompacto<PerfilTecnico>(
-        valor: ref.watch(perfilTecnicoProvider),
-        onReintentar: () => ref.invalidate(perfilTecnicoProvider),
-        contenido: (perfil) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _TarjetaNivel(
-              perfil: perfil,
-              // Si no cargan los niveles, solo no se muestra el progreso.
-              niveles: ref.watch(nivelesProvider).value,
-            ),
-            if (miId != null) _UltimasResenas(tecnicoId: miId),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TarjetaNivel extends StatelessWidget {
-  const _TarjetaNivel({required this.perfil, required this.niveles});
-
-  final PerfilTecnico perfil;
-  final List<Nivel>? niveles;
-
-  @override
-  Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    final niveles = this.niveles;
-    final progreso = niveles == null || niveles.isEmpty
-        ? null
-        : ProgresoNivel.calcular(perfil.puntos, niveles);
-    final esNuevo = perfil.totalResenas == 0;
-    return TarjetaApp(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.star_rounded, color: Colores.estrella, size: 32),
-              const SizedBox(width: Espacios.s),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      esNuevo
-                          ? 'Técnico nuevo'
-                          : perfil.calificacionPromedio.toStringAsFixed(1),
-                      style: textos.titleLarge,
-                    ),
-                    Text(
-                      esNuevo
-                          ? 'Aún sin reseñas'
-                          : '${perfil.totalResenas} '
-                                '${perfil.totalResenas == 1 ? 'reseña' : 'reseñas'}',
-                      style: textos.bodySmall?.copyWith(
-                        color: Colores.tintaSuave,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: Espacios.s),
-              Flexible(
-                child: Pildora(
-                  texto: 'Nivel ${perfil.nivelNombre}',
-                  icono: Icons.workspace_premium_outlined,
-                  color: Colores.primario,
-                ),
-              ),
-            ],
-          ),
-          if (progreso != null) ...[
-            const SizedBox(height: Espacios.l),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${perfil.puntos} pts',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textos.labelLarge,
-                  ),
-                ),
-                if (!progreso.esNivelMaximo)
-                  Flexible(
-                    child: Text(
-                      '${progreso.siguiente!.puntosMinimos} pts',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.end,
-                      style: textos.labelMedium?.copyWith(
-                        color: Colores.tintaSuave,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: Espacios.xs),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(Radios.pildora),
-              child: LinearProgressIndicator(
-                value: progreso.fraccion,
-                minHeight: 8,
-                semanticsLabel: 'Progreso al siguiente nivel',
-              ),
-            ),
-            const SizedBox(height: Espacios.s),
-            Text(
-              progreso.esNivelMaximo
-                  ? 'Estás en el nivel más alto. ¡Buen trabajo!'
-                  : 'Te faltan ${progreso.puntosFaltantes} puntos para el '
-                        'nivel ${progreso.siguiente!.nombre}.',
-              style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Las dos reseñas más recientes que recibió.
-class _UltimasResenas extends ConsumerWidget {
-  const _UltimasResenas({required this.tecnicoId});
-
-  final String tecnicoId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final resenas = ref.watch(perfilPublicoProvider(tecnicoId)).value?.resenas;
-    // Las reseñas complementan la tarjeta: si no cargan, no se muestran (ni
-    // tampoco el título de la sección).
-    if (resenas == null || resenas.isEmpty) return const SizedBox.shrink();
-    return Seccion(
-      titulo: 'Reseñas',
-      child: Column(
-        children: [for (final r in resenas.take(2)) TarjetaResena(resena: r)],
-      ),
-    );
-  }
-}
-// Piezas comunes
-
 /// Una sección que carga sola: un indicador pequeño mientras carga, un aviso
 /// compacto con "Reintentar" si falla, y el contenido cuando llegan los
 /// datos (se mantiene visible durante una recarga).

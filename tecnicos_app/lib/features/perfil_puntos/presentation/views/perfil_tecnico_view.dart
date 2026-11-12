@@ -1,5 +1,3 @@
-// Pestaña "Perfil" del técnico: cabecera con nivel y estadísticas,
-// verificación de identidad y datos de trabajo (tarifa, oficios y zona).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -15,6 +13,7 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/barra_accion.dart';
 import '../../../../core/widgets/boton_carga.dart';
+import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/pildora.dart';
@@ -24,9 +23,15 @@ import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
+import '../../../solicitudes/domain/entities/resumen_tecnico.dart';
+import '../../../solicitudes/presentation/providers/inicio_tecnico_provider.dart';
 import '../../domain/entities/cambios_perfil.dart';
+import '../../domain/entities/nivel.dart';
+import '../../domain/entities/perfil_publico.dart';
 import '../../domain/entities/perfil_tecnico.dart';
+import '../providers/perfil_publico_provider.dart';
 import '../providers/perfil_tecnico_provider.dart';
+import '../widgets/resena_widgets.dart';
 import 'verificacion_view.dart';
 
 class PerfilTecnicoView extends ConsumerStatefulWidget {
@@ -145,6 +150,10 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
           _CabeceraTecnico(nombre: nombre, perfil: perfil),
           const SizedBox(height: Espacios.xl + 8),
           _EstadisticasTecnico(perfil: perfil),
+          const SizedBox(height: Espacios.l),
+          const _ActividadTecnico(),
+          const SizedBox(height: Espacios.l),
+          _NivelYResenas(perfil: perfil),
           const SizedBox(height: Espacios.l),
         ];
         final banner = _BannerVerificacion(verificado: perfil.verificado);
@@ -470,7 +479,7 @@ class _CabeceraTecnico extends StatelessWidget {
   }
 }
 
-/// Tarjetas de puntos, calificación y comisión.
+/// Tarjetas de puntos y calificación.
 class _EstadisticasTecnico extends StatelessWidget {
   const _EstadisticasTecnico({required this.perfil});
 
@@ -496,15 +505,9 @@ class _EstadisticasTecnico extends StatelessWidget {
             valor: esNuevo
                 ? 'Nuevo'
                 : perfil.calificacionPromedio.toStringAsFixed(1),
-            etiqueta: esNuevo ? 'Sin reseñas' : '${perfil.totalResenas} reseñas',
-          ),
-        ),
-        const SizedBox(width: Espacios.m),
-        Expanded(
-          child: _DatoPerfil(
-            icono: Icons.percent_rounded,
-            valor: '${perfil.comisionPorcentaje.toStringAsFixed(0)} %',
-            etiqueta: 'Comisión',
+            etiqueta: esNuevo
+                ? 'Sin reseñas'
+                : '${perfil.totalResenas} reseñas',
           ),
         ),
       ],
@@ -542,6 +545,238 @@ class _DatoPerfil extends StatelessWidget {
             maxLines: 2,
             style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Actividad del técnico: ofertas, tickets, trabajos y lo ganado en el mes.
+class _ActividadTecnico extends ConsumerWidget {
+  const _ActividadTecnico();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Seccion(
+      titulo: 'Tu actividad',
+      child: AsyncValueView<ResumenTecnico>(
+        value: ref.watch(resumenTecnicoProvider),
+        onRetry: () => ref.invalidate(resumenTecnicoProvider),
+        onData: (context, r) => CuadriculaAdaptable(
+          anchoMinimo: 0,
+          children: [
+            _DatoPerfil(
+              icono: Icons.local_offer_outlined,
+              valor: '${r.ofertasPendientes}',
+              etiqueta: 'Ofertas pendientes',
+            ),
+            _DatoPerfil(
+              icono: Icons.receipt_long_outlined,
+              valor: '${r.ticketsPorConfirmar}',
+              etiqueta: 'Tickets por confirmar',
+            ),
+            _DatoPerfil(
+              icono: Icons.task_alt,
+              valor: '${r.completados}',
+              etiqueta: 'Trabajos completados',
+            ),
+            _DatoPerfil(
+              icono: Icons.payments_outlined,
+              valor: Formatos.dinero(r.ganadoEsteMes),
+              etiqueta: 'Ganado este mes',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Insignias de nivel, puntos que faltan para el siguiente y reseñas.
+class _NivelYResenas extends ConsumerWidget {
+  const _NivelYResenas({required this.perfil});
+
+  final PerfilTecnico perfil;
+
+  static const _colores = {
+    'Bronce': Color(0xFFCD7F32),
+    'Plata': Color(0xFF9EA7B0),
+    'Oro': Color(0xFFF5B301),
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final textos = Theme.of(context).textTheme;
+    final niveles = ref.watch(nivelesProvider).value;
+    final miId = ref.watch(usuarioActualProvider)?.id;
+    final resenas = miId == null
+        ? null
+        : ref.watch(perfilPublicoProvider(miId)).value?.resenas;
+    final progreso = niveles == null || niveles.isEmpty
+        ? null
+        : ProgresoNivel.calcular(perfil.puntos, niveles);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (niveles != null && progreso != null)
+          TarjetaApp(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    for (final n in niveles)
+                      _Insignia(
+                        nombre: n.nombre,
+                        puntos: n.puntosMinimos,
+                        color: _colores[n.nombre] ?? Colores.primario,
+                        lograda: perfil.puntos >= n.puntosMinimos,
+                        actual: n.nombre == perfil.nivelNombre,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: Espacios.l),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(Radios.pildora),
+                  child: LinearProgressIndicator(
+                    value: progreso.esNivelMaximo ? 1 : progreso.fraccion,
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: Espacios.s),
+                Text(
+                  progreso.esNivelMaximo
+                      ? '¡Llegaste al nivel más alto!'
+                      : 'Te faltan ${progreso.puntosFaltantes} puntos para '
+                            'llegar a ${progreso.siguiente!.nombre}.',
+                  textAlign: TextAlign.center,
+                  style: textos.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        if (resenas != null && resenas.isNotEmpty) ...[
+          const SizedBox(height: Espacios.l),
+          _SeccionResenas(resenas: resenas),
+        ],
+      ],
+    );
+  }
+}
+
+class _Insignia extends StatelessWidget {
+  const _Insignia({
+    required this.nombre,
+    required this.puntos,
+    required this.color,
+    required this.lograda,
+    required this.actual,
+  });
+
+  final String nombre;
+  final int puntos;
+  final Color color;
+  final bool lograda;
+  final bool actual;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return Column(
+      children: [
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: lograda ? color : Colors.grey.shade300,
+            border: actual
+                ? Border.all(color: Colores.primario, width: 3)
+                : null,
+          ),
+          child: Icon(
+            lograda ? Icons.workspace_premium_rounded : Icons.lock_outline,
+            color: Colors.white,
+            size: 30,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(nombre, style: textos.labelLarge),
+        Text('$puntos pts', style: textos.bodySmall),
+      ],
+    );
+  }
+}
+
+/// Reseñas recibidas, en columnas y con filtro por fecha.
+class _SeccionResenas extends StatefulWidget {
+  const _SeccionResenas({required this.resenas});
+
+  final List<ResenaPublica> resenas;
+
+  @override
+  State<_SeccionResenas> createState() => _SeccionResenasState();
+}
+
+class _SeccionResenasState extends State<_SeccionResenas> {
+  static const int _inicial = 4;
+  static const List<({String texto, int? dias})> _filtros = [
+    (texto: 'Todas', dias: null),
+    (texto: '7 días', dias: 7),
+    (texto: '30 días', dias: 30),
+    (texto: '3 meses', dias: 90),
+  ];
+
+  int? _dias;
+  bool _todas = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final desde = _dias == null
+        ? null
+        : DateTime.now().subtract(Duration(days: _dias!));
+    final lista = [
+      for (final r in widget.resenas)
+        if (desde == null || r.creadoEn.isAfter(desde)) r,
+    ];
+    final visibles = _todas ? lista : lista.take(_inicial).toList();
+    return Seccion(
+      titulo: 'Reseñas',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: Espacios.s,
+            children: [
+              for (final f in _filtros)
+                ChoiceChip(
+                  label: Text(f.texto),
+                  selected: _dias == f.dias,
+                  onSelected: (_) => setState(() {
+                    _dias = f.dias;
+                    _todas = false;
+                  }),
+                ),
+            ],
+          ),
+          const SizedBox(height: Espacios.m),
+          if (lista.isEmpty)
+            Text(
+              'No hay reseñas en este periodo.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            )
+          else
+            CuadriculaAdaptable(
+              anchoMinimo: 560,
+              children: [for (final r in visibles) TarjetaResena(resena: r)],
+            ),
+          if (lista.length > _inicial)
+            TextButton(
+              onPressed: () => setState(() => _todas = !_todas),
+              child: Text(_todas ? 'Ver menos' : 'Ver las ${lista.length}'),
+            ),
         ],
       ),
     );

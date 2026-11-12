@@ -15,7 +15,7 @@ class ResumenTecnico {
   /// [ofertas]: las del técnico. [trabajos]: solicitudes donde lo
   /// contrataron. Lo ganado en el mes suma los trabajos completados cuya
   /// fecha de servicio (o, si no la hay, la de la oferta) cae en el mes de
-  /// [hoy]: el total del ticket, o el precio base si no hubo ticket.
+  /// [hoy]: el total del ticket, o el precio de la visita si no hubo ticket.
   factory ResumenTecnico.calcular({
     required List<Cotizacion> ofertas,
     required List<Solicitud> trabajos,

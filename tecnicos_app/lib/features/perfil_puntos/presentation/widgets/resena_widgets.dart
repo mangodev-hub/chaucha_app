@@ -23,21 +23,17 @@ class TarjetaResena extends StatelessWidget {
           Row(
             children: [
               Semantics(
-                label: '${resena.calificacion} de 5 estrellas',
+                label: 'Valoración ${resena.calificacion >= 4 ? "excelente" : resena.calificacion == 3 ? "neutra" : "mala"}',
                 child: ExcludeSemantics(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (var i = 1; i <= 5; i++)
-                        Icon(
-                          i <= resena.calificacion
-                              ? Icons.star_rounded
-                              : Icons.star_outline_rounded,
-                          size: 18,
-                          color: Colores.estrella,
-                        ),
-                    ],
-                  ),
+                  child: Icon(
+  resena.calificacion >= 4
+      ? Icons.sentiment_very_satisfied_rounded
+      : resena.calificacion == 3
+          ? Icons.thumb_up_alt_outlined
+          : Icons.sentiment_very_dissatisfied_rounded,
+  size: 22,
+  color: Colores.estrella,
+)
                 ),
               ),
               const Spacer(),
