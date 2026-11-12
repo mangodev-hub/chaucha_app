@@ -49,4 +49,18 @@ class SupabaseUsuarioRepository implements UsuarioRepository {
       );
     });
   }
+
+    @override
+  Future<String?> registrarSelfie({required String ruta}) {
+    return supabaseGuard(() async {
+      await _client
+          .from(_tabla)
+          .update({'foto_perfil_ruta': ruta})
+          .eq('id', _client.auth.currentUser!.id);
+      final r = await _client.functions.invoke('validar-foto-rostro');
+      final datos = r.data as Map<String, dynamic>;
+      if (datos['valida'] == true) return null;
+      return (datos['motivo'] as String?) ?? 'No se ve un rostro claro.';
+    });
+  }
 }

@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/avatar_usuario.dart';
 import '../../../../core/widgets/carrusel_aliados.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
 import '../providers/resenas_cliente_provider.dart';
@@ -157,31 +158,18 @@ class _Etiqueta extends StatelessWidget {
   }
 }
 
-class _Avatar extends StatelessWidget {
+class _Avatar extends ConsumerWidget {
   const _Avatar(this.nombre, {this.radio = 30});
 
   final String nombre;
   final double radio;
 
   @override
-  Widget build(BuildContext context) {
-    final iniciales = nombre
-        .split(' ')
-        .where((p) => p.isNotEmpty)
-        .take(2)
-        .map((p) => p[0].toUpperCase())
-        .join();
-    return CircleAvatar(
-      radius: radio,
-      backgroundColor: _hielo,
-      child: Text(
-        iniciales,
-        style: TextStyle(
-          color: _azulOscuro,
-          fontSize: radio * 0.6,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return AvatarUsuario(
+      nombre: nombre,
+      rutaFoto: ref.watch(usuarioActualProvider)?.fotoPerfilRuta,
+      radio: radio,
     );
   }
 }

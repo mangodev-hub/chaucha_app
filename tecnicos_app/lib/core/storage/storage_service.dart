@@ -8,6 +8,7 @@ import '../supabase/supabase_guard.dart';
 abstract final class Buckets {
   static const String solicitudes = 'solicitudes';
   static const String documentos = 'cedulas';
+  static const String perfiles = 'perfiles';
 }
 
 abstract interface class StorageService {
@@ -16,7 +17,7 @@ abstract interface class StorageService {
     required String ruta,
     required Uint8List bytes,
   });
-
+  String urlPublica({required String bucket, required String ruta});
   Future<String> urlFirmada({required String bucket, required String ruta});
 }
 
@@ -51,4 +52,9 @@ class SupabaseStorageService implements StorageService {
           _client.storage.from(bucket).createSignedUrl(ruta, _segundosValidez),
     );
   }
+
+    @override
+  String urlPublica({required String bucket, required String ruta}) =>
+      _client.storage.from(bucket).getPublicUrl(ruta);
+  
 }

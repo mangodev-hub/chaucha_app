@@ -15,6 +15,7 @@ import '../features/auth/presentation/views/completar_perfil_view.dart';
 import '../features/auth/presentation/views/inicio_view.dart';
 import '../features/auth/presentation/views/login_view.dart';
 import '../features/auth/presentation/views/perfil_cliente_view.dart';
+import '../features/auth/presentation/views/selfie_view.dart';
 import '../features/auth/presentation/views/recuperar_view.dart';
 import '../features/auth/presentation/views/registro_view.dart';
 import '../features/auth/presentation/views/restablecer_view.dart';
@@ -84,6 +85,10 @@ Future<void> cerrarSesion() async {
         path: AppRoutes.completarPerfil,
         builder: (context, state) =>
             CompletarPerfilView(onCerrarSesion: cerrarSesion),
+      ),
+            GoRoute(
+        path: AppRoutes.selfie,
+        builder: (context, state) => SelfieView(onCerrarSesion: cerrarSesion),
       ),
       GoRoute(
         path: AppRoutes.clienteInicio,

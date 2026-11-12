@@ -10,6 +10,7 @@ class UsuarioModel {
     required this.apellidos,
     required this.creadoEn,
     this.fotoPerfilRuta,
+    this.fotoRostroValidada = false,
     this.perfilCompleto = true,
     this.verificado = false,
   });
@@ -25,6 +26,7 @@ class UsuarioModel {
       nombres: json['nombres'] as String,
       apellidos: (json['apellidos'] as String?) ?? '',
       fotoPerfilRuta: json['foto_perfil_ruta'] as String?,
+      fotoRostroValidada: (json['foto_rostro_validada'] as bool?) ?? false,
       creadoEn: DateTime.parse(json['creado_en'] as String),
       verificado: (json['verificado'] as bool?) ?? false,
     );
@@ -32,7 +34,7 @@ class UsuarioModel {
 
   /// Columnas que se piden en el `select`.
   static const String columnas =
-      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, '
+      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, foto_rostro_validada,'
       'identidades(usuario_id)';
 
   final String id;
@@ -40,6 +42,7 @@ class UsuarioModel {
   final String nombres;
   final String apellidos;
   final String? fotoPerfilRuta;
+  final bool fotoRostroValidada;
   final DateTime creadoEn;
   final bool perfilCompleto;
   final bool verificado;
@@ -50,6 +53,7 @@ class UsuarioModel {
     nombres: nombres,
     apellidos: apellidos,
     fotoPerfilRuta: fotoPerfilRuta,
+    fotoRostroValidada: fotoRostroValidada,
     creadoEn: creadoEn,
     perfilCompleto: perfilCompleto,
     verificado: verificado,

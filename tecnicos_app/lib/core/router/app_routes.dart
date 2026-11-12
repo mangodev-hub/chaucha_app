@@ -6,6 +6,7 @@ abstract final class AppRoutes {
   static const String registro = '/registro';
 
   static const String completarPerfil = '/completar-perfil';
+  static const String selfie = '/selfie';
   static const String clienteInicio = '/cliente';
   static const String tecnicoInicio = '/tecnico';
   static const String adminInicio = '/admin';

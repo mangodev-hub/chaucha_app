@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../aliados/oferta_aliado.dart';
 import '../theme/tokens.dart';
 import 'tarjeta_app.dart';
+import '../../../../core/widgets/avatar_usuario.dart';
 
 /// Carrusel de ofertas de aliados (publicidad externa): cambia solo cada 7 s y abre el enlace.
 class CarruselAliados extends StatefulWidget {

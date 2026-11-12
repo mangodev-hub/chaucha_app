@@ -22,6 +22,9 @@ String? resolverRedireccion({
     ConSesion(:final usuario)
         when !usuario.perfilCompleto && usuario.rol != Rol.admin =>
       ubicacion == AppRoutes.completarPerfil ? null : AppRoutes.completarPerfil,
+          ConSesion(:final usuario)
+        when !usuario.fotoVerificada && usuario.rol != Rol.admin =>
+      ubicacion == AppRoutes.selfie ? null : AppRoutes.selfie,
     ConSesion(:final usuario) => _redireccionConSesion(usuario.rol, ubicacion),
     SesionRecuperando() =>
       ubicacion == AppRoutes.restablecer ? null : AppRoutes.restablecer,
