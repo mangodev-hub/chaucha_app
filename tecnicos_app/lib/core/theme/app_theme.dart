@@ -74,14 +74,16 @@ abstract final class AppTheme {
               shadowColor: const WidgetStatePropertyAll(Sombras.boton),
             ),
       ),
-      // Botón secundario: borde y texto verdes.
+      // Botón secundario: neutro (blanco, borde gris y texto oscuro), para
+      // que el verde quede solo en la acción principal.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: Colores.primario,
+          foregroundColor: Colores.tinta,
+          backgroundColor: Colores.tarjeta,
           minimumSize: const Size(0, 48),
-          side: const BorderSide(color: Colores.primario),
+          side: const BorderSide(color: Colores.linea, width: 1.5),
           shape: _formaMedia,
-          textStyle: textos.labelLarge,
+          textStyle: textos.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       textButtonTheme: TextButtonThemeData(

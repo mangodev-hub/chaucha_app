@@ -25,16 +25,17 @@ class AvatarUsuario extends ConsumerWidget {
               .watch(storageServiceProvider)
               .urlPublica(bucket: Buckets.perfiles, ruta: rutaFoto!);
     final t = nombre.trim();
+    // Celeste: las personas son contexto, no acción.
     return CircleAvatar(
       radius: radio,
-      backgroundColor: Colores.primarioSuave,
+      backgroundColor: Colores.cieloSuave,
       backgroundImage: url == null ? null : NetworkImage(url),
       child: url != null
           ? null
           : Text(
               t.isEmpty ? '?' : t[0].toUpperCase(),
               style: TextStyle(
-                color: Colores.primarioOscuro,
+                color: Colores.cieloOscuro,
                 fontSize: radio * 0.7,
                 fontWeight: FontWeight.w700,
               ),

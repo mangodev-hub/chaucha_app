@@ -128,7 +128,9 @@ class _Portada extends ConsumerWidget {
         ? null
         : chats + trabajos;
 
+    // Portada celeste: distingue el inicio del técnico del del cliente.
     return TarjetaPortada(
+      celeste: true,
       titulo: nombre == null ? 'Hola.' : 'Hola, $nombre.',
       subtitulo: 'Este es tu resumen de hoy.',
       icono: Icons.engineering_rounded,

@@ -128,14 +128,26 @@ class _Encabezado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    return TarjetaApp(
+    // Cabecera celeste con el avatar en un aro blanco.
+    return Container(
       padding: const EdgeInsets.all(Espacios.l + 4),
+      decoration: BoxDecoration(
+        gradient: Degradados.cielo,
+        borderRadius: BorderRadius.circular(Radios.muyGrande),
+      ),
       child: Row(
         children: [
-          AvatarUsuario(
-            nombre: perfil.nombre,
-            rutaFoto: perfil.fotoRuta,
-            radio: 32,
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: const BoxDecoration(
+              color: Colores.tarjeta,
+              shape: BoxShape.circle,
+            ),
+            child: AvatarUsuario(
+              nombre: perfil.nombre,
+              rutaFoto: perfil.fotoRuta,
+              radio: 32,
+            ),
           ),
           const SizedBox(width: Espacios.l),
           Expanded(
@@ -162,11 +174,11 @@ class _Encabezado extends StatelessWidget {
                       ),
                     if (certificado) const InsigniaCertificado(),
                     if (perfil.esTecnico)
-                    Pildora(
-                      texto: 'Nivel ${perfil.nivelNombre}',
-                      icono: Icons.workspace_premium_outlined,
-                      color: Colores.primario,
-                    ),
+                      Pildora(
+                        texto: 'Nivel ${perfil.nivelNombre}',
+                        icono: Icons.workspace_premium_outlined,
+                        color: Colores.info,
+                      ),
                   ],
                 ),
               ],
@@ -203,7 +215,7 @@ class _Estadisticas extends StatelessWidget {
         Expanded(
           child: _Dato(
             icono: Icons.reviews_outlined,
-            colorIcono: Colores.primario,
+            colorIcono: Colores.cieloOscuro,
             valor: '${perfil.totalResenas}',
             etiqueta: perfil.totalResenas == 1 ? 'Reseña' : 'Reseñas',
           ),
@@ -213,7 +225,7 @@ class _Estadisticas extends StatelessWidget {
           Expanded(
             child: _Dato(
               icono: Icons.calendar_month_outlined,
-              colorIcono: Colores.primario,
+              colorIcono: Colores.cieloOscuro,
               valor: Formatos.mesAnio(desde),
               etiqueta: 'Miembro desde',
             ),

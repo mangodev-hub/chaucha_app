@@ -36,6 +36,7 @@ La referencia es el lienzo "Rediseño ChauchaApp" (skill `.claude/skills/diseno-
 12. **Portada plana**, sin degradado: verde bosque con el sol celeste y el brote verde asomando por la derecha.
 13. **Navegación como Facebook**: cinco destinos fijos abajo, siempre visibles, con insignias, y la acción principal ("Pedir") como botón redondo al centro. **Chats como WhatsApp**: pestaña con buscador, filtro "Sin leer" y lista con avatar, último mensaje, hora e insignia; en la conversación, mis burbujas en verde claro y las ajenas en blanco, ambas con texto oscuro.
 14. **Sin emojis ni degradados decorativos.** El login y el registro conservan su distribución (con las animaciones Lottie) y solo toman los colores de los tokens.
+15. **Regla v2 (2026-11-12, fila "Dirección v2" del lienzo): celeste = contexto, verde = acción, neutro = lienzo.** Las cabeceras de detalle y de perfil (`CabeceraCielo`), la portada del técnico (`TarjetaPortada(celeste: true)`), los avatares, los íconos de sección (`IconoRecuadro`) y las filas de datos (`FilaDato`: precio, ticket, fecha, con el valor en `cieloOscuro`) van en celeste. El verde bosque queda solo para el botón principal, la pestaña activa y lo confirmado. El fondo es neutro (`#F6F8F7`) y los campos, chips y filas de datos son grises neutros, para que ambos colores resalten. El botón secundario es neutro: blanco, borde `linea` y texto oscuro. La portada del cliente sigue verde: es la pieza de marca y distingue los dos roles.
 
 No se copia el lienzo literalmente: su lenguaje visual se adapta a cada funcionalidad.
 
@@ -58,11 +59,11 @@ Todo vive en [`lib/core/theme/tokens.dart`](../lib/core/theme/tokens.dart).
 | `fondoChat` | `#EEF7FC` | Fondo de la conversación del chat |
 | `tinta` | `#0E2A14` | Texto principal (verde muy oscuro), fondo del visor de fotos |
 | `tintaSuave` | `#4F6654` | Texto secundario, íconos de los campos (sobre `fondo`: 5.6:1) |
-| `fondo` | `#F3FAF4` | Fondo verde muy suave de las pantallas y de la barra superior |
+| `fondo` | `#F6F8F7` | Fondo neutro (blanco roto) de las pantallas y de la barra superior |
 | `tarjeta` | `#FFFFFF` | Tarjetas, diálogos, hojas inferiores, barras inferiores |
-| `superficie` | `#EAF6EB` | Campos de texto, chips y opciones sin elegir |
-| `superficieFuerte` | `#D5EBD7` | Pistas del slider, huecos de fotos que cargan, franjas ocupadas |
-| `linea` | `#DCEBDD` | Divisores y bordes suaves |
+| `superficie` / `neutro` | `#EEF2F0` | Campos de texto, chips y opciones sin elegir; filas de datos (`FilaDato`) |
+| `superficieFuerte` | `#DDE5E0` | Pistas del slider, huecos de fotos que cargan, franjas ocupadas |
+| `linea` | `#E1E8E3` | Divisores, bordes suaves y el borde del botón secundario |
 | `acento` / `acentoSuave` / `acentoOscuro` | = `primarioVivo` / `#DDF5DE` / = `primario` | Lo positivo: completado, aceptada, aprobado, verificado, avisos de éxito |
 | `info` | `#0F6E9E` | Celeste legible como texto: estados "Abierta" y "Con cotizaciones", oficio en los chats, distancia (5.6:1) |
 | `aviso` / `avisoSuave` / `avisoOscuro` | `#B45309` / `#FDF0E1` / `#7C3A06` | "Por confirmar", avisos de advertencia |
@@ -77,7 +78,10 @@ Todo vive en [`lib/core/theme/tokens.dart`](../lib/core/theme/tokens.dart).
 - `Sombras.boton`: color de la sombra del botón principal.
 - `Sombras.fuerte`: sombra verde más marcada para la portada (`TarjetaPortada`) y el botón central de la barra inferior.
 
-No hay degradados de marca: la portada es verde bosque plano con formas de color. El único degradado es el fondo suave del login y el registro (`AuthLayout`), que usa los tokens.
+### Degradados (`Degradados`)
+
+- `Degradados.cielo`: de `cieloSuave` a celeste medio, en diagonal. Fondo de `CabeceraCielo`, de la portada celeste del técnico y de las cabeceras de los perfiles. **Siempre con texto oscuro** (`tinta`, `cieloOscuro`), nunca blanco.
+- La portada del cliente es verde bosque plano con formas de color, sin degradado. El fondo suave del login y el registro (`AuthLayout`) usa los tokens verdes.
 
 ### Radios (`Radios`) y espacios (`Espacios`)
 
@@ -125,7 +129,9 @@ Las pantallas se arman con estos componentes. No se crean versiones propias de l
 | `CampoEtiquetado` | `campos.dart` | Etiqueta en negrita arriba del campo, con ayuda verde opcional ("Opcional", "Ecuador (10 dígitos)") |
 | `CampoContrasena` | `campos.dart` | Campo de contraseña con candado y ojo para mostrarla u ocultarla |
 | `BotonCarga` | `boton_carga.dart` | Botón principal con carga (cambio animado entre texto e indicador), ícono opcional (al inicio o al final) |
-| `TarjetaPortada` | `tarjeta_portada.dart` | Portada del inicio: verde bosque plano con el sol celeste y el brote verde asomando por la derecha, título grande en blanco (el signo final va en verde brote como acento), subtítulo, dato en una píldora blanca y una ilustración (se oculta con menos de 300 px) |
+| `TarjetaPortada` | `tarjeta_portada.dart` | Portada del inicio: verde bosque plano con el sol celeste y el brote verde asomando por la derecha, título grande en blanco (el signo final va en verde brote como acento), subtítulo, dato en una píldora blanca a todo el ancho y una ilustración (se oculta con menos de 300 px). Con `celeste: true` (inicio del técnico) usa `Degradados.cielo`, texto oscuro y el signo en verde marca |
+| `CabeceraCielo` | `cabecera_cielo.dart` | Cabecera celeste de detalle y perfil: título y subtítulo en tinta oscura, `pildora` opcional a la derecha, `child` debajo y una animación Lottie (`animacion`, el técnico) abajo a la derecha con 360 px o más. La usa `EncabezadoSolicitud` |
+| `FilaDato` | `fila_dato.dart` | Fila de datos neutra: `etiqueta` (y `detalle`), `icono` opcional, `valor` grande en celeste oscuro a la derecha y `trailing` (una `Pildora`). Precio de la visita y ticket en `CotizacionCard` |
 | `BarraAccion` | `barra_accion.dart` | Barra blanca fija abajo con la acción principal (móvil) |
 | `AvisoBanner` | `aviso_banner.dart` | Aviso dentro de la pantalla: `info`, `exito`, `aviso` o `error`. Versión `compacto` para etiquetas |
 | `EstadoMensaje` | `estado_mensaje.dart` | Hueco de la pantalla: lista vacía, error o éxito (`TipoEstado`), centrado o `compacto`, con botón opcional y, en la versión grande, una acción secundaria debajo ("Regresar", "Volver al inicio"). En éxito, el ícono aparece con rebote y lleva un `CheckAnimado` |
@@ -148,18 +154,18 @@ Las pantallas se arman con estos componentes. No se crean versiones propias de l
 | --- | --- | --- |
 | Login y registro | `features/auth/presentation/` | Tarjeta sobre degradado verde suave, con las animaciones Lottie. En escritorio, panel verde con la marca y tres beneficios. La distribución no cambió con el rediseño; solo los colores |
 | Verificación de identidad | `features/perfil_puntos/presentation/views/verificacion_view.dart` | Hoja inferior en móvil y diálogo en escritorio (`mostrarVerificacion`). Se abre desde el perfil |
-| Perfil del técnico | `features/perfil_puntos/presentation/views/perfil_tecnico_view.dart` | Encabezado verde con puntos, banner de verificación y bloques. Dos columnas en escritorio |
+| Perfil del técnico | `features/perfil_puntos/presentation/views/perfil_tecnico_view.dart` | Cabecera celeste con el avatar en un aro blanco, nivel en píldora celeste, banner de verificación y bloques. Dos columnas en escritorio. El perfil público y el del cliente siguen la misma cabecera celeste |
 | Pestañas (shell) | `app/inicio_shell.dart` | En móvil, barra blanca fija abajo con cinco destinos (como Facebook): íconos con insignia, la pestaña activa con el ícono relleno en verde marca y la etiqueta en verde bosque. Si el shell tiene `AccionCentral` ("Pedir un técnico" para el cliente), va como botón redondo verde al centro, un poco por encima de la barra. Cada `Destino` puede tener `iconoActivo` (relleno) y `corto` (etiqueta de la barra). En escritorio, la `Marca`, las pestañas y la acción central en la barra superior. El cliente abre su agenda desde el menú de la cuenta (`rutaAgenda`) |
 | Chats | `features/chat/presentation/views/chats_view.dart` | Pestaña al estilo WhatsApp: título con "N sin leer", buscador por nombre u oficio, chips Todos / Sin leer y la lista en una tarjeta: avatar (abre el perfil), nombre en negrita si hay nuevos, hora en verde, último mensaje ("Tú: …"), oficio en píldora e insignia con la cantidad. Los no leídos salen de `notificacionesNoLeidasProvider` (tipos `tiposDeChat`) |
 | Agenda | `features/solicitudes/presentation/views/agenda_view.dart` | Tickets por confirmar arriba; luego `CalendarioAgenda` (mes en español con cabecera propia, día elegido en verde bosque, hoy con borde verde marca, puntos verde brote en los días con visitas) y la lista del día elegido, o las próximas, como línea de tiempo: hora y "Hoy / Mañana" a la izquierda y tarjeta con borde de color (ámbar ticket, verde hoy, celeste más adelante) |
 | Elegir franja | `features/cotizaciones/presentation/widgets/selector_franja.dart` | Hoja inferior en móvil y diálogo en escritorio (`elegirFranja`): calendario, leyenda y cuadrícula de franjas de 1 hora. Libre (blanca), elegida (verde bosque), ocupada por otra visita del técnico o del cliente (rayada con candado, bloqueada) y pasada (tachada). El botón dice "Confirmar jue 12 de nov, 11:00 a 12:00" |
 | Inicio del cliente | `features/auth/presentation/views/inicio_view.dart` | `TarjetaPortada` ("¿Qué arreglamos hoy?" y técnicos cerca), buscador con frecuentes, especialidades, mapa y técnicos destacados |
-| Inicio del técnico | `features/solicitudes/presentation/views/inicio_tecnico_view.dart` | `TarjetaPortada` con saludo y pendientes del día, luego "Para empezar", pendientes, solicitudes cerca, actividad y reputación |
+| Inicio del técnico | `features/solicitudes/presentation/views/inicio_tecnico_view.dart` | `TarjetaPortada(celeste: true)` con saludo y pendientes del día, luego "Para empezar", pendientes, solicitudes cerca, actividad y reputación |
 | Mis solicitudes | `features/solicitudes/presentation/views/mis_solicitudes_view.dart` | Título con el botón a la agenda y "Nueva solicitud", y filtros Activas / Finalizadas |
 | Nueva solicitud | `features/solicitudes/presentation/views/crear_solicitud_view.dart` | Cuatro bloques numerados, oficios en chips, "Publicar" fijo abajo. Al publicar, pantalla de éxito (`SolicitudPublicada`) con "Ver mi solicitud" y "Volver al inicio" |
 | Feed y mis trabajos | `features/solicitudes/presentation/views/` | Resumen de la zona, tarjetas con píldoras y grupos "En curso" y "Finalizados" |
 | Panel de administrador | `features/admin/presentation/views/` | Mismo shell (barra inferior en móvil, pestañas arriba en escritorio), sin acción central. Resumen con `TarjetaPortada` y cifras; Solicitudes, Usuarios y Verificaciones con `PantallaAdmin` (título, buscador, filtros en chips y lista). Crear y editar usuarios en hojas inferiores; suspender y eliminar con `confirmar(destructivo: true)`. Verificaciones: miniaturas de cédula y selfie con estado en `Pildora`, zoom al tocar, "Rechazar" y "Aprobar" |
-| Detalle de solicitud | `features/solicitudes/presentation/views/solicitud_detalle_view.dart` | Guía "Qué sigue", progreso y acción fija abajo. Dos columnas en escritorio. Mientras carga, `EsqueletoCarga`; si falla, "Reintentar" y "Regresar" |
+| Detalle de solicitud | `features/solicitudes/presentation/views/solicitud_detalle_view.dart` | `CabeceraCielo` con el oficio, el estado, la descripción y el técnico (Lottie); guía "Qué sigue", progreso y acción fija abajo. La oferta del técnico (`CotizacionCard`) muestra el precio y el ticket en `FilaDato`. Dos columnas en escritorio. Mientras carga, `EsqueletoCarga`; si falla, "Reintentar" y "Regresar" |
 | Chat | `features/chat/presentation/views/chat_view.dart` | El cliente ve el nombre del técnico en la barra. Fondo `fondoChat`, separadores por día en píldoras blancas, mis burbujas en verde claro y las ajenas en blanco (texto oscuro en ambas), el ticket como tarjeta con el precio grande y la franja de la visita, notas del sistema en verde claro, barra de envío con campo redondeado y botón verde |
 
 ## Accesibilidad

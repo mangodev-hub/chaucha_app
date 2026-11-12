@@ -7,6 +7,7 @@ import '../../../../core/utils/formatos.dart';
 import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/fila_dato.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/cotizacion.dart';
@@ -77,40 +78,9 @@ class CotizacionCard extends StatelessWidget {
         children: [
           _Tecnico(cotizacion: c, onVerPerfil: onVerPerfil),
           const SizedBox(height: Espacios.l),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Espacios.m + 2,
-              vertical: Espacios.m,
-            ),
-            decoration: BoxDecoration(
-              color: Colores.primarioSuave,
-              borderRadius: BorderRadius.circular(Radios.medio),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Precio de la visita',
-                    style: textos.titleSmall?.copyWith(
-                      color: Colores.primarioOscuro,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Espacios.s),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      Formatos.dinero(c.precioBase),
-                      style: textos.titleLarge?.copyWith(
-                        color: Colores.primarioOscuro,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          FilaDato(
+            etiqueta: 'Precio de la visita',
+            valor: Formatos.dinero(c.precioBase),
           ),
           if (solucion != null) ...[
             const SizedBox(height: Espacios.m),
@@ -165,48 +135,16 @@ class _ResumenTicket extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
     final fecha = tarifa.fechaServicio;
-    return Container(
-      padding: const EdgeInsets.all(Espacios.m),
-      decoration: BoxDecoration(
-        color: Colores.superficie,
-        borderRadius: BorderRadius.circular(Radios.medio),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.receipt_long_outlined,
-            size: 20,
-            color: Colores.primario,
-          ),
-          const SizedBox(width: Espacios.s),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Ticket: ${Formatos.dinero(tarifa.total)}',
-                  style: textos.titleSmall,
-                ),
-                if (fecha != null)
-                  Text(
-                    'Servicio: ${Formatos.fechaCorta(fecha)}',
-                    style: textos.bodySmall?.copyWith(
-                      color: Colores.tintaSuave,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: Espacios.s),
-          Flexible(
-            child: confirmado
-                ? const Pildora(texto: 'Confirmado', color: Colores.acento)
-                : const Pildora(texto: 'Por confirmar', color: Colores.aviso),
-          ),
-        ],
-      ),
+    return FilaDato(
+      icono: Icons.receipt_long_outlined,
+      etiqueta: 'Ticket: ${Formatos.dinero(tarifa.total)}',
+      detalle: fecha == null
+          ? 'Sin fecha de visita'
+          : 'Visita: ${Formatos.fechaCorta(fecha)} · ${Formatos.hora(fecha)}',
+      trailing: confirmado
+          ? const Pildora(texto: 'Confirmado', color: Colores.acento)
+          : const Pildora(texto: 'Por confirmar', color: Colores.aviso),
     );
   }
 }
@@ -319,11 +257,11 @@ class _Tecnico extends StatelessWidget {
     final fila = Row(
       children: [
         CircleAvatar(
-          backgroundColor: Colores.primarioSuave,
-          foregroundColor: Colores.primarioOscuro,
+          backgroundColor: Colores.cieloSuave,
+          foregroundColor: Colores.cieloOscuro,
           child: Text(
             inicial,
-            style: textos.titleMedium?.copyWith(color: Colores.primarioOscuro),
+            style: textos.titleMedium?.copyWith(color: Colores.cieloOscuro),
           ),
         ),
         const SizedBox(width: Espacios.m),
@@ -357,8 +295,11 @@ class _Tecnico extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: textos.bodySmall?.copyWith(
                         color: onVerPerfil != null
-                            ? Colores.primario
+                            ? Colores.info
                             : Colores.tintaSuave,
+                        fontWeight: onVerPerfil != null
+                            ? FontWeight.w700
+                            : null,
                       ),
                     ),
                   ),

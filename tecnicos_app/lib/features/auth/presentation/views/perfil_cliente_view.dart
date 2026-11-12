@@ -16,9 +16,11 @@ import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
 import '../providers/resenas_cliente_provider.dart';
 import '../providers/sesion_provider.dart';
 
-const _azul = Colores.primarioVivo;
-const _azulOscuro = Colores.primarioProfundo;
-const _hielo = Colores.primarioSuave;
+// Regla v2: el perfil es contexto, así que va en celeste; el verde queda
+// para las acciones.
+const _azul = Colores.cielo;
+const _azulOscuro = Colores.cieloOscuro;
+const _hielo = Colores.cieloSuave;
 const _fondo = Colores.fondo;
 const _texto = Colores.tinta;
 const _gris = Colores.tintaSuave;
@@ -195,13 +197,7 @@ class _Cabecera extends StatelessWidget {
                 ),
                 child: Container(
                   height: 160,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [_azulOscuro, _azul],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
+                  decoration: const BoxDecoration(gradient: Degradados.cielo),
                 ),
               ),
               Positioned(

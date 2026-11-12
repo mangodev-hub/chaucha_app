@@ -49,17 +49,20 @@ abstract final class Colores {
   static const Color tinta = Color(0xFF0E2A14);
   static const Color tintaSuave = Color(0xFF4F6654);
 
-  // Fondos y superficies.
-  /// Fondo verde muy suave de las pantallas.
-  static const Color fondo = Color(0xFFF3FAF4);
+  // Fondos y superficies: neutros, para que el verde y el celeste resalten.
+  /// Fondo neutro (blanco roto) de las pantallas.
+  static const Color fondo = Color(0xFFF6F8F7);
 
   /// Tarjetas, diálogos, hojas inferiores y barras: blanco.
   static const Color tarjeta = Color(0xFFFFFFFF);
 
-  /// Campos de texto y opciones sin elegir: verde claro.
-  static const Color superficie = Color(0xFFEAF6EB);
-  static const Color superficieFuerte = Color(0xFFD5EBD7);
-  static const Color linea = Color(0xFFDCEBDD);
+  /// Campos de texto, opciones sin elegir y filas de datos: gris neutro.
+  static const Color superficie = Color(0xFFEEF2F0);
+  static const Color superficieFuerte = Color(0xFFDDE5E0);
+  static const Color linea = Color(0xFFE1E8E3);
+
+  /// Fila de datos (precio, ticket, fecha): el mismo neutro de los campos.
+  static const Color neutro = superficie;
 
   // Acento positivo (completado, aprobado, verificado): el verde marca.
   static const Color acento = primarioVivo;
@@ -113,6 +116,17 @@ abstract final class Sombras {
   static const List<BoxShadow> fuerte = [
     BoxShadow(color: Color(0x40006414), blurRadius: 24, offset: Offset(0, 10)),
   ];
+}
+
+abstract final class Degradados {
+  /// Cabeceras de detalle y perfil, y la portada del técnico: celeste suave a
+  /// celeste medio. Lleva texto oscuro (`tinta`, `cieloOscuro`), nunca blanco.
+  static const LinearGradient cielo = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Colores.cieloSuave, Color(0xFFBFE4F8), Color(0xFF9FD6F3)],
+    stops: [0, 0.55, 1],
+  );
 }
 
 /// Duraciones y curvas de las animaciones. Las pantallas y componentes piden

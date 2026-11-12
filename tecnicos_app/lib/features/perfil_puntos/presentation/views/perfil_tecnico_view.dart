@@ -412,7 +412,7 @@ class _CabeceraTecnico extends StatelessWidget {
                     Icon(
                       Icons.location_on_outlined,
                       size: 16,
-                      color: Colores.primario,
+                      color: Colores.cielo,
                     ),
                     SizedBox(width: 4),
                     Text(
@@ -429,7 +429,7 @@ class _CabeceraTecnico extends StatelessWidget {
                     Pildora(
                       texto: 'Nivel ${perfil.nivelNombre}',
                       icono: Icons.workspace_premium_outlined,
-                      color: Colores.primario,
+                      color: Colores.info,
                     ),
                     if (perfil.verificado)
                       const Pildora(
@@ -454,14 +454,11 @@ class _CabeceraTecnico extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(Radios.grande),
                 ),
+                // Cabecera celeste: el perfil es contexto, no acción.
                 child: Container(
                   height: 120,
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colores.primarioOscuro, Colores.primario],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
+                    gradient: Degradados.cielo,
                   ),
                 ),
               ),

@@ -76,7 +76,7 @@ class BloqueTarjeta extends StatelessWidget {
   final String titulo;
   final String? subtitulo;
 
-  /// Número de paso en un círculo azul (formularios por bloques).
+  /// Número de paso en un círculo verde (formularios por bloques).
   final int? numero;
 
   /// Ícono en un recuadro celeste, si no hay número.
@@ -139,14 +139,15 @@ class BloqueTarjeta extends StatelessWidget {
   }
 }
 
-/// Ícono azul en un recuadro celeste de esquinas redondeadas.
+/// Ícono celeste oscuro en un recuadro celeste suave de esquinas redondeadas
+/// (los íconos de sección son contexto; el verde queda para la acción).
 class IconoRecuadro extends StatelessWidget {
   const IconoRecuadro({
     super.key,
     required this.icono,
     this.lado = 40,
-    this.color = Colores.primario,
-    this.fondo = Colores.primarioSuave,
+    this.color = Colores.cieloOscuro,
+    this.fondo = Colores.cieloSuave,
   });
 
   final IconData icono;
