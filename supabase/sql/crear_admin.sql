@@ -1,7 +1,7 @@
 -- Crea la cuenta del administrador (una sola vez).
 --
 -- Requiere haber aplicado antes la migración
--- `tecnicos_app/supabase/migrations/20261109150000_panel_admin.sql`.
+-- `supabase/migrations/20261109150000_panel_admin.sql`.
 --
 -- Cómo usarlo: copia este archivo en el editor SQL de Supabase, reemplaza
 -- CORREO_DEL_ADMIN y CONTRASEÑA_DEL_ADMIN y ejecútalo. No guardes la

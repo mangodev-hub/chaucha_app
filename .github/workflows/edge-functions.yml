@@ -6,12 +6,12 @@ name: Edge Functions
 on:
   pull_request:
     paths:
-      - 'tecnicos_app/supabase/functions/**'
+      - 'supabase/functions/**'
       - '.github/workflows/edge-functions.yml'
   push:
     branches: [master]
     paths:
-      - 'tecnicos_app/supabase/functions/**'
+      - 'supabase/functions/**'
       - '.github/workflows/edge-functions.yml'
   workflow_dispatch:
 
@@ -24,7 +24,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: tecnicos_app/supabase/functions
+    working-directory: supabase/functions
 
 jobs:
   verificar:

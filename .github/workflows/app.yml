@@ -1,20 +1,20 @@
-# CI de la app Flutter (tecnicos_app): análisis, pruebas y compilación web.
+# CI de la app Flutter: análisis, pruebas y compilación web.
 # No usa secretos: el build web compila sin env.json (las claves llegan con
 # --dart-define-from-file solo al publicar).
 name: App Flutter
 
 on:
   pull_request:
-    paths:
-      - 'tecnicos_app/**'
-      - '!tecnicos_app/supabase/**'
-      - '.github/workflows/app.yml'
+    paths-ignore:
+      - 'supabase/**'
+      - '**.md'
+      - '.github/workflows/edge-functions.yml'
   push:
     branches: [master]
-    paths:
-      - 'tecnicos_app/**'
-      - '!tecnicos_app/supabase/**'
-      - '.github/workflows/app.yml'
+    paths-ignore:
+      - 'supabase/**'
+      - '**.md'
+      - '.github/workflows/edge-functions.yml'
   workflow_dispatch:
 
 permissions:
@@ -23,10 +23,6 @@ permissions:
 concurrency:
   group: app-${{ github.ref }}
   cancel-in-progress: true
-
-defaults:
-  run:
-    working-directory: tecnicos_app
 
 jobs:
   verificar:
