@@ -87,7 +87,8 @@ CambiosPerfil _cambios(
 }) => CambiosPerfil(
   tarifaBase: perfil.tarifaBase,
   rangoCoberturaM: radio ?? perfil.rangoCoberturaM,
-  ubicacion: ubicacion ?? perfil.ubicacionActual ?? GeoMapper.quito,
+  // Sin zona marcada y sin una nueva, no se inventa una.
+  ubicacion: ubicacion ?? perfil.ubicacionActual,
   oficioIds: oficios ?? perfil.oficioIds.toSet(),
 );
 

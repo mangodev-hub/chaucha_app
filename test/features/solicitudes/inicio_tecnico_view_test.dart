@@ -192,7 +192,8 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Hola, Carlos.'), findsOneWidget);
-    expect(find.text('Pendientes de hoy'), findsOneWidget);
+    expect(find.text('Tus propuestas'), findsOneWidget);
+    expect(find.text('Tu próxima visita'), findsOneWidget);
     // Solo el scroll de la página (el de la prueba).
     expect(find.byType(SingleChildScrollView), findsOneWidget);
 

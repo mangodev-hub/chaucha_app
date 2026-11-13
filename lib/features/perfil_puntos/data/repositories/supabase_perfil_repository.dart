@@ -56,7 +56,8 @@ class SupabasePerfilRepository implements PerfilRepository {
           .update({
             'tarifa_base': cambios.tarifaBase,
             'rango_cobertura_m': cambios.rangoCoberturaM,
-            'ubicacion_actual': GeoMapper.toPostGisPoint(cambios.ubicacion),
+            if (cambios.ubicacion case final punto?)
+              'ubicacion_actual': GeoMapper.toPostGisPoint(punto),
           })
           .eq('usuario_id', uid);
 

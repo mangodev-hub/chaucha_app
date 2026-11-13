@@ -805,8 +805,11 @@ class DatosProximaVisita extends StatelessWidget {
     required this.precio,
     required this.onReagendar,
     required this.onEscribir,
+    this.textoSecundario = 'Reagendar',
   });
 
+  /// Texto del botón con borde (el técnico ve "Ver detalle").
+  final String textoSecundario;
   final DateTime inicio;
   final DateTime fin;
   final String tecnico;
@@ -889,7 +892,7 @@ class DatosProximaVisita extends StatelessWidget {
           children: [
             Expanded(
               child: _BotonChico(
-                texto: 'Reagendar',
+                texto: textoSecundario,
                 conBorde: true,
                 onPressed: onReagendar,
               ),
@@ -940,7 +943,7 @@ class TarjetasConfianza extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tarjetas = [
-      _TarjetaConfianza(
+      TarjetaConfianza(
         icono: Icons.verified_user_rounded,
         fondo: Colores.primarioSuave,
         color: Colores.primarioVivo,
@@ -948,7 +951,7 @@ class TarjetasConfianza extends StatelessWidget {
         texto: 'Cédula y selfie revisadas por nuestro equipo.',
         onTap: onVerificacion,
       ),
-      _TarjetaConfianza(
+      TarjetaConfianza(
         icono: Icons.shield_outlined,
         insignia: Icons.schedule_rounded,
         fondo: Colores.cieloSuave,
@@ -957,7 +960,7 @@ class TarjetasConfianza extends StatelessWidget {
         texto: 'Si algo falla, repórtalo desde tu ticket.',
         onTap: onGarantia,
       ),
-      _TarjetaConfianza(
+      TarjetaConfianza(
         icono: Icons.payments_outlined,
         fondo: Colores.avisoSuave,
         color: Colores.aviso,
@@ -966,6 +969,19 @@ class TarjetasConfianza extends StatelessWidget {
         onTap: onPago,
       ),
     ];
+    return FilaTarjetasInicio(tarjetas: tarjetas);
+  }
+}
+
+/// Tarjetas chicas en fila desde 640 px de ancho, todas del mismo alto; más
+/// angosto, una debajo de otra.
+class FilaTarjetasInicio extends StatelessWidget {
+  const FilaTarjetasInicio({super.key, required this.tarjetas});
+
+  final List<Widget> tarjetas;
+
+  @override
+  Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, r) {
         if (r.maxWidth < 640) {
@@ -994,8 +1010,9 @@ class TarjetasConfianza extends StatelessWidget {
   }
 }
 
-class _TarjetaConfianza extends StatelessWidget {
-  const _TarjetaConfianza({
+class TarjetaConfianza extends StatelessWidget {
+  const TarjetaConfianza({
+    super.key,
     required this.icono,
     required this.fondo,
     required this.color,

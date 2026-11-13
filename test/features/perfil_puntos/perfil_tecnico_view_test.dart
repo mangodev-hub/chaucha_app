@@ -131,7 +131,9 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Carlos Daniel Puente Castro'), findsOneWidget);
       expect(find.text('Quito, Ecuador'), findsOneWidget);
-      expect(find.text('Tu actividad'), findsOneWidget);
+      expect(find.text('Datos de trabajo'), findsOneWidget);
+      expect(find.text('Zona de trabajo'), findsOneWidget);
+      expect(find.text('Lo que dicen los clientes'), findsOneWidget);
 
       await _desmontar(tester);
     });

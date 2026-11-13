@@ -223,13 +223,20 @@ class ResumenResenas extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      cifra,
-                      const SizedBox(width: Espacios.l),
-                      Expanded(child: barras),
-                    ],
-                  ),
+                  // Muy angosto (teléfonos de 320 px): la cifra va arriba
+                  // de las barras; si no, al lado.
+                  if (r.maxWidth < 300) ...[
+                    Align(alignment: Alignment.centerLeft, child: cifra),
+                    const SizedBox(height: Espacios.m),
+                    barras,
+                  ] else
+                    Row(
+                      children: [
+                        cifra,
+                        const SizedBox(width: Espacios.l),
+                        Expanded(child: barras),
+                      ],
+                    ),
                   if (etiquetas.isNotEmpty) ...[
                     const SizedBox(height: Espacios.m),
                     pildoras,
@@ -316,27 +323,31 @@ class FilaResena extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                // Nombre con estrellas a la izquierda y la fecha a la
+                // derecha. Si no caben (teléfonos de 320 px), lo que no
+                // entra baja a la línea siguiente en vez de desbordar.
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: Espacios.s,
+                  runSpacing: 2,
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              r.autor,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: textos.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                    Wrap(
+                      spacing: Espacios.s,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          r.autor,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textos.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
                           ),
-                          const SizedBox(width: Espacios.s),
-                          Estrellas(valor: r.calificacion.toDouble()),
-                        ],
-                      ),
+                        ),
+                        Estrellas(valor: r.calificacion.toDouble()),
+                      ],
                     ),
-                    const SizedBox(width: Espacios.s),
                     Text(
                       _fecha(r.creadoEn),
                       style: textos.bodySmall?.copyWith(

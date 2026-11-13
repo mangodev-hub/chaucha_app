@@ -1,34 +1,31 @@
-// Pestaña "Inicio" del técnico: su portada con la línea del día, qué le
-// falta para trabajar, las solicitudes cerca y sus pendientes. Cada sección
-// carga por separado; si una falla, las demás se siguen viendo.
+// Pestaña "Inicio" del técnico: su portada con la línea del día, un resumen
+// de su mes, qué le falta para trabajar, sus propuestas, las solicitudes
+// cerca, sus chats y su próxima visita. Cada sección carga por separado; si
+// una falla, las demás se siguen viendo.
 //
 // Mismo armado que el inicio del cliente: tarjetas blancas (radio 18 y
-// sombra suave) sobre el fondo claro. Desde 1280 px, la portada, "Para
-// empezar" y el mapa van a la izquierda, y la publicidad y los pendientes
-// en una columna de 340 px a la derecha. En la web la página va dentro del
+// sombra suave) sobre el fondo claro. Desde 1280 px, lo principal va a la
+// izquierda y los chats, la próxima visita y la publicidad en una columna de
+// 340 px a la derecha. En la web la página va dentro del
 // scroll único del shell (que pone el pie); en el teléfono, en la hoja
 // clara con su propio scroll.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../app/pie_pagina.dart';
-import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
-import '../../../../core/utils/formatos.dart';
 import '../../../../core/utils/refrescar.dart';
-import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/hoja_clara.dart';
 import '../../../../core/widgets/scroll_pagina.dart';
-import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../../core/widgets/tarjeta_inicio.dart';
 import '../../../../core/widgets/tarjeta_portada.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
-import '../../../chat/domain/entities/conversacion_pendiente.dart';
-import '../../../chat/presentation/widgets/chat_flotante.dart';
+import '../../../catalogo/domain/entities/oficio.dart';
+import '../../../catalogo/presentation/providers/oficios_provider.dart';
+import '../../../catalogo/presentation/widgets/icono_oficio.dart';
+import '../../../chat/presentation/providers/mis_chats_provider.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_publico_provider.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 import '../../../perfil_puntos/presentation/views/verificacion_view.dart';
@@ -36,18 +33,17 @@ import '../../../perfil_puntos/presentation/widgets/ajustes_tecnico.dart';
 import '../../../perfil_puntos/presentation/widgets/disponibilidad_tecnico.dart';
 import '../../../publicidad/domain/entities/anuncio.dart';
 import '../../../publicidad/presentation/widgets/bloque_publicidad.dart';
-import '../../domain/entities/resumen_tecnico.dart';
-import '../../domain/entities/solicitud.dart';
 import '../providers/feed_provider.dart';
 import '../providers/inicio_tecnico_provider.dart';
 import '../providers/listas_provider.dart';
 import '../providers/visitas_agenda_provider.dart';
 import '../widgets/cerca_tecnico.dart';
+import '../widgets/inicio_tecnico_bloques.dart';
 
 class InicioTecnicoView extends ConsumerWidget {
   const InicioTecnicoView({super.key});
 
-  /// Desde este ancho, la publicidad y los pendientes van a la derecha.
+  /// Desde este ancho, chats, visita y publicidad van a la derecha.
   static const double anchoDosColumnas = 1280;
 
   /// Bajo este ancho es el teléfono: hoja clara con scroll propio.
@@ -61,6 +57,7 @@ class InicioTecnicoView extends ConsumerWidget {
       ..invalidate(misOfertasProvider)
       ..invalidate(chatsPendientesProvider)
       ..invalidate(visitasProximasProvider(false))
+      ..invalidate(misChatsProvider)
       ..invalidate(feedProvider);
     final id = ref.read(usuarioActualProvider)?.id;
     if (id != null) ref.invalidate(perfilPublicoProvider(id));
@@ -74,13 +71,19 @@ class InicioTecnicoView extends ConsumerWidget {
     const espacio = SizedBox(height: 18);
 
     const portada = _Portada();
+    const resumen = ResumenTecnicoTarjetas();
     const paraEmpezar = _ParaEmpezar(separacion: 18);
+    const propuestas = BloquePropuestas();
     const cerca = CercaTecnico();
-    const pendientes = _Pendientes();
+    const chats = BloqueChatsTecnico();
+    const visita = BloqueVisitaTecnico();
     const publicidad = BloquePublicidad(
       ubicacion: UbicacionAnuncio.homeTecnico,
     );
+    const espacioPanel = SizedBox(height: Espacios.l);
 
+    // Mismo armado que el inicio del cliente: lo principal a la izquierda y
+    // chats, próxima visita y publicidad en una columna de 340 px.
     final Widget contenido = ancho >= anchoDosColumnas
         ? const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,7 +91,16 @@ class InicioTecnicoView extends ConsumerWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [portada, paraEmpezar, espacio, cerca],
+                  children: [
+                    portada,
+                    espacio,
+                    resumen,
+                    paraEmpezar,
+                    espacio,
+                    propuestas,
+                    espacio,
+                    cerca,
+                  ],
                 ),
               ),
               SizedBox(width: 24),
@@ -97,23 +109,38 @@ class InicioTecnicoView extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    chats,
+                    espacioPanel,
+                    visita,
+                    espacioPanel,
                     publicidad,
-                    SizedBox(height: Espacios.l),
-                    pendientes,
                   ],
                 ),
               ),
             ],
           )
-        : const Column(
+        : Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               portada,
+              espacio,
+              resumen,
               paraEmpezar,
               espacio,
-              cerca,
+              // En el teléfono la próxima visita va antes que los chats.
+              if (movil) ...[
+                visita,
+                espacio,
+                chats,
+              ] else ...[
+                chats,
+                espacio,
+                visita,
+              ],
               espacio,
-              pendientes,
+              propuestas,
+              espacio,
+              cerca,
               espacio,
               publicidad,
             ],
@@ -159,6 +186,13 @@ class _Portada extends ConsumerWidget {
     final nombre =
         ref.watch(usuarioActualProvider)?.nombres.trim().split(' ').first ?? '';
     final perfil = ref.watch(perfilTecnicoProvider).value;
+    final nombresOficio = {
+      for (final o in ref.watch(oficiosProvider).value ?? const <Oficio>[])
+        o.id: o.nombre,
+    };
+    final misOficios = [
+      for (final id in perfil?.oficioIds ?? const <int>[]) ?nombresOficio[id],
+    ];
     final chats = ref.watch(chatsPendientesProvider).value?.length;
     final hoy = DateTime.now();
     final visitas = ref
@@ -238,6 +272,8 @@ class _Portada extends ConsumerWidget {
                             puntos: perfil.puntos,
                           ),
                         if (movil) const PildoraDisponible(),
+                        // Sus oficios, como los del inicio del cliente.
+                        for (final o in misOficios) _ChipOficio(o),
                       ],
                     ),
                   ],
@@ -253,6 +289,43 @@ class _Portada extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Oficio del técnico: chip blanco translúcido con borde suave.
+class _ChipOficio extends StatelessWidget {
+  const _ChipOficio(this.texto);
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Espacios.m,
+        vertical: Espacios.s - 1,
+      ),
+      decoration: BoxDecoration(
+        color: Colores.tarjeta.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(Radios.pildora),
+        border: Border.all(color: Colores.tarjeta.withValues(alpha: 0.9)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(iconoOficio(texto), size: 15, color: Colores.cieloOscuro),
+          const SizedBox(width: Espacios.xs + 2),
+          Text(
+            texto,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontSize: 13,
+              color: Colores.cieloOscuro,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -492,265 +565,6 @@ class _PasoInicio extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-// Pendientes de hoy
-
-/// Chats donde el cliente espera respuesta y trabajos en curso. Si está al
-/// día es una fila compacta.
-class _Pendientes extends ConsumerWidget {
-  const _Pendientes();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final textos = Theme.of(context).textTheme;
-    final chats = ref.watch(chatsPendientesProvider);
-    final resumen = ref.watch(resumenTecnicoProvider);
-
-    final alDia =
-        (chats.value?.isEmpty ?? false) &&
-        (resumen.value?.trabajosEnCurso.isEmpty ?? false);
-
-    if (alDia) {
-      return TarjetaInicio(
-        child: Row(
-          children: [
-            const IconoRecuadro(
-              icono: Icons.task_alt_rounded,
-              color: Colores.primario,
-              fondo: Colores.primarioSuave,
-            ),
-            const SizedBox(width: Espacios.m),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Pendientes de hoy', style: textos.titleSmall),
-                  Text(
-                    'Estás al día: sin chats ni trabajos en curso.',
-                    style: textos.bodySmall?.copyWith(
-                      color: Colores.tintaSuave,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return TarjetaInicio(
-      padding: const EdgeInsets.all(Espacios.l),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Pendientes de hoy',
-            style: textos.titleMedium?.copyWith(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: Espacios.s),
-          _AsyncCompacto<List<ConversacionPendiente>>(
-            valor: chats,
-            onReintentar: () => ref.invalidate(chatsPorResponderProvider),
-            contenido: (lista) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final c in lista.take(3)) _ChatPendiente(chat: c),
-                if (lista.length > 3)
-                  _Mas(texto: 'y ${lista.length - 3} chats más'),
-              ],
-            ),
-          ),
-          _AsyncCompacto<ResumenTecnico>(
-            valor: resumen,
-            onReintentar: () => ref.invalidate(resumenTecnicoProvider),
-            contenido: (r) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final t in r.trabajosEnCurso.take(3))
-                  _FilaPendiente(
-                    icono: Icons.handyman_outlined,
-                    titulo: '${t.oficioNombre} · en curso',
-                    detalle: t.descripcion,
-                    onTap: () => unawaited(_abrirSolicitud(context, ref, t)),
-                  ),
-                if (r.trabajosEnCurso.length > 3)
-                  _Mas(texto: 'y ${r.trabajosEnCurso.length - 3} trabajos más'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-Future<void> _abrirSolicitud(
-  BuildContext context,
-  WidgetRef ref,
-  Solicitud solicitud,
-) async {
-  await context.push(
-    AppRoutes.detalleSolicitud(solicitud.id, esCliente: false),
-  );
-  if (!context.mounted) return;
-  ref
-    ..invalidate(misTrabajosProvider)
-    ..invalidate(misOfertasProvider)
-    ..invalidate(feedProvider);
-}
-
-class _ChatPendiente extends ConsumerWidget {
-  const _ChatPendiente({required this.chat});
-
-  final ConversacionPendiente chat;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dia = Formatos.dia(chat.enviadoEn);
-    return _FilaPendiente(
-      icono: Icons.mark_chat_unread_outlined,
-      titulo: chat.oficio == null
-          ? 'Un cliente te escribió'
-          : '${chat.oficio} · te escribió',
-      detalle: chat.ultimoMensaje,
-      cuando: dia == 'Hoy' ? Formatos.hora(chat.enviadoEn) : dia,
-      onTap: () async {
-        await abrirChat(context, chat.conversacionId, esCliente: false);
-        if (context.mounted) ref.invalidate(chatsPorResponderProvider);
-      },
-    );
-  }
-}
-
-/// Fila tocable de un pendiente: ícono, título, detalle y hora opcional.
-class _FilaPendiente extends StatelessWidget {
-  const _FilaPendiente({
-    required this.icono,
-    required this.titulo,
-    required this.detalle,
-    required this.onTap,
-    this.cuando,
-  });
-
-  final IconData icono;
-  final String titulo;
-  final String detalle;
-  final String? cuando;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    final cuando = this.cuando;
-    final borde = BorderRadius.circular(Radios.pequeno);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: borde,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: Espacios.s),
-        child: Row(
-          children: [
-            IconoRecuadro(icono: icono),
-            const SizedBox(width: Espacios.m),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    titulo,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textos.titleSmall,
-                  ),
-                  Text(
-                    detalle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textos.bodySmall?.copyWith(
-                      color: Colores.tintaSuave,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (cuando != null) ...[
-              const SizedBox(width: Espacios.s),
-              Text(
-                cuando,
-                style: textos.labelSmall?.copyWith(color: Colores.tintaSuave),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Una sección que carga sola: un indicador pequeño mientras carga, un aviso
-/// compacto con "Reintentar" si falla, y el contenido cuando llegan los
-/// datos (se mantiene visible durante una recarga).
-class _AsyncCompacto<T> extends StatelessWidget {
-  const _AsyncCompacto({
-    required this.valor,
-    required this.contenido,
-    required this.onReintentar,
-  });
-
-  final AsyncValue<T> valor;
-  final Widget Function(T datos) contenido;
-  final VoidCallback onReintentar;
-
-  @override
-  Widget build(BuildContext context) {
-    return valor.when(
-      skipLoadingOnRefresh: !valor.hasError,
-      data: contenido,
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: Espacios.l),
-        child: Center(
-          child: SizedBox.square(
-            dimension: 24,
-            child: CircularProgressIndicator(strokeWidth: 2.5),
-          ),
-        ),
-      ),
-      error: (error, _) => Padding(
-        padding: const EdgeInsets.only(bottom: Espacios.m),
-        child: EstadoMensaje(
-          compacto: true,
-          tipo: TipoEstado.error,
-          icono: Icons.cloud_off_outlined,
-          mensaje: AsyncValueView.mensajeDe(error),
-          textoAccion: 'Reintentar',
-          onAccion: onReintentar,
-        ),
-      ),
-    );
-  }
-}
-
-class _Mas extends StatelessWidget {
-  const _Mas({required this.texto});
-
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: Espacios.xs, bottom: Espacios.s),
-      child: Text(
-        texto,
-        style: Theme.of(context).textTheme.bodySmall
-            ?.copyWith(color: Colores.tintaSuave),
       ),
     );
   }

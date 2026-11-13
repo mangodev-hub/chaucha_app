@@ -5,12 +5,15 @@ class CambiosPerfil {
   const CambiosPerfil({
     required this.tarifaBase,
     required this.rangoCoberturaM,
-    required this.ubicacion,
     required this.oficioIds,
+    this.ubicacion,
   });
 
   final double tarifaBase;
   final int rangoCoberturaM;
-  final LatLng ubicacion;
+
+  /// Punto de partida. Si es null no se toca la zona guardada (por ejemplo,
+  /// al guardar solo la tarifa y los oficios).
+  final LatLng? ubicacion;
   final Set<int> oficioIds;
 }
