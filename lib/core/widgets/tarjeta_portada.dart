@@ -97,7 +97,10 @@ class TarjetaPortada extends StatelessWidget {
                       Expanded(child: texto),
                       if (conIlustracion) ...[
                         const SizedBox(width: Espacios.l),
-                        _Ilustracion(icono: icono, tamano: tamanoIlustracion),
+                        IlustracionPortada(
+                          icono: icono,
+                          tamano: tamanoIlustracion,
+                        ),
                       ],
                     ],
                   ),
@@ -204,8 +207,12 @@ class _PildoraDato extends StatelessWidget {
 
 /// Ilustración hecha con formas: un círculo claro translúcido con el ícono y
 /// una insignia de "verificado". Entra con un pequeño rebote.
-class _Ilustracion extends StatelessWidget {
-  const _Ilustracion({required this.icono, required this.tamano});
+class IlustracionPortada extends StatelessWidget {
+  const IlustracionPortada({
+    super.key,
+    required this.icono,
+    required this.tamano,
+  });
 
   final IconData icono;
   final double tamano;

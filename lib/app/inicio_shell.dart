@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/geo/sector_service.dart';
 import '../core/presence/presencia_service.dart';
 import '../core/providers/core_providers.dart';
 import '../core/providers/sincronizacion_provider.dart';
@@ -106,6 +105,7 @@ class InicioShell extends ConsumerStatefulWidget {
     this.pagina,
     this.paginaLlena = false,
     this.rutaInicio,
+    this.barraExtra,
   });
 
   /// Desde este ancho la navegación es un menú lateral en vez de la barra
@@ -128,7 +128,7 @@ class InicioShell extends ConsumerStatefulWidget {
   final String? notaMenu;
 
   /// Con menú lateral: fondo claro, barra superior blanca y el menú directo
-  /// sobre el fondo (inicio web del cliente).
+  /// sobre el fondo (la web de los tres roles).
   final bool claro;
 
   /// Buscador de la barra superior clara: recibe lo escrito.
@@ -144,6 +144,11 @@ class InicioShell extends ConsumerStatefulWidget {
   /// La [pagina] ocupa el alto visible y tiene su propio scroll (chat).
   final bool paginaLlena;
   final String? rutaInicio;
+
+  /// Lo propio del rol en la barra superior clara, antes de la campana (la
+  /// píldora "Disponible" y el sector del técnico). Sin buscador ni
+  /// [barraExtra] (admin), la barra solo lleva la marca y la cuenta.
+  final Widget? barraExtra;
 
   @override
   ConsumerState<InicioShell> createState() => _InicioShellState();
@@ -539,7 +544,10 @@ class _InicioShellState extends ConsumerState<InicioShell> {
                           ),
                   ),
                   const SizedBox(width: Espacios.l),
-                  const _UbicacionActual(),
+                  if (widget.barraExtra case final extra?)
+                    extra
+                  else if (onBuscar != null)
+                    const _UbicacionActual(),
                   const SizedBox(width: Espacios.s),
                   _Campana(
                     cantidad: noLeidas.length,
@@ -692,39 +700,8 @@ class _UbicacionActual extends ConsumerWidget {
   const _UbicacionActual();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final punto = ref.watch(ubicacionInicioProvider).value;
-    final sector = punto == null
-        ? null
-        : ref.watch(sectorProvider(SectorService.clave(punto))).value;
-    if (sector == null || sector.isEmpty) return const SizedBox.shrink();
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 200),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.location_on_outlined,
-            size: 18,
-            color: Colores.primario,
-          ),
-          const SizedBox(width: Espacios.xs),
-          Flexible(
-            child: Text(
-              sector,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontSize: 13,
-                color: Colores.primario,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SectorEnBarra(punto: ref.watch(ubicacionInicioProvider).value);
 }
 
 class _Campana extends StatelessWidget {

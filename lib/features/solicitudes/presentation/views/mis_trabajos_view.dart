@@ -12,6 +12,7 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/filtro_chips.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/listas_provider.dart';
@@ -86,8 +87,8 @@ class _MisTrabajosViewState extends ConsumerState<MisTrabajosView> {
         onRefresh: () =>
             esperarSinError(ref.refresh(misTrabajosProvider.future)),
         child: trabajos.isEmpty
-            ? ListView(
-                children: const [
+            ? const ListaDePagina(
+                children: [
                   EstadoMensaje(
                     icono: Icons.work_outline,
                     titulo: 'Aún no tienes trabajos',
@@ -138,13 +139,15 @@ class _MisTrabajosViewState extends ConsumerState<MisTrabajosView> {
       contenido = [if (visibles.isNotEmpty) _grupo(_estado.etiqueta, visibles)];
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        Espacios.l,
-        Espacios.l,
-        Espacios.l,
-        Espacios.xxl,
-      ),
+    return ListaDePagina(
+      padding: ScrollDePagina.activo(context)
+          ? EdgeInsets.zero
+          : const EdgeInsets.fromLTRB(
+              Espacios.l,
+              Espacios.l,
+              Espacios.l,
+              Espacios.xxl,
+            ),
       children: [
         AnchoMaximo(
           child: Column(

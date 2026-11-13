@@ -1,17 +1,19 @@
-// Pestaña "Inicio" del técnico: qué le falta para trabajar, sus pendientes
-// del día, solicitudes nuevas cerca, su actividad y su reputación. Cada
-// sección carga por separado; si una falla, las demás se siguen viendo.
+// Pestaña "Inicio" del técnico: su portada con la línea del día, qué le
+// falta para trabajar, las solicitudes cerca y sus pendientes. Cada sección
+// carga por separado; si una falla, las demás se siguen viendo.
 //
-// Cada sección es una tarjeta bento sobre el fondo oscuro. En móvil: una
-// columna. En escritorio: lo urgente a la izquierda y la zona y las ofertas
-// a la derecha.
+// Mismo armado que el inicio del cliente: tarjetas blancas (radio 18 y
+// sombra suave) sobre el fondo claro. Desde 1280 px, la portada, "Para
+// empezar" y el mapa van a la izquierda, y la publicidad y los pendientes
+// en una columna de 340 px a la derecha. En la web la página va dentro del
+// scroll único del shell (que pone el pie); en el teléfono, en la hoja
+// clara con su propio scroll.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/pestana_solicitada.dart';
 import '../../../../app/pie_pagina.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
@@ -19,10 +21,10 @@ import '../../../../core/utils/formatos.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
-import '../../../../core/widgets/responsive_layout.dart';
-import '../../../../core/widgets/seccion.dart';
+import '../../../../core/widgets/hoja_clara.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
-import '../../../../core/widgets/tarjeta_onda.dart';
+import '../../../../core/widgets/tarjeta_inicio.dart';
 import '../../../../core/widgets/tarjeta_portada.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../chat/domain/entities/conversacion_pendiente.dart';
@@ -30,6 +32,8 @@ import '../../../chat/presentation/widgets/chat_flotante.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_publico_provider.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 import '../../../perfil_puntos/presentation/views/verificacion_view.dart';
+import '../../../perfil_puntos/presentation/widgets/ajustes_tecnico.dart';
+import '../../../perfil_puntos/presentation/widgets/disponibilidad_tecnico.dart';
 import '../../../publicidad/domain/entities/anuncio.dart';
 import '../../../publicidad/presentation/widgets/bloque_publicidad.dart';
 import '../../domain/entities/resumen_tecnico.dart';
@@ -37,11 +41,17 @@ import '../../domain/entities/solicitud.dart';
 import '../providers/feed_provider.dart';
 import '../providers/inicio_tecnico_provider.dart';
 import '../providers/listas_provider.dart';
+import '../providers/visitas_agenda_provider.dart';
 import '../widgets/cerca_tecnico.dart';
-import '../widgets/solicitud_widgets.dart';
 
 class InicioTecnicoView extends ConsumerWidget {
   const InicioTecnicoView({super.key});
+
+  /// Desde este ancho, la publicidad y los pendientes van a la derecha.
+  static const double anchoDosColumnas = 1280;
+
+  /// Bajo este ancho es el teléfono: hoja clara con scroll propio.
+  static const double anchoMovil = 700;
 
   /// Recarga todo lo que muestra el inicio.
   static Future<void> _recargar(WidgetRef ref) {
@@ -50,6 +60,7 @@ class InicioTecnicoView extends ConsumerWidget {
       ..invalidate(misTrabajosProvider)
       ..invalidate(misOfertasProvider)
       ..invalidate(chatsPendientesProvider)
+      ..invalidate(visitasProximasProvider(false))
       ..invalidate(feedProvider);
     final id = ref.read(usuarioActualProvider)?.id;
     if (id != null) ref.invalidate(perfilPublicoProvider(id));
@@ -58,113 +69,258 @@ class InicioTecnicoView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final escritorio = ResponsiveLayout.isDesktop(context);
+    final ancho = MediaQuery.sizeOf(context).width;
+    final movil = ancho < anchoMovil;
+    const espacio = SizedBox(height: 18);
 
-    const urgente = [_ParaEmpezar(), _Pendientes()];
-    const progreso = [_Publicidad()];
-    const derecha = progreso;
+    const portada = _Portada();
+    const paraEmpezar = _ParaEmpezar(separacion: 18);
+    const cerca = CercaTecnico();
+    const pendientes = _Pendientes();
+    const publicidad = BloquePublicidad(
+      ubicacion: UbicacionAnuncio.homeTecnico,
+    );
 
-    return RefreshIndicator(
-      onRefresh: () => _recargar(ref),
-      child: ListView(
-        padding: escritorio
-            ? const EdgeInsets.all(Espacios.xl)
-            : const EdgeInsets.fromLTRB(
-                Espacios.l,
-                Espacios.xs,
-                Espacios.l,
-                Espacios.l,
-              ),
-        children: [
-          AnchoMaximo(
-            ancho: escritorio ? 1100 : 900,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _Portada(),
-                // El mapa con las solicitudes de su zona, a todo el ancho.
-                const Padding(
-                  padding: EdgeInsets.only(top: Espacios.bento),
-                  child: CercaTecnico(),
+    final Widget contenido = ancho >= anchoDosColumnas
+        ? const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [portada, paraEmpezar, espacio, cerca],
                 ),
-                if (escritorio)
-                  const Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: urgente,
-                        ),
-                      ),
-                      SizedBox(width: Espacios.bento),
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: derecha,
-                        ),
-                      ),
-                    ],
-                  )
-                else ...[
-                  ...urgente,
-                  ...progreso,
-                ],
-                const SizedBox(height: Espacios.xl),
-              ],
-            ),
-          ),
-          const PiePagina(),
-        ],
+              ),
+              SizedBox(width: 24),
+              SizedBox(
+                width: 340,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    publicidad,
+                    SizedBox(height: Espacios.l),
+                    pendientes,
+                  ],
+                ),
+              ),
+            ],
+          )
+        : const Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              portada,
+              paraEmpezar,
+              espacio,
+              cerca,
+              espacio,
+              pendientes,
+              espacio,
+              publicidad,
+            ],
+          );
+
+    // Dentro del scroll único de la web, la página ya tiene scroll y pie.
+    if (ScrollDePagina.activo(context)) return contenido;
+
+    final pagina = RefreshIndicator(
+      onRefresh: () => _recargar(ref),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // En web, 12 px a los lados para que no se corten las sombras.
+        padding: movil
+            ? const EdgeInsets.all(Espacios.l)
+            : const EdgeInsets.fromLTRB(12, 0, 12, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            contenido,
+            const SizedBox(height: Espacios.xxl),
+            const PiePagina(),
+          ],
+        ),
       ),
     );
+    return movil ? HojaClara(child: pagina) : pagina;
   }
 }
+
 // Portada
 
-/// Saludo con el total de pendientes del día (chats por responder y trabajos
-/// en curso) en la píldora, cuando ya cargaron.
+/// "Hola, {nombre}." sobre el degradado celeste, con la línea del día, la
+/// calificación y los puntos en una píldora blanca y la ilustración del
+/// técnico a la derecha. En el teléfono, sin barra superior, lleva también
+/// la píldora "Disponible".
 class _Portada extends ConsumerWidget {
   const _Portada();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final textos = Theme.of(context).textTheme;
+    final nombre =
+        ref.watch(usuarioActualProvider)?.nombres.trim().split(' ').first ?? '';
+    final perfil = ref.watch(perfilTecnicoProvider).value;
     final chats = ref.watch(chatsPendientesProvider).value?.length;
-    final trabajos = ref
-        .watch(resumenTecnicoProvider)
+    final hoy = DateTime.now();
+    final visitas = ref
+        .watch(visitasProximasProvider(false))
         .value
-        ?.trabajosEnCurso
+        ?.where((v) => DateUtils.isSameDay(v.inicio, hoy))
         .length;
-    final pendientes = chats == null || trabajos == null
-        ? null
-        : chats + trabajos;
+    final movil =
+        MediaQuery.sizeOf(context).width < InicioTecnicoView.anchoMovil;
 
-    // Portada celeste: distingue el inicio del técnico del del cliente.
-    return TarjetaPortada(
-      celeste: true,
-      titulo: 'Tu resumen de hoy.',
-      subtitulo: 'Chats, trabajos y solicitudes cerca de ti.',
-      icono: Icons.engineering_rounded,
-      dato: switch (pendientes) {
-        null => null,
-        0 => 'Estás al día',
-        1 => '1 pendiente hoy',
-        final n => '$n pendientes hoy',
-      },
-      iconoDato: pendientes == 0
-          ? Icons.task_alt_rounded
-          : Icons.notifications_active_outlined,
+    // Lo más urgente primero: visitas de hoy, luego chats por responder.
+    final linea = switch ((visitas, chats)) {
+      (final v?, _) when v > 0 =>
+        v == 1 ? 'Hoy tienes 1 visita' : 'Hoy tienes $v visitas',
+      (_, final c?) when c > 0 =>
+        c == 1
+            ? 'Tienes 1 chat por responder'
+            : 'Tienes $c chats por responder',
+      (_?, _?) => 'Estás al día',
+      _ => null,
+    };
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colores.cieloSuave, Colores.cieloNube, Colores.cieloBruma],
+        ),
+        borderRadius: BorderRadius.circular(Radios.grande),
+      ),
+      padding: const EdgeInsets.all(Espacios.xl),
+      child: LayoutBuilder(
+        builder: (context, restricciones) {
+          final ancho = restricciones.maxWidth;
+          final conIlustracion = ancho >= 340;
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nombre.isEmpty ? 'Hola.' : 'Hola, $nombre.',
+                      style: textos.headlineMedium?.copyWith(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colores.tinta,
+                        height: 1.15,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: Espacios.s),
+                    AnimatedSwitcher(
+                      duration: Movimiento.de(context, Movimiento.normal),
+                      child: Text(
+                        linea ?? 'Revisando tu día…',
+                        key: ValueKey(linea),
+                        style: textos.titleMedium?.copyWith(
+                          fontSize: 16,
+                          color: Colores.cieloOscuro,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: Espacios.l),
+                    Wrap(
+                      spacing: Espacios.s,
+                      runSpacing: Espacios.s,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (perfil != null)
+                          _PildoraReputacion(
+                            calificacion: perfil.totalResenas == 0
+                                ? null
+                                : perfil.calificacionPromedio,
+                            puntos: perfil.puntos,
+                          ),
+                        if (movil) const PildoraDisponible(),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (conIlustracion) ...[
+                const SizedBox(width: Espacios.l),
+                IlustracionPortada(
+                  icono: Icons.engineering_rounded,
+                  tamano: ancho >= 600 ? 130 : 96,
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Píldora blanca: estrella, calificación (o "Nuevo") y puntos.
+class _PildoraReputacion extends StatelessWidget {
+  const _PildoraReputacion({required this.calificacion, required this.puntos});
+
+  final double? calificacion;
+  final int puntos;
+
+  @override
+  Widget build(BuildContext context) {
+    final estilo = Theme.of(context).textTheme.labelLarge?.copyWith(
+      fontSize: 13,
+      color: Colores.tinta,
+      fontWeight: FontWeight.w700,
+    );
+    final calificacion = this.calificacion;
+    final nota = calificacion == null
+        ? 'Nuevo'
+        : calificacion.toStringAsFixed(1).replaceAll('.', ',');
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Espacios.m + 2,
+        vertical: Espacios.s,
+      ),
+      decoration: BoxDecoration(
+        color: Colores.tarjeta,
+        borderRadius: BorderRadius.circular(Radios.pildora),
+      ),
+      child: Semantics(
+        label: calificacion == null
+            ? 'Técnico nuevo, $puntos puntos'
+            : 'Calificación $nota, $puntos puntos',
+        child: ExcludeSemantics(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.star_rounded, size: 18, color: Colores.estrella),
+              const SizedBox(width: Espacios.xs),
+              Text(nota, style: estilo),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Espacios.s),
+                child: Text(
+                  '·',
+                  style: estilo?.copyWith(color: Colores.tintaSuave),
+                ),
+              ),
+              Text('$puntos pts', style: estilo),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
 // Para empezar a trabajar
-/// Lo que le falta al perfil para recibir solicitudes. Desaparece cuando
-/// todo está listo.
+
+/// Lo que le falta al perfil para recibir solicitudes, con el progreso y un
+/// botón por paso que abre la acción. Desaparece cuando todo está listo.
 class _ParaEmpezar extends ConsumerWidget {
-  const _ParaEmpezar();
+  const _ParaEmpezar({required this.separacion});
+
+  /// Espacio arriba, solo si la tarjeta se muestra.
+  final double separacion;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -173,76 +329,79 @@ class _ParaEmpezar extends ConsumerWidget {
     final pasos = [
       (
         hecho: perfil.verificado,
-        titulo: 'Verifica tu identidad',
+        titulo: 'Verificar identidad',
         detalle: 'Sube tu cédula y una selfie.',
         accion: 'Verificar',
-        onTap: perfil.verificado
-            ? null
-            : () => unawaited(mostrarVerificacion(context)),
+        onTap: () => unawaited(mostrarVerificacion(context)),
       ),
       (
         hecho: perfil.oficioIds.isNotEmpty,
-        titulo: 'Elige tus oficios',
-        detalle: 'En la pestaña "Mi perfil".',
+        titulo: 'Elegir oficios',
+        detalle: 'Verás solicitudes de los oficios que elijas.',
         accion: 'Elegir',
-        onTap: () {
-          ref.read(seccionPerfilProvider.notifier).pedir('oficios');
-          ref.read(pestanaSolicitadaProvider.notifier).pedir('Mi perfil');
-        },
+        onTap: () => unawaited(mostrarSelectorOficios(context)),
       ),
       (
         hecho: perfil.ubicacionActual != null,
-        titulo: 'Marca tu zona de trabajo',
-        detalle: 'En la pestaña "Mi perfil".',
+        titulo: 'Marcar zona de trabajo',
+        detalle: 'Desde dónde sales y hasta dónde atiendes.',
         accion: 'Marcar',
-        onTap: () {
-          ref.read(seccionPerfilProvider.notifier).pedir('zona');
-          ref.read(pestanaSolicitadaProvider.notifier).pedir('Mi perfil');
-        },
+        onTap: () => unawaited(mostrarZonaTrabajo(context)),
       ),
     ];
     final hechos = pasos.where((p) => p.hecho).length;
     if (hechos == pasos.length) return const SizedBox.shrink();
 
     final textos = Theme.of(context).textTheme;
-    // Tarjeta verde con los pasos en una sub-tarjeta blanca.
-    return _Bloque(
-      titulo: 'Para empezar a trabajar',
-      verde: true,
-      child: TarjetaApp(
-        conBorde: false,
+    return Padding(
+      padding: EdgeInsets.only(top: separacion),
+      child: TarjetaInicio(
+        padding: const EdgeInsets.all(Espacios.l + 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              '$hechos de ${pasos.length} listos. Completa tu perfil para '
-              'ver solicitudes cerca de ti.',
-              style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
-            ),
-            const SizedBox(height: Espacios.s),
-            for (final p in pasos)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                onTap: p.onTap,
-                leading: Icon(
-                  p.hecho ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: p.hecho ? Colores.acento : Colores.aviso,
-                ),
-                title: Text(
-                  p.titulo,
-                  style: textos.titleSmall?.copyWith(
-                    color: p.hecho ? Colores.tintaSuave : Colores.tinta,
-                    decoration: p.hecho ? TextDecoration.lineThrough : null,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Para empezar a trabajar',
+                    style: textos.titleMedium?.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                subtitle: p.hecho ? null : Text(p.detalle),
-                trailing: p.hecho
-                    ? null
-                    : FilledButton.tonal(
-                        onPressed: p.onTap,
-                        child: Text(p.accion),
-                      ),
+                Text(
+                  '$hechos de ${pasos.length} listos',
+                  style: textos.labelMedium?.copyWith(
+                    color: Colores.tintaSuave,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Espacios.s),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(Radios.pildora),
+              child: LinearProgressIndicator(
+                value: hechos / pasos.length,
+                minHeight: 4,
+                color: Colores.primarioVivo,
+                backgroundColor: Colores.superficie,
+                semanticsLabel: 'Progreso del perfil',
               ),
+            ),
+            const SizedBox(height: Espacios.s),
+            for (final (i, p) in pasos.indexed) ...[
+              if (i > 0) const Divider(height: 1, color: Colores.divisor),
+              _PasoInicio(
+                hecho: p.hecho,
+                titulo: p.titulo,
+                detalle: p.detalle,
+                accion: p.accion,
+                onTap: p.onTap,
+              ),
+            ],
           ],
         ),
       ),
@@ -250,76 +409,187 @@ class _ParaEmpezar extends ConsumerWidget {
   }
 }
 
+class _PasoInicio extends StatelessWidget {
+  const _PasoInicio({
+    required this.hecho,
+    required this.titulo,
+    required this.detalle,
+    required this.accion,
+    required this.onTap,
+  });
+
+  final bool hecho;
+  final String titulo;
+  final String detalle;
+  final String accion;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: Espacios.m),
+      child: Row(
+        children: [
+          if (hecho)
+            const Icon(
+              Icons.check_circle_rounded,
+              size: 24,
+              color: Colores.primarioVivo,
+              semanticLabel: 'Listo',
+            )
+          else
+            Container(
+              width: 22,
+              height: 22,
+              margin: const EdgeInsets.all(1),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colores.superficieFuerte, width: 2),
+              ),
+            ),
+          const SizedBox(width: Espacios.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: textos.titleSmall?.copyWith(
+                    color: hecho ? Colores.tintaSuave : Colores.tinta,
+                    decoration: hecho ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                if (!hecho)
+                  Text(
+                    detalle,
+                    style: textos.bodySmall?.copyWith(
+                      color: Colores.tintaSuave,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (!hecho) ...[
+            const SizedBox(width: Espacios.s),
+            FilledButton(
+              onPressed: onTap,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colores.primarioSuave,
+                foregroundColor: Colores.primario,
+                elevation: 0,
+                minimumSize: const Size(0, 36),
+                padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(Radios.pildora),
+                ),
+                textStyle: textos.labelLarge?.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              child: Text(accion),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 // Pendientes de hoy
-/// Chats donde el cliente espera respuesta y trabajos en curso.
+
+/// Chats donde el cliente espera respuesta y trabajos en curso. Si está al
+/// día es una fila compacta.
 class _Pendientes extends ConsumerWidget {
   const _Pendientes();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final textos = Theme.of(context).textTheme;
     final chats = ref.watch(chatsPendientesProvider);
     final resumen = ref.watch(resumenTecnicoProvider);
 
-    final sinPendientes =
+    final alDia =
         (chats.value?.isEmpty ?? false) &&
         (resumen.value?.trabajosEnCurso.isEmpty ?? false);
 
-    return _Bloque(
-      titulo: 'Pendientes de hoy',
-      child: sinPendientes
-          ? const EstadoMensaje(
-              compacto: true,
-              tipo: TipoEstado.exito,
-              icono: Icons.task_alt,
-              titulo: 'Estás al día',
-              mensaje: 'No tienes chats por responder ni trabajos en curso.',
-            )
-          : Column(
+    if (alDia) {
+      return TarjetaInicio(
+        child: Row(
+          children: [
+            const IconoRecuadro(
+              icono: Icons.task_alt_rounded,
+              color: Colores.primario,
+              fondo: Colores.primarioSuave,
+            ),
+            const SizedBox(width: Espacios.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Pendientes de hoy', style: textos.titleSmall),
+                  Text(
+                    'Estás al día: sin chats ni trabajos en curso.',
+                    style: textos.bodySmall?.copyWith(
+                      color: Colores.tintaSuave,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return TarjetaInicio(
+      padding: const EdgeInsets.all(Espacios.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Pendientes de hoy',
+            style: textos.titleMedium?.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: Espacios.s),
+          _AsyncCompacto<List<ConversacionPendiente>>(
+            valor: chats,
+            onReintentar: () => ref.invalidate(chatsPorResponderProvider),
+            contenido: (lista) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _AsyncCompacto<List<ConversacionPendiente>>(
-                  valor: chats,
-                  onReintentar: () => ref.invalidate(chatsPorResponderProvider),
-                  contenido: (lista) => Column(
-                    children: [
-                      for (final c in lista.take(3)) _ChatPendiente(chat: c),
-                      if (lista.length > 3)
-                        _Mas(texto: 'y ${lista.length - 3} chats más'),
-                    ],
-                  ),
-                ),
-                _AsyncCompacto<ResumenTecnico>(
-                  valor: resumen,
-                  onReintentar: () => ref.invalidate(resumenTecnicoProvider),
-                  contenido: (r) => Column(
-                    children: [
-                      for (final t in r.trabajosEnCurso.take(3))
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: Espacios.m),
-                          child: SolicitudCard(
-                            solicitud: t,
-                            onTap: () => _abrirSolicitud(context, ref, t),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                for (final c in lista.take(3)) _ChatPendiente(chat: c),
+                if (lista.length > 3)
+                  _Mas(texto: 'y ${lista.length - 3} chats más'),
               ],
             ),
+          ),
+          _AsyncCompacto<ResumenTecnico>(
+            valor: resumen,
+            onReintentar: () => ref.invalidate(resumenTecnicoProvider),
+            contenido: (r) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final t in r.trabajosEnCurso.take(3))
+                  _FilaPendiente(
+                    icono: Icons.handyman_outlined,
+                    titulo: '${t.oficioNombre} · en curso',
+                    detalle: t.descripcion,
+                    onTap: () => unawaited(_abrirSolicitud(context, ref, t)),
+                  ),
+                if (r.trabajosEnCurso.length > 3)
+                  _Mas(texto: 'y ${r.trabajosEnCurso.length - 3} trabajos más'),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
-}
-
-class _Publicidad extends StatelessWidget {
-  const _Publicidad();
-
-  @override
-  Widget build(BuildContext context) =>
-      // El carrusel ya es una tarjeta: va solo, con el respiro bento.
-      const Padding(
-        padding: EdgeInsets.only(top: Espacios.bento),
-        child: BloquePublicidad(ubicacion: UbicacionAnuncio.homeTecnico),
-      );
 }
 
 Future<void> _abrirSolicitud(
@@ -344,46 +614,82 @@ class _ChatPendiente extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final textos = Theme.of(context).textTheme;
     final dia = Formatos.dia(chat.enviadoEn);
-    final cuando = dia == 'Hoy' ? Formatos.hora(chat.enviadoEn) : dia;
-    return TarjetaApp(
-      margin: const EdgeInsets.only(bottom: Espacios.m),
+    return _FilaPendiente(
+      icono: Icons.mark_chat_unread_outlined,
+      titulo: chat.oficio == null
+          ? 'Un cliente te escribió'
+          : '${chat.oficio} · te escribió',
+      detalle: chat.ultimoMensaje,
+      cuando: dia == 'Hoy' ? Formatos.hora(chat.enviadoEn) : dia,
       onTap: () async {
         await abrirChat(context, chat.conversacionId, esCliente: false);
         if (context.mounted) ref.invalidate(chatsPorResponderProvider);
       },
-      child: Row(
-        children: [
-          const IconoRecuadro(icono: Icons.mark_chat_unread_outlined),
-          const SizedBox(width: Espacios.m),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  chat.oficio == null
-                      ? 'Un cliente te escribió'
-                      : '${chat.oficio} · te escribió',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textos.titleSmall,
-                ),
-                Text(
-                  chat.ultimoMensaje,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
-                ),
-              ],
+    );
+  }
+}
+
+/// Fila tocable de un pendiente: ícono, título, detalle y hora opcional.
+class _FilaPendiente extends StatelessWidget {
+  const _FilaPendiente({
+    required this.icono,
+    required this.titulo,
+    required this.detalle,
+    required this.onTap,
+    this.cuando,
+  });
+
+  final IconData icono;
+  final String titulo;
+  final String detalle;
+  final String? cuando;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    final cuando = this.cuando;
+    final borde = BorderRadius.circular(Radios.pequeno);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: borde,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Espacios.s),
+        child: Row(
+          children: [
+            IconoRecuadro(icono: icono),
+            const SizedBox(width: Espacios.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textos.titleSmall,
+                  ),
+                  Text(
+                    detalle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textos.bodySmall?.copyWith(
+                      color: Colores.tintaSuave,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: Espacios.s),
-          Text(
-            cuando,
-            style: textos.labelSmall?.copyWith(color: Colores.tintaSuave),
-          ),
-        ],
+            if (cuando != null) ...[
+              const SizedBox(width: Espacios.s),
+              Text(
+                cuando,
+                style: textos.labelSmall?.copyWith(color: Colores.tintaSuave),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -446,31 +752,6 @@ class _Mas extends StatelessWidget {
         style: Theme.of(context).textTheme.bodySmall
             ?.copyWith(color: Colores.tintaSuave),
       ),
-    );
-  }
-}
-
-/// Sección del inicio como tarjeta bento: título y contenido sobre la
-/// superficie clara con una onda celeste, o sobre verde claro con onda
-/// celeste si [verde] (lo que pide acción).
-class _Bloque extends StatelessWidget {
-  const _Bloque({
-    required this.titulo,
-    required this.child,
-    this.verde = false,
-  });
-
-  final String titulo;
-  final Widget child;
-  final bool verde;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: Espacios.bento),
-      child: verde
-          ? TarjetaOnda.verde(titulo: titulo, child: child)
-          : TarjetaOnda.clara(titulo: titulo, child: child),
     );
   }
 }

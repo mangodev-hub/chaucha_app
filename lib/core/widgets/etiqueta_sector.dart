@@ -74,3 +74,46 @@ class EtiquetaSector extends ConsumerWidget {
     );
   }
 }
+
+/// Sector de [punto] en la barra superior blanca: pin y nombre en verde.
+/// Sin punto o sin sector no ocupa espacio.
+class SectorEnBarra extends ConsumerWidget {
+  const SectorEnBarra({super.key, required this.punto});
+
+  final LatLng? punto;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final punto = this.punto;
+    final sector = punto == null
+        ? null
+        : ref.watch(sectorProvider(SectorService.clave(punto))).value;
+    if (sector == null || sector.isEmpty) return const SizedBox.shrink();
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 200),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.location_on_outlined,
+            size: 18,
+            color: Colores.primario,
+          ),
+          const SizedBox(width: Espacios.xs),
+          Flexible(
+            child: Text(
+              sector,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontSize: 13,
+                color: Colores.primario,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

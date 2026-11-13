@@ -26,6 +26,7 @@ import '../features/chat/presentation/views/chats_view.dart';
 import '../features/legal/presentation/views/pagina_legal_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_publico_view.dart';
 import '../features/perfil_puntos/presentation/views/perfil_tecnico_view.dart';
+import '../features/perfil_puntos/presentation/widgets/disponibilidad_tecnico.dart';
 import '../features/reclamos/presentation/providers/reclamos_provider.dart';
 import '../features/reclamos/presentation/views/mis_reclamos_view.dart';
 import '../features/reclamos/presentation/views/reclamo_detalle_view.dart';
@@ -107,6 +108,104 @@ final routerProvider = Provider<GoRouter>((ref) {
         PerfilClienteView(),
         iconoActivo: Icons.person_rounded,
         corto: 'Perfil',
+      ),
+    ],
+  );
+
+  // Shell del técnico, con la misma estructura web clara que el cliente.
+  InicioShell shellTecnico({Widget? pagina, bool llena = false}) => InicioShell(
+    pagina: pagina,
+    paginaLlena: llena,
+    rutaInicio: AppRoutes.tecnicoInicio,
+    onCerrarSesion: cerrarSesion,
+    claro: true,
+    barraExtra: const BarraTecnico(),
+    notaMenu:
+        'Recibe solicitudes de tu zona. Sin comisiones: te quedas con lo '
+        'que acuerdes.',
+    destinos: const [
+      Destino(
+        'Inicio',
+        Icons.home_outlined,
+        InicioTecnicoView(),
+        iconoActivo: Icons.home_rounded,
+        saludo: 'Estos son los trabajos de tu zona',
+      ),
+      Destino(
+        'Mis trabajos',
+        Icons.work_outline,
+        MisTrabajosView(),
+        iconoActivo: Icons.work_rounded,
+        corto: 'Trabajos',
+        tiposNotificacion: [
+          'cotizacion_aceptada',
+          'tarifa_cancelada',
+          'cierre',
+        ],
+      ),
+      Destino(
+        'Agenda',
+        Icons.event_outlined,
+        AgendaView(esCliente: false),
+        iconoActivo: Icons.event_rounded,
+      ),
+      Destino(
+        'Chats',
+        Icons.chat_bubble_outline_rounded,
+        ChatsView(esCliente: false),
+        iconoActivo: Icons.chat_bubble_rounded,
+        tiposNotificacion: tiposDeChat,
+        marcaAlEntrar: false,
+      ),
+      Destino(
+        'Mi perfil',
+        Icons.person_outline,
+        PerfilTecnicoView(),
+        iconoActivo: Icons.person_rounded,
+        corto: 'Perfil',
+      ),
+    ],
+  );
+
+  // Shell del admin: estructura clara, sin buscador ni acción central.
+  InicioShell shellAdmin({Widget? pagina, bool llena = false}) => InicioShell(
+    pagina: pagina,
+    paginaLlena: llena,
+    rutaInicio: AppRoutes.adminInicio,
+    onCerrarSesion: cerrarSesion,
+    claro: true,
+    destinos: [
+      const Destino(
+        'Resumen',
+        Icons.space_dashboard_outlined,
+        AdminResumenView(),
+        iconoActivo: Icons.space_dashboard_rounded,
+      ),
+      const Destino(
+        'Solicitudes',
+        Icons.assignment_outlined,
+        AdminSolicitudesView(),
+        iconoActivo: Icons.assignment_rounded,
+      ),
+      const Destino(
+        'Usuarios',
+        Icons.group_outlined,
+        AdminUsuariosView(),
+        iconoActivo: Icons.group_rounded,
+      ),
+      const Destino(
+        'Verificaciones',
+        Icons.badge_outlined,
+        AdminVerificacionesView(),
+        iconoActivo: Icons.badge_rounded,
+        corto: 'Verificar',
+      ),
+      Destino(
+        'Reclamos',
+        Icons.verified_user_outlined,
+        const AdminReclamosView(),
+        iconoActivo: Icons.verified_user_rounded,
+        conteo: reclamosRecibidosProvider,
       ),
     ],
   );
@@ -225,138 +324,75 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.tecnicoInicio,
         // Cinco destinos abajo: Inicio · Trabajos · Agenda · Chats · Perfil.
-        builder: (context, state) => InicioShell(
-          onCerrarSesion: cerrarSesion,
-          destinos: const [
-            Destino(
-              'Inicio',
-              Icons.home_outlined,
-              InicioTecnicoView(),
-              iconoActivo: Icons.home_rounded,
-              saludo: 'Estos son los trabajos de tu zona',
-            ),
-            Destino(
-              'Mis trabajos',
-              Icons.work_outline,
-              MisTrabajosView(),
-              iconoActivo: Icons.work_rounded,
-              corto: 'Trabajos',
-              tiposNotificacion: [
-                'cotizacion_aceptada',
-                'tarifa_cancelada',
-                'cierre',
-              ],
-            ),
-            Destino(
-              'Agenda',
-              Icons.event_outlined,
-              AgendaView(esCliente: false),
-              iconoActivo: Icons.event_rounded,
-            ),
-            Destino(
-              'Chats',
-              Icons.chat_bubble_outline_rounded,
-              ChatsView(esCliente: false),
-              iconoActivo: Icons.chat_bubble_rounded,
-              tiposNotificacion: tiposDeChat,
-              marcaAlEntrar: false,
-            ),
-            Destino(
-              'Mi perfil',
-              Icons.person_outline,
-              PerfilTecnicoView(),
-              iconoActivo: Icons.person_rounded,
-              corto: 'Perfil',
-            ),
-          ],
-        ),
+        builder: (context, state) => shellTecnico(),
         routes: [
           GoRoute(
             path: 'solicitud/:id',
-            builder: (context, state) => detalle(state),
+            builder: (context, state) => shellTecnico(pagina: detalle(state)),
           ),
-          GoRoute(path: 'chat/:id', builder: (context, state) => chat(state)),
+          GoRoute(
+            path: 'chat/:id',
+            builder: (context, state) =>
+                shellTecnico(pagina: chat(state), llena: true),
+          ),
           GoRoute(
             path: 'reclamo/:id',
-            builder: (context, state) =>
-                ReclamoDetalleView(reclamoId: state.pathParameters['id']!),
+            builder: (context, state) => shellTecnico(
+              pagina: ReclamoDetalleView(
+                reclamoId: state.pathParameters['id']!,
+              ),
+              llena: true,
+            ),
           ),
           GoRoute(
             path: 'reclamos',
             builder: (context, state) =>
-                const MisReclamosView(esCliente: false),
+                shellTecnico(pagina: const MisReclamosView(esCliente: false)),
           ),
           GoRoute(
             path: 'tecnico/:id',
-            builder: (context, state) =>
-                PerfilPublicoView(tecnicoId: state.pathParameters['id']!),
+            builder: (context, state) => shellTecnico(
+              pagina: PerfilPublicoView(tecnicoId: state.pathParameters['id']!),
+            ),
           ),
           GoRoute(
             path: 'cliente/:id',
-            builder: (context, state) => PerfilPublicoView(
-              tecnicoId: state.pathParameters['id']!,
-              esCliente: true,
+            builder: (context, state) => shellTecnico(
+              pagina: PerfilPublicoView(
+                tecnicoId: state.pathParameters['id']!,
+                esCliente: true,
+              ),
             ),
           ),
         ],
       ),
       GoRoute(
         path: AppRoutes.adminInicio,
-        builder: (context, state) => InicioShell(
-          onCerrarSesion: cerrarSesion,
-          destinos: [
-            const Destino(
-              'Resumen',
-              Icons.space_dashboard_outlined,
-              AdminResumenView(),
-              iconoActivo: Icons.space_dashboard_rounded,
-            ),
-            const Destino(
-              'Solicitudes',
-              Icons.assignment_outlined,
-              AdminSolicitudesView(),
-              iconoActivo: Icons.assignment_rounded,
-            ),
-            const Destino(
-              'Usuarios',
-              Icons.group_outlined,
-              AdminUsuariosView(),
-              iconoActivo: Icons.group_rounded,
-            ),
-            const Destino(
-              'Verificaciones',
-              Icons.badge_outlined,
-              AdminVerificacionesView(),
-              iconoActivo: Icons.badge_rounded,
-              corto: 'Verificar',
-            ),
-            Destino(
-              'Reclamos',
-              Icons.verified_user_outlined,
-              const AdminReclamosView(),
-              iconoActivo: Icons.verified_user_rounded,
-              conteo: reclamosRecibidosProvider,
-            ),
-          ],
-        ),
+        builder: (context, state) => shellAdmin(),
         routes: [
           GoRoute(
             path: 'reclamo/:id',
-            builder: (context, state) => ReclamoDetalleView(
-              reclamoId: state.pathParameters['id']!,
-              esAdmin: true,
+            builder: (context, state) => shellAdmin(
+              pagina: ReclamoDetalleView(
+                reclamoId: state.pathParameters['id']!,
+                esAdmin: true,
+              ),
+              llena: true,
             ),
           ),
           GoRoute(
             path: 'tecnico/:id',
-            builder: (context, state) =>
-                PerfilPublicoView(tecnicoId: state.pathParameters['id']!),
+            builder: (context, state) => shellAdmin(
+              pagina: PerfilPublicoView(tecnicoId: state.pathParameters['id']!),
+            ),
           ),
           GoRoute(
             path: 'cliente/:id',
-            builder: (context, state) => PerfilPublicoView(
-              tecnicoId: state.pathParameters['id']!,
-              esCliente: true,
+            builder: (context, state) => shellAdmin(
+              pagina: PerfilPublicoView(
+                tecnicoId: state.pathParameters['id']!,
+                esCliente: true,
+              ),
             ),
           ),
         ],

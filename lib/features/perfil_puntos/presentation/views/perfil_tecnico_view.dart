@@ -21,6 +21,7 @@ import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/responsive_layout.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../../core/widgets/tarjeta_onda.dart';
@@ -59,6 +60,9 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
 
   // Estado del formulario. Se llena una sola vez, con el primer perfil cargado.
   bool _inicializado = false;
+
+  /// El último perfil cargado, para saber qué se editó en el formulario.
+  PerfilTecnico? _base;
   Set<int> _seleccionados = const {};
   LatLng _ubicacion = GeoMapper.quito;
   double _radio = 5000;
@@ -97,7 +101,29 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
   }
 
   void _inicializar(PerfilTecnico perfil) {
-    if (_inicializado) return;
+    final base = _base;
+    _base = perfil;
+    if (_inicializado) {
+      // El perfil cambió fuera del formulario (oficios o zona guardados
+      // desde el inicio): se toma lo nuevo en lo que no se ha editado aquí.
+      if (base == null || !mounted) return;
+      setState(() {
+        if (_seleccionados.length == base.oficioIds.length &&
+            _seleccionados.containsAll(base.oficioIds)) {
+          _seleccionados = perfil.oficioIds.toSet();
+        }
+        final guardada = perfil.ubicacionActual;
+        if (guardada != null &&
+            (base.ubicacionActual == null ||
+                _ubicacion == base.ubicacionActual)) {
+          _ubicacion = guardada;
+        }
+        double radioDe(PerfilTecnico p) =>
+            p.rangoCoberturaM.clamp(_radioMinimo, _radioMaximo).toDouble();
+        if (_radio == radioDe(base)) _radio = radioDe(perfil);
+      });
+      return;
+    }
     _inicializado = true;
     _tarifa.text = perfil.tarifaBase.toStringAsFixed(2);
     _seleccionados = perfil.oficioIds.toSet();
@@ -217,9 +243,34 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
           ),
         );
 
+        // Dentro del scroll único de la web la página ya tiene scroll y pie.
+        final dentroDeWeb = ScrollDePagina.activo(context);
+        if (dentroDeWeb && !escritorio) {
+          return Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ...cabecera,
+                banner,
+                const SizedBox(height: Espacios.l),
+                tarifa,
+                oficios,
+                zona,
+                const SizedBox(height: Espacios.l),
+                const EntradaMisReclamos(esCliente: false),
+                const SizedBox(height: Espacios.l),
+                boton,
+              ],
+            ),
+          );
+        }
+
         if (escritorio) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(Espacios.xl),
+          return _ConScroll(
+            padding: dentroDeWeb
+                ? EdgeInsets.zero
+                : const EdgeInsets.all(Espacios.xl),
             child: AnchoMaximo(
               ancho: 1100,
               child: Form(
@@ -364,6 +415,19 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
 }
 
 /// Invita a verificar la identidad, o confirma que ya está verificada.
+/// Scroll propio, salvo dentro del scroll único de la página web.
+class _ConScroll extends StatelessWidget {
+  const _ConScroll({required this.padding, required this.child});
+
+  final EdgeInsetsGeometry padding;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ScrollDePagina.activo(context)
+      ? Padding(padding: padding, child: child)
+      : SingleChildScrollView(padding: padding, child: child);
+}
+
 class _BannerVerificacion extends StatelessWidget {
   const _BannerVerificacion({required this.verificado});
 

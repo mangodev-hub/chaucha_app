@@ -41,6 +41,11 @@ abstract final class Colores {
   /// Celeste muy aclarado: fondos de información e íconos en recuadro.
   static const Color cieloSuave = Color(0xFFE3F3FC);
 
+  /// Tonos medios del degradado de la portada del técnico
+  /// (`cieloSuave` → `cieloNube` → `cieloBruma`). Llevan texto oscuro.
+  static const Color cieloNube = Color(0xFFBFE4F8);
+  static const Color cieloBruma = Color(0xFF9FD6F3);
+
   /// Celeste oscuro, legible como texto sobre blanco y sobre `cieloSuave`.
   static const Color cieloOscuro = Color(0xFF0B4F73);
 

@@ -39,6 +39,8 @@ class MapaRadio extends StatefulWidget {
     this.tarjeta,
     this.alto = 400,
     this.atenuado,
+    this.iconoAtenuado = Icons.verified_user_outlined,
+    this.accionAtenuado,
   });
 
   final LatLng centro;
@@ -56,6 +58,12 @@ class MapaRadio extends StatefulWidget {
 
   /// Si no es null, el mapa se ve atenuado con este mensaje encima.
   final String? atenuado;
+
+  /// Ícono sobre el mensaje de [atenuado].
+  final IconData iconoAtenuado;
+
+  /// Botón bajo el mensaje de [atenuado] ("Marcar mi zona").
+  final ({String texto, VoidCallback onTap})? accionAtenuado;
 
   /// Tamaño del pin de cada punto.
   static const double tamanoPin = 44;
@@ -84,7 +92,9 @@ class _MapaRadioState extends State<MapaRadio> {
 
   /// Encuadra el círculo del radio con un margen.
   void _ajustar() {
-    if (!_listo) return;
+    // Sin radio se queda en el zoom inicial (una caja vacía acercaría al
+    // máximo).
+    if (!_listo || widget.radioM <= 0) return;
     final c = widget.centro;
     final dLat = widget.radioM / 111320;
     final dLng =
@@ -139,27 +149,30 @@ class _MapaRadioState extends State<MapaRadio> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.eagledev.tecnicos_app',
               ),
-              CapaCirculos(
-                circulos: [
-                  CircleMarker(
-                    point: widget.centro,
-                    radius: widget.radioM.toDouble(),
-                    useRadiusInMeter: true,
-                    color: Colores.cielo.withValues(alpha: 0.15),
-                    borderColor: Colores.cielo,
-                    borderStrokeWidth: 2,
-                  ),
-                ],
-              ),
+              if (widget.radioM > 0)
+                CapaCirculos(
+                  circulos: [
+                    CircleMarker(
+                      point: widget.centro,
+                      radius: widget.radioM.toDouble(),
+                      useRadiusInMeter: true,
+                      color: Colores.cielo.withValues(alpha: 0.15),
+                      borderColor: Colores.cielo,
+                      borderStrokeWidth: 2,
+                    ),
+                  ],
+                ),
               MarkerLayer(
                 markers: [
-                  Marker(
-                    point: widget.centro,
-                    width: 48,
-                    height: 44,
-                    alignment: Alignment.topCenter,
-                    child: const _MarcadorTu(),
-                  ),
+                  // Radio 0: aún no hay punto propio (zona sin marcar).
+                  if (widget.radioM > 0)
+                    Marker(
+                      point: widget.centro,
+                      width: 48,
+                      height: 44,
+                      alignment: Alignment.topCenter,
+                      child: const _MarcadorTu(),
+                    ),
                   for (final p in widget.puntos)
                     Marker(
                       point: p.ubicacion,
@@ -211,8 +224,8 @@ class _MapaRadioState extends State<MapaRadio> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.verified_user_outlined,
+                        Icon(
+                          widget.iconoAtenuado,
                           size: 36,
                           color: Colores.primario,
                         ),
@@ -222,6 +235,13 @@ class _MapaRadioState extends State<MapaRadio> {
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
+                        if (widget.accionAtenuado case final accion?) ...[
+                          const SizedBox(height: Espacios.m),
+                          FilledButton(
+                            onPressed: accion.onTap,
+                            child: Text(accion.texto),
+                          ),
+                        ],
                       ],
                     ),
                   ),

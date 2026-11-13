@@ -1,13 +1,15 @@
 // "Solicitudes cerca de ti" del técnico: las solicitudes abiertas de sus
 // oficios dentro de su radio (`solicitudes_en_mapa`), en el mapa y en la
 // lista. Al soltar el slider se guarda el radio (`actualizar_mi_radio`).
-// Sin verificar, el mapa sale atenuado.
+// Sin verificar, sin zona o sin estar disponible, el mapa sale atenuado
+// con lo que falta y su botón.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
@@ -15,10 +17,14 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/mapa_radio.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/tarjeta_cerca.dart';
+import '../../../../core/widgets/tarjeta_inicio.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
 import '../../../catalogo/presentation/widgets/icono_oficio.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
+import '../../../perfil_puntos/presentation/views/verificacion_view.dart';
+import '../../../perfil_puntos/presentation/widgets/ajustes_tecnico.dart';
+import '../../../perfil_puntos/presentation/widgets/disponibilidad_tecnico.dart';
 import '../../domain/entities/solicitud_en_mapa.dart';
 import '../providers/mapa_tecnico_provider.dart';
 
@@ -65,9 +71,52 @@ class _CercaTecnicoState extends ConsumerState<CercaTecnico> {
     // Mantiene vivo el notifier mientras se guarda el radio.
     final guardando = ref.watch(actualizarRadioProvider).isLoading;
     final perfil = ref.watch(perfilTecnicoProvider).value;
-    final centro = perfil?.ubicacionActual;
-    // Sin perfil o sin zona no hay mapa: lo explica "Para empezar".
-    if (perfil == null || centro == null) return const SizedBox.shrink();
+    if (perfil == null) return const SizedBox.shrink();
+    final disponible = ref.watch(disponibleProvider);
+    final centro = perfil.ubicacionActual;
+    // Lo que falta para ver solicitudes, sobre el mapa atenuado.
+    final verificar = (
+      texto: 'Verificar mi identidad',
+      onTap: () => unawaited(mostrarVerificacion(context)),
+    );
+    final ({
+      String mensaje,
+      IconData icono,
+      ({String texto, VoidCallback onTap}) accion,
+    })?
+    bloqueo = !perfil.verificado
+        ? (
+            mensaje: 'Verifica tu identidad para ver solicitudes',
+            icono: Icons.verified_user_outlined,
+            accion: verificar,
+          )
+        : centro == null
+        ? (
+            mensaje:
+                'Marca tu zona de trabajo para ver solicitudes cerca de ti',
+            icono: Icons.location_on_outlined,
+            accion: (
+              texto: 'Marcar mi zona',
+              onTap: () => unawaited(mostrarZonaTrabajo(context)),
+            ),
+          )
+        : !disponible
+        ? (
+            mensaje: 'Pausaste las solicitudes nuevas',
+            icono: Icons.pause_circle_outline_rounded,
+            accion: (
+              texto: 'Volver a estar disponible',
+              onTap: ref.read(disponibleProvider.notifier).alternar,
+            ),
+          )
+        : null;
+    if (centro == null) {
+      return _SinZona(
+        mensaje: bloqueo!.mensaje,
+        icono: bloqueo.icono,
+        accion: bloqueo.accion,
+      );
+    }
 
     final solicitudes = ref.watch(solicitudesEnMapaProvider);
     final nombres = <int, String>{
@@ -109,9 +158,9 @@ class _CercaTecnicoState extends ConsumerState<CercaTecnico> {
         centro: centro,
         radioM: (km * 1000).round(),
         alto: alto,
-        atenuado: perfil.verificado
-            ? null
-            : 'Verifica tu identidad para ver solicitudes',
+        atenuado: bloqueo?.mensaje,
+        iconoAtenuado: bloqueo?.icono ?? Icons.verified_user_outlined,
+        accionAtenuado: bloqueo?.accion,
         seleccionadoId: _seleccionado,
         resaltadoId: _resaltado,
         onTocar: (id) => setState(() => _seleccionado = id),
@@ -147,6 +196,11 @@ class _CercaTecnicoState extends ConsumerState<CercaTecnico> {
           return const _Aviso(
             'Cuando verifiquemos tu identidad verás aquí las solicitudes de '
             'tu zona.',
+          );
+        }
+        if (!disponible) {
+          return const _Aviso(
+            'Mientras no estés disponible no verás solicitudes nuevas.',
           );
         }
         if (solicitudes.hasError && !solicitudes.hasValue) {
@@ -330,6 +384,50 @@ class _MiniSolicitud extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// "Solicitudes cerca de ti" sin zona de trabajo: el mapa de Quito
+/// atenuado con lo que falta y su botón.
+class _SinZona extends StatelessWidget {
+  const _SinZona({
+    required this.mensaje,
+    required this.icono,
+    required this.accion,
+  });
+
+  final String mensaje;
+  final IconData icono;
+  final ({String texto, VoidCallback onTap}) accion;
+
+  @override
+  Widget build(BuildContext context) {
+    final ancho =
+        MediaQuery.sizeOf(context).width >= TarjetaCerca.anchoDosColumnas;
+    return TarjetaInicio(
+      padding: const EdgeInsets.all(Espacios.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Solicitudes cerca de ti',
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: Espacios.m),
+          MapaRadio(
+            centro: GeoMapper.quito,
+            radioM: 0,
+            alto: ancho ? 360 : 280,
+            puntos: const [],
+            onTocar: (_) {},
+            atenuado: mensaje,
+            iconoAtenuado: icono,
+            accionAtenuado: accion,
+          ),
+        ],
       ),
     );
   }

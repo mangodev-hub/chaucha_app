@@ -51,6 +51,8 @@ Future<void> _montarEnMovil(
   AccionCentral? accion,
   Size tamano = const Size(390, 844),
   bool claro = false,
+  bool conBuscador = true,
+  Widget? barraExtra,
 }) async {
   tester.view
     ..physicalSize = tamano
@@ -67,7 +69,8 @@ Future<void> _montarEnMovil(
           claro: claro,
           rutaAgenda: claro ? '/nueva' : null,
           notaMenu: claro ? 'Nota del menú' : null,
-          onBuscar: claro ? (context, ref, texto) {} : null,
+          onBuscar: claro && conBuscador ? (context, ref, texto) {} : null,
+          barraExtra: barraExtra,
         ),
       ),
       GoRoute(
@@ -197,6 +200,43 @@ void main() {
       expect(find.text('Cerca'), findsNothing);
     });
   }
+
+  testWidgets('modo claro del técnico: lo suyo en la barra, sin buscador', (
+    tester,
+  ) async {
+    await _montarEnMovil(
+      tester,
+      tamano: const Size(1920, 1080),
+      claro: true,
+      conBuscador: false,
+      barraExtra: const Text('píldora del técnico'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('píldora del técnico'), findsOneWidget);
+    expect(find.text('Busca plomero, electricista, cerrajero…'), findsNothing);
+    // El sector del cliente no va: el técnico pone el suyo en su extra.
+    expect(find.text('La Carolina'), findsNothing);
+    expect(find.text('vista inicio'), findsOneWidget);
+  });
+
+  testWidgets('modo claro del admin: barra solo con marca, avisos y cuenta', (
+    tester,
+  ) async {
+    await _montarEnMovil(
+      tester,
+      tamano: const Size(1920, 1080),
+      claro: true,
+      conBuscador: false,
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Busca plomero, electricista, cerrajero…'), findsNothing);
+    expect(find.text('La Carolina'), findsNothing);
+    expect(find.text('Pedir un técnico'), findsNothing);
+  });
 
   testWidgets(
     'agenda del cliente: se marca en el menú y otro clic no la vuelve a apilar',

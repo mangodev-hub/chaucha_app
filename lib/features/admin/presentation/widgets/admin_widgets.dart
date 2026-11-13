@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/encabezado_pantalla.dart';
 import '../../../../core/widgets/responsive_layout.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
 
 /// Pantalla del panel: título, acción opcional, filtros y contenido, con
@@ -35,10 +36,14 @@ class PantallaAdmin extends StatelessWidget {
     final escritorio = ResponsiveLayout.isDesktop(context);
     final accion = this.accion;
     final encabezado = EncabezadoPantalla(titulo: titulo, subtitulo: subtitulo);
+    // En la web clara la página ya tiene scroll: aquí va sin el suyo.
+    final dentroDeWeb = ScrollDePagina.activo(context);
     return RefreshIndicator(
       onRefresh: onRecargar,
-      child: ListView(
-        padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
+      child: ListaDePagina(
+        padding: dentroDeWeb
+            ? EdgeInsets.zero
+            : EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
         children: [
           AnchoMaximo(
             ancho: 1100,
