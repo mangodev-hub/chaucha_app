@@ -1,0 +1,55 @@
+# CI de la app Flutter (tecnicos_app): análisis, pruebas y compilación web.
+# No usa secretos: el build web compila sin env.json (las claves llegan con
+# --dart-define-from-file solo al publicar).
+name: App Flutter
+
+on:
+  pull_request:
+    paths:
+      - 'tecnicos_app/**'
+      - '!tecnicos_app/supabase/**'
+      - '.github/workflows/app.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'tecnicos_app/**'
+      - '!tecnicos_app/supabase/**'
+      - '.github/workflows/app.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: tecnicos_app
+
+jobs:
+  verificar:
+    name: Analizar, probar y compilar
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.9
+          cache: true
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Análisis estático
+        run: flutter analyze
+
+      - name: Pruebas
+        run: flutter test --timeout 60s
+
+      - name: Compilación web
+        run: flutter build web --release

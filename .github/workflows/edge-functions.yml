@@ -1,0 +1,45 @@
+# CI de las Edge Functions de Supabase (Deno): tipos de las seis funciones y
+# pruebas de los módulos compartidos (Redis con fail-open, límites, EWKB).
+# No despliega nada ni usa secretos.
+name: Edge Functions
+
+on:
+  pull_request:
+    paths:
+      - 'tecnicos_app/supabase/functions/**'
+      - '.github/workflows/edge-functions.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'tecnicos_app/supabase/functions/**'
+      - '.github/workflows/edge-functions.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: funciones-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: tecnicos_app/supabase/functions
+
+jobs:
+  verificar:
+    name: Revisar tipos y probar
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.2.12
+
+      - name: Revisión de tipos
+        run: deno check */index.ts
+
+      - name: Pruebas de _shared
+        run: deno test --allow-env --allow-net=none _shared/
