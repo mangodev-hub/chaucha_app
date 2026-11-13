@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../app/pestana_solicitada.dart';
+import '../../../../app/pie_pagina.dart';
 import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/tokens.dart';
@@ -26,6 +27,7 @@ import '../../../../core/widgets/tarjeta_onda.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
+import '../../../reclamos/presentation/widgets/entrada_mis_reclamos.dart';
 import '../../../solicitudes/domain/entities/resumen_tecnico.dart';
 import '../../../solicitudes/presentation/providers/inicio_tecnico_provider.dart';
 import '../../domain/entities/cambios_perfil.dart';
@@ -244,11 +246,19 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [zona, boton],
+                            children: [
+                              zona,
+                              const SizedBox(height: Espacios.l),
+                              const EntradaMisReclamos(esCliente: false),
+                              const SizedBox(height: Espacios.l),
+                              boton,
+                            ],
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: Espacios.xxl),
+                    const PiePagina(),
                   ],
                 ),
               ),
@@ -274,6 +284,9 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
                         tarifa,
                         oficios,
                         zona,
+                        const SizedBox(height: Espacios.l),
+                        const EntradaMisReclamos(esCliente: false),
+                        const PieLegalMovil(),
                       ],
                     ),
                   ),

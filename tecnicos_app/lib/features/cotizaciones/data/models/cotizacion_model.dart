@@ -13,6 +13,7 @@
 //
 // Las ofertas antiguas (antes de `precio_base`) guardaban su precio en
 // mano_obra + materiales, y no tienen ticket.
+import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/utils/json_utils.dart';
 import '../../domain/entities/cotizacion.dart';
 import '../../domain/entities/tarifa.dart';
@@ -23,9 +24,10 @@ abstract final class CotizacionModel {
   static const String columnas =
       'id, solicitud_id, tecnico_id, precio_base, detalle, mano_obra, '
       'materiales, total, tarifa_enviada, fecha_servicio, reagenda_inicio, '
-      'reagenda_por, estado, creado_en, '
+      'reagenda_por, inicio_visita, fin_visita, estado, creado_en, '
       'perfiles_tecnicos!fk_cotizaciones_tecnico(calificacion_promedio, '
-      'usuarios!fk_perfiles_usuario(nombres, apellidos))';
+      'total_resenas, ubicacion_actual, '
+      'usuarios!fk_perfiles_usuario(nombres, apellidos, foto_perfil_ruta))';
 
   static Cotizacion desdeFila(Map<String, dynamic> json) {
     // El join puede llegar como objeto o como lista de un elemento.
@@ -44,6 +46,9 @@ abstract final class CotizacionModel {
       tecnicoId: json['tecnico_id'] as String,
       tecnicoNombre: nombre.isEmpty ? 'Técnico' : nombre,
       tecnicoCalificacion: aDouble(perfil?['calificacion_promedio']),
+      tecnicoTotalResenas: aInt(perfil?['total_resenas']),
+      tecnicoFotoRuta: usuario?['foto_perfil_ruta'] as String?,
+      tecnicoUbicacion: GeoMapper.fromDb(perfil?['ubicacion_actual']),
       precioBase: json['precio_base'] != null
           ? aDouble(json['precio_base'])
           : aDouble(json['total'], porDefecto: manoObra + materiales),
@@ -56,10 +61,15 @@ abstract final class CotizacionModel {
           : null,
       fechaPropuesta: propuesta is String ? aFecha(propuesta).toLocal() : null,
       propuestaPor: json['reagenda_por'] as String?,
+      inicioVisita: _fecha(json['inicio_visita']),
+      finVisita: _fecha(json['fin_visita']),
       estado: EstadoCotizacionDb.desdeDb(json['estado'] as String),
       creadoEn: aFecha(json['creado_en']),
     );
   }
+
+  static DateTime? _fecha(Object? valor) =>
+      valor is String ? aFecha(valor).toLocal() : null;
 
   static Map<String, dynamic> filaNueva({
     required String solicitudId,

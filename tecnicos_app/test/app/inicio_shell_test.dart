@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:tecnicos_app/app/inicio_shell.dart';
+import 'package:tecnicos_app/core/presence/presencia_service.dart';
 import 'package:tecnicos_app/core/providers/sincronizacion_provider.dart';
+import 'package:tecnicos_app/core/widgets/etiqueta_sector.dart';
 import 'package:tecnicos_app/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:tecnicos_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:tecnicos_app/features/auth/presentation/providers/inicio_provider.dart';
 import 'package:tecnicos_app/features/auth/presentation/providers/sesion_provider.dart';
 import 'package:tecnicos_app/features/notificaciones/presentation/providers/notificaciones_provider.dart';
 
@@ -45,9 +49,11 @@ class _AuthSinSesion implements AuthRepository {
 Future<void> _montarEnMovil(
   WidgetTester tester, {
   AccionCentral? accion,
+  Size tamano = const Size(390, 844),
+  bool claro = false,
 }) async {
   tester.view
-    ..physicalSize = const Size(390, 844)
+    ..physicalSize = tamano
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final router = GoRouter(
@@ -58,6 +64,10 @@ Future<void> _montarEnMovil(
           destinos: _destinos,
           accionCentral: accion,
           onCerrarSesion: () {},
+          claro: claro,
+          rutaAgenda: claro ? '/nueva' : null,
+          notaMenu: claro ? 'Nota del menú' : null,
+          onBuscar: claro ? (context, ref, texto) {} : null,
         ),
       ),
       GoRoute(
@@ -75,6 +85,11 @@ Future<void> _montarEnMovil(
         // El shell sincroniza datos y escucha notificaciones por Supabase;
         // en el test no hay cliente.
         sincronizacionProvider.overrideWith((ref) {}),
+        presenciaProvider.overrideWith((ref) {}),
+        ubicacionInicioProvider.overrideWith(
+          (ref) async => const LatLng(-0.18, -78.48),
+        ),
+        sectorProvider.overrideWith((ref, clave) async => 'La Carolina'),
         notificacionesNoLeidasProvider.overrideWith(
           (ref) => Stream.value(const []),
         ),
@@ -156,4 +171,30 @@ void main() {
     );
     semantica.dispose();
   });
+
+  for (final ancho in [900.0, 1440.0]) {
+    testWidgets('modo claro a $ancho px: barra blanca y menú lateral', (
+      tester,
+    ) async {
+      await _montarEnMovil(
+        tester,
+        accion: _accion,
+        tamano: Size(ancho, 900),
+        claro: true,
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Busca plomero, electricista, cerrajero…'),
+        findsOneWidget,
+      );
+      expect(find.text('La Carolina'), findsOneWidget);
+      expect(find.text('Agenda'), findsOneWidget);
+      expect(find.text('Pedir un técnico'), findsOneWidget);
+      expect(find.text('Nota del menú'), findsOneWidget);
+      // En el modo claro no hay barra inferior.
+      expect(find.text('Cerca'), findsNothing);
+    });
+  }
 }

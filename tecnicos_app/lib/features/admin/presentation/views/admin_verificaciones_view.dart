@@ -88,7 +88,10 @@ class _CertificadosPendientes extends ConsumerWidget {
         for (final c in lista)
           Padding(
             padding: const EdgeInsets.only(bottom: Espacios.l),
-            child: _TarjetaCertificado(certificacion: c, procesando: procesando),
+            child: _TarjetaCertificado(
+              certificacion: c,
+              procesando: procesando,
+            ),
           ),
       ],
     );
@@ -118,8 +121,9 @@ class _TarjetaCertificado extends ConsumerWidget {
         aprobado ? 'Certificado aprobado.' : 'Certificado rechazado.',
         tipo: TipoMensaje.exito,
       );
-    } else if (ref.read(revisarCertificacionProvider)
-        case AsyncError(:final error)) {
+    } else if (ref.read(revisarCertificacionProvider) case AsyncError(
+      :final error,
+    )) {
       context.mostrarMensaje(
         AsyncValueView.mensajeDe(error),
         tipo: TipoMensaje.error,
@@ -185,7 +189,10 @@ class _TarjetaCertificado extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(c.tecnicoNombre ?? 'Técnico', style: textos.titleMedium),
+                    Text(
+                      c.tecnicoNombre ?? 'Técnico',
+                      style: textos.titleMedium,
+                    ),
                     const SizedBox(height: Espacios.xs),
                     Text(c.nombre, style: textos.titleSmall),
                     Text(

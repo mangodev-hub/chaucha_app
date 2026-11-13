@@ -102,7 +102,7 @@ class CotizacionCard extends StatelessWidget {
               onResponderReagendado != null ||
               onCancelarVisita != null) ...[
             const SizedBox(height: Espacios.m),
-            _AccionesVisita(
+            AccionesVisita(
               cotizacion: c,
               miId: miId,
               activas: accionesActivas,
@@ -150,8 +150,9 @@ class _ResumenTicket extends StatelessWidget {
 }
 
 /// Reagendar (por propuesta) y cancelar la visita acordada.
-class _AccionesVisita extends StatelessWidget {
-  const _AccionesVisita({
+class AccionesVisita extends StatelessWidget {
+  const AccionesVisita({
+    super.key,
     required this.cotizacion,
     required this.miId,
     required this.activas,

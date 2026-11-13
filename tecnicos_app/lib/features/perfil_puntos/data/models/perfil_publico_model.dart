@@ -7,7 +7,7 @@ abstract final class PerfilPublicoModel {
   /// Columnas de `perfiles_tecnicos` con los joins a nivel, usuario y oficios.
   static const String columnasPerfil =
       'usuario_id, verificado, calificacion_promedio, total_resenas, '
-      'niveles_gamificacion(nombre), usuarios!fk_perfiles_usuario(nombres, apellidos, foto_perfil_ruta, creado_en), '
+      'niveles_gamificacion(nombre), usuarios!fk_perfiles_usuario(nombres, apellidos, foto_perfil_ruta, creado_en, foto_rostro_validada), '
       'tecnico_oficios(oficios(nombre))';
 
   /// Columnas de `usuarios` para el perfil público de un cliente.
@@ -21,7 +21,7 @@ abstract final class PerfilPublicoModel {
       'autor:usuarios!fk_resenas_autor(nombres, apellidos)';
 
   /// Cuántas reseñas recientes se muestran.
-  static const int limiteResenas = 10;
+  static const int limiteResenas = 100;
 
   static PerfilPublico desdeFilas(
     Map<String, dynamic> perfil,
@@ -48,6 +48,7 @@ abstract final class PerfilPublicoModel {
       resenas: [for (final fila in resenas) _resena(fila)],
       fotoRuta: usuario?['foto_perfil_ruta'] as String?,
       miembroDesde: _fecha(usuario?['creado_en']),
+      selfieValidada: usuario?['foto_rostro_validada'] as bool? ?? false,
     );
   }
 

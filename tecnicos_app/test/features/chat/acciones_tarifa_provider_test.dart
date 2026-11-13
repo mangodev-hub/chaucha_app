@@ -43,7 +43,8 @@ void main() {
     test('envía el ticket sobre la oferta y avisa al cliente', () async {
       final c = contenedor(contextoDePrueba());
 
-      final ok = await acciones(c).enviar(const NuevaTarifa(precioAcordado: 40));
+      final ok = await acciones(c)
+          .enviar(const NuevaTarifa(precioAcordado: 40));
 
       expect(ok, isTrue);
       final (cotizacionId, tarifa) = cotizaciones.tarifasEnviadas.single;

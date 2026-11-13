@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { encodeBase64 } from 'jsr:@std/encoding@1/base64';
+import { limitar, respuesta429 } from '../_shared/limite.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,10 @@ Deno.serve(async (req) => {
 
     const { data: { user } } = await cliente.auth.getUser();
     if (!user) return responder({ error: 'No autorizado' }, 401);
+
+    // Una llamada a Gemini por comparación: límite por usuario.
+    const limite = await limitar('comparar', user.id);
+    if (!limite.permitido) return respuesta429(limite.reintentarEnSeg);
 
     const { selfie_ruta, cedula_ruta } = await req.json();
     if (!selfie_ruta?.startsWith(`${user.id}/`) || !cedula_ruta?.startsWith(`${user.id}/`)) {

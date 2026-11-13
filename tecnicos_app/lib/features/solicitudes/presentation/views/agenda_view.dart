@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/pie_pagina.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
@@ -13,6 +14,7 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/pildora.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../providers/agenda_provider.dart';
 import '../widgets/calendario_agenda.dart';
@@ -97,8 +99,8 @@ class _AgendaViewState extends ConsumerState<AgendaView> {
         return RefreshIndicator(
           onRefresh: () => esperarSinError(ref.refresh(provider.future)),
           child: vacia
-              ? ListView(
-                  children: const [
+              ? const ListaDePagina(
+                  children: [
                     EstadoMensaje(
                       icono: Icons.event_available_outlined,
                       titulo: 'Agenda vacía',
@@ -106,9 +108,10 @@ class _AgendaViewState extends ConsumerState<AgendaView> {
                           'Aquí verás los tickets por confirmar y los '
                           'trabajos próximos en el calendario.',
                     ),
+                    PiePagina(),
                   ],
                 )
-              : ListView(
+              : ListaDePagina(
                   padding: const EdgeInsets.fromLTRB(
                     Espacios.l,
                     Espacios.l,
@@ -179,6 +182,8 @@ class _AgendaViewState extends ConsumerState<AgendaView> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: Espacios.xxl),
+                    const PiePagina(),
                   ],
                 ),
         );

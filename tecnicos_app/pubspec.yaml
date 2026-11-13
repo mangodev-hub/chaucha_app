@@ -44,7 +44,6 @@ dependencies:
   flutter_riverpod: ^3.5.0
   # La 9.x usa el paquete separado material_ui (tipos incompatibles con
   # flutter/material). Subir cuando la app migre a material_ui.
-  google_fonts: ^8.0.0
   flutter_svg: ^2.3.2
   url_launcher: ^6.3.3
   # Registro de usuarios desde el panel admin sin tocar la sesión actual.
@@ -100,6 +99,22 @@ flutter_native_splash:
 # The following section is specific to Flutter packages.
 flutter:
 
+  # Plus Jakarta Sans en una sola familia con sus pesos: así `fontWeight`
+  # elige el archivo correcto (con google_fonts el peso quedaba fijo).
+  fonts:
+    - family: Plus Jakarta Sans
+      fonts:
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-ExtraBold.ttf
+          weight: 800
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
@@ -109,6 +124,8 @@ flutter:
   assets:
     - assets/img/
     - assets/lottie/
+    # Licencia de Plus Jakarta Sans (se muestra en las licencias de la app).
+    - assets/fonts/plus_jakarta_sans/OFL.txt
 
   # To add assets to your application, add an assets section, like this:
   # assets:

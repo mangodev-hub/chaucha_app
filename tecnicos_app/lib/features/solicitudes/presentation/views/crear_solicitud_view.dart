@@ -16,9 +16,9 @@ import '../../../../core/widgets/barra_accion.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/campos.dart';
 import '../../../../core/widgets/encabezado_pantalla.dart';
-import '../../../../core/widgets/hoja_clara.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/pantalla_secundaria.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
@@ -137,13 +137,11 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
     // devuelve el id (quien abrió el formulario abre el detalle); "Volver" y
     // la flecha devuelven null.
     if (_creadaId case final id?) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Solicitud publicada')),
-        body: HojaClara(
-          child: SolicitudPublicada(
-            onVerSolicitud: () => context.pop(id),
-            onVolver: () => context.pop(),
-          ),
+      return PantallaSecundaria(
+        titulo: 'Solicitud publicada',
+        cuerpo: SolicitudPublicada(
+          onVerSolicitud: () => context.pop(id),
+          onVolver: () => context.pop(),
         ),
       );
     }
@@ -225,55 +223,52 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
       child: _fotosSeleccionadas(),
     );
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Nueva solicitud')),
-      bottomNavigationBar: escritorio ? null : BarraAccion(child: boton),
-      body: HojaClara(
-        abajoRecto: !escritorio,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
-            child: AnchoMaximo(
-              ancho: escritorio ? 1100 : 900,
-              child: escritorio
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        aviso,
-                        intro,
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [servicio, problema, fotos],
-                              ),
+    return PantallaSecundaria(
+      titulo: 'Nueva solicitud',
+      barraInferior: escritorio ? null : BarraAccion(child: boton),
+      cuerpo: Form(
+        key: _formKey,
+        child: ScrollOpcional(
+          padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
+          child: AnchoMaximo(
+            ancho: escritorio ? 1100 : 900,
+            child: escritorio
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      aviso,
+                      intro,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [servicio, problema, fotos],
                             ),
-                            const SizedBox(width: Espacios.xl),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [ubicacion, boton],
-                              ),
+                          ),
+                          const SizedBox(width: Espacios.xl),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [ubicacion, boton],
                             ),
-                          ],
-                        ),
-                      ],
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        aviso,
-                        intro,
-                        servicio,
-                        problema,
-                        ubicacion,
-                        fotos,
-                      ],
-                    ),
-            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      aviso,
+                      intro,
+                      servicio,
+                      problema,
+                      ubicacion,
+                      fotos,
+                    ],
+                  ),
           ),
         ),
       ),

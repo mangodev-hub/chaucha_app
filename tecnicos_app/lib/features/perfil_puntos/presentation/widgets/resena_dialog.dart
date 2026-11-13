@@ -150,7 +150,9 @@ class _HojaResenaState extends State<_HojaResena> {
                       iconSize: 44,
                       icon: Icon(
                         Icons.star_rounded,
-                        color: i <= _estrellas ? Colores.estrella : Colores.linea,
+                        color: i <= _estrellas
+                            ? Colores.estrella
+                            : Colores.linea,
                       ),
                     ),
                 ],
@@ -194,7 +196,9 @@ class _HojaResenaState extends State<_HojaResena> {
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
                 onPressed: _estrellas == 0 ? null : _enviar,
                 child: Text(
-                  widget.paraTecnico ? 'Calificar técnico' : 'Calificar cliente',
+                  widget.paraTecnico
+                      ? 'Calificar técnico'
+                      : 'Calificar cliente',
                 ),
               ),
             ],

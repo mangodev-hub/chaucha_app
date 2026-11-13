@@ -8,8 +8,8 @@ import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/capa_circulos.dart';
 import '../../../../core/widgets/etiqueta_sector.dart';
 import '../../../../core/widgets/presionable.dart';
-import '../../../auth/presentation/widgets/mapa_tecnicos.dart';
 import '../../domain/entities/solicitud.dart';
+import 'control_radio.dart';
 
 class MapaZonaTecnico extends StatefulWidget {
   const MapaZonaTecnico({

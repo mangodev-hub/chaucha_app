@@ -183,6 +183,13 @@ class MenuCuenta extends ConsumerWidget {
 
 /// "Configuración de la cuenta": agrupa acceso (correo y contraseña),
 /// seguridad e información de la cuenta. Sin datos personales.
+/// Configuración de la cuenta: correo, contraseña y sesiones.
+Future<void> mostrarConfiguracionCuenta(BuildContext context) =>
+    showDialog<void>(
+      context: context,
+      builder: (_) => const _DialogoConfiguracion(),
+    );
+
 class _DialogoConfiguracion extends ConsumerWidget {
   const _DialogoConfiguracion();
 

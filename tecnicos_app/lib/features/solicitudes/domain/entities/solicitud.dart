@@ -25,6 +25,7 @@ class Solicitud {
     this.direccionReferencia,
     this.clienteNombre,
     this.clienteFotoRuta,
+    this.completadaEn,
   });
 
   final String id;
@@ -32,6 +33,10 @@ class Solicitud {
   final int oficioId;
   final String oficioNombre;
   final String descripcion;
+
+  /// Cuándo se completó el servicio: desde aquí corren los 30 días de
+  /// garantía.
+  final DateTime? completadaEn;
   final LatLng? ubicacion;
   final String? direccionReferencia;
   final EstadoSolicitud estado;

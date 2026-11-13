@@ -53,10 +53,11 @@ class RevisarCertificacionNotifier extends AsyncNotifier<void> {
         await cliente
             .from(CertificacionModel.tabla)
             .update({
-              'estado': (aprobado
-                      ? EstadoCertificacion.aprobada
-                      : EstadoCertificacion.rechazada)
-                  .valorDb,
+              'estado':
+                  (aprobado
+                          ? EstadoCertificacion.aprobada
+                          : EstadoCertificacion.rechazada)
+                      .valorDb,
               'revisado_por': cliente.uidActual,
               'revisado_en': DateTime.now().toUtc().toIso8601String(),
             })

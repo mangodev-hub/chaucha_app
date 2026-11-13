@@ -160,4 +160,25 @@ void main() {
       );
     });
   });
+
+  group('páginas legales', () {
+    test('se abren con o sin sesión y desde cualquier rol', () {
+      for (final sesion in <SesionEstado>[
+        const SinSesion(),
+        _con(Rol.cliente),
+        _con(Rol.tecnico),
+        _con(Rol.admin),
+      ]) {
+        expect(_redirigir(sesion, AppRoutes.terminos), isNull);
+        expect(_redirigir(sesion, AppRoutes.privacidad), isNull);
+      }
+    });
+
+    test('mientras se verifica la sesión, esperan en splash', () {
+      expect(
+        _redirigir(const SesionVerificando(), AppRoutes.terminos),
+        AppRoutes.splash,
+      );
+    });
+  });
 }

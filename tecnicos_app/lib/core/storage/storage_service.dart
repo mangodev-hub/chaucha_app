@@ -9,6 +9,12 @@ abstract final class Buckets {
   static const String solicitudes = 'solicitudes';
   static const String documentos = 'cedulas';
   static const String perfiles = 'perfiles';
+
+  /// Público: imágenes de la publicidad.
+  static const String anuncios = 'anuncios';
+
+  /// Privado: fotos de evidencia de los reclamos (`{uid}/{id}.jpg`).
+  static const String reclamos = 'reclamos';
 }
 
 abstract interface class StorageService {
@@ -53,8 +59,7 @@ class SupabaseStorageService implements StorageService {
     );
   }
 
-    @override
+  @override
   String urlPublica({required String bucket, required String ruta}) =>
       _client.storage.from(bucket).getPublicUrl(ruta);
-  
 }

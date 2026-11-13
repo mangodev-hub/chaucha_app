@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:tecnicos_app/core/errors/app_failure.dart';
 import 'package:tecnicos_app/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:tecnicos_app/features/auth/data/repositories/supabase_usuario_repository.dart';
@@ -76,6 +77,12 @@ class _AuthFalso implements AuthRepository {
 }
 
 class _UsuariosFalso implements UsuarioRepository {
+  @override
+  Future<void> actualizarUbicacion(LatLng punto) async {}
+
+  @override
+  Future<String?> miCedula() async => null;
+
   @override
   Future<void> completarPerfil({
     required String cedula,

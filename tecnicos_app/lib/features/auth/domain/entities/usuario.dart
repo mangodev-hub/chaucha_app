@@ -1,3 +1,5 @@
+import 'package:latlong2/latlong.dart';
+
 import 'rol.dart';
 
 class Usuario {
@@ -12,6 +14,8 @@ class Usuario {
     this.perfilCompleto = true,
     this.verificado = false,
     this.suspendidoHasta,
+    this.ciudad,
+    this.ubicacionRegistro,
   });
 
   final String id;
@@ -26,6 +30,10 @@ class Usuario {
 
   /// Fin de la sanción por reseñas negativas (null si nunca la tuvo).
   final DateTime? suspendidoHasta;
+  final String? ciudad;
+
+  /// Ubicación que eligió el cliente para buscar técnicos cercanos.
+  final LatLng? ubicacionRegistro;
 
   bool get estaSuspendido =>
       suspendidoHasta != null && suspendidoHasta!.isAfter(DateTime.now());

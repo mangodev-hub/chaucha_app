@@ -14,6 +14,7 @@ class PerfilPublico {
     this.miembroDesde,
     this.esTecnico = true,
     this.esVip = false,
+    this.selfieValidada = false,
   });
 
   final String tecnicoId;
@@ -26,6 +27,9 @@ class PerfilPublico {
   /// Lo calcula un job nocturno en la base.
   final bool esVip;
   final bool verificado;
+
+  /// La selfie coincide con la cédula (validación automática).
+  final bool selfieValidada;
   final String nivelNombre;
   final double calificacionPromedio;
   final int totalResenas;

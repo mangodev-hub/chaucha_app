@@ -15,6 +15,15 @@ abstract final class AppRoutes {
 
   static const Set<String> publicas = {login, registro, recuperar};
 
+  /// Páginas legales: se abren con o sin sesión, desde cualquier rol.
+  static const String terminos = '/terminos';
+  static const String privacidad = '/privacidad';
+  static const Set<String> legales = {terminos, privacidad};
+
+  /// Sección "Uso de datos de verificación" dentro de Privacidad.
+  static const String privacidadVerificacion =
+      '$privacidad?seccion=verificacion';
+
   static const String clienteNuevaSolicitud = '/cliente/nueva';
 
   /// Agenda del cliente. No es una pestaña: se abre desde el menú de la
@@ -34,6 +43,20 @@ abstract final class AppRoutes {
   /// Perfil público de un cliente. Solo lo abre el técnico.
   static String perfilCliente(String clienteId) =>
       '$tecnicoInicio/cliente/$clienteId';
+
+  /// Detalle de un reclamo: lo abre quien lo hizo o el asesor (admin).
+  static String reclamo(
+    String id, {
+    bool esCliente = true,
+    bool esAdmin = false,
+  }) => '${esAdmin ? adminInicio : _prefijo(esCliente)}/reclamo/$id';
+
+  static String misReclamos({required bool esCliente}) =>
+      '${_prefijo(esCliente)}/reclamos';
+
+  /// Perfiles públicos desde el panel del asesor.
+  static String perfilTecnicoAdmin(String id) => '$adminInicio/tecnico/$id';
+  static String perfilClienteAdmin(String id) => '$adminInicio/cliente/$id';
 
   static String _prefijo(bool esCliente) =>
       esCliente ? clienteInicio : tecnicoInicio;

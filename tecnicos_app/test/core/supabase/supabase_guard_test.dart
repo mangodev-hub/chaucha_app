@@ -70,4 +70,38 @@ void main() {
       'No se pudo completar la autenticación.',
     );
   });
+
+  group('Edge Functions', () {
+    test('429 del límite de uso: dice cuánto esperar', () async {
+      expect(
+        await _mensajePara(
+          const FunctionException(
+            status: 429,
+            details: {'error': 'Demasiados', 'reintentar_en': 42},
+          ),
+        ),
+        'Hiciste muchos intentos seguidos. Espera 42 s e inténtalo de nuevo.',
+      );
+    });
+
+    test('429 sin segundos', () async {
+      expect(
+        await _mensajePara(const FunctionException(status: 429)),
+        'Hiciste muchos intentos seguidos. Espera un momento e inténtalo '
+        'de nuevo.',
+      );
+    });
+
+    test('otro error usa el texto de la función', () async {
+      expect(
+        await _mensajePara(
+          const FunctionException(
+            status: 400,
+            details: {'error': 'Primero sube tu foto de perfil.'},
+          ),
+        ),
+        'Primero sube tu foto de perfil.',
+      );
+    });
+  });
 }

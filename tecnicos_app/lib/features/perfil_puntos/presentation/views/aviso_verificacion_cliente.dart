@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/errors/app_failure.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../auth/domain/entities/rol.dart';
@@ -20,10 +22,16 @@ class AvisoVerificacionCliente extends ConsumerWidget {
     super.key,
     this.subtitulo = 'Necesitas verificarte para pedir un técnico.',
     this.margenInferior = 0,
+    this.margenSuperior = 0,
+    this.estiloInicio = false,
   });
 
   final String subtitulo;
   final double margenInferior;
+  final double margenSuperior;
+
+  /// Tarjeta blanca con sombra, como las del inicio del cliente.
+  final bool estiloInicio;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,8 +40,7 @@ class AvisoVerificacionCliente extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final v = ref.watch(verificacionProvider).value;
-    final frenteHecho =
-        v != null && !v.puedeSubir(TipoDocumento.cedulaFrontal);
+    final frenteHecho = v != null && !v.puedeSubir(TipoDocumento.cedulaFrontal);
     final reversoHecho =
         v != null && !v.puedeSubir(TipoDocumento.cedulaPosterior);
     final selfieHecha = usuario.fotoVerificada;
@@ -45,71 +52,89 @@ class AvisoVerificacionCliente extends ConsumerWidget {
       await refrescarVerificacion(ref);
     }
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: margenInferior),
-      child: TarjetaApp(
-        colorBorde: Colores.primarioClaro,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(Radios.medio),
-              onTap: abrir,
-              child: Row(
-                children: [
-                  IconoRecuadro(
-                    icono: enRevision
-                        ? Icons.hourglass_top_rounded
-                        : Icons.shield_outlined,
-                    lado: 44,
-                  ),
-                  const SizedBox(width: Espacios.m),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          enRevision
-                              ? 'Perfil en revisión'
-                              : 'Falta verificar tu identidad',
-                          style: textos.titleSmall,
-                        ),
-                        Text(
-                          enRevision
-                              ? 'Tu verificación se realizará pronto.'
-                              : subtitulo,
-                          style: textos.bodySmall?.copyWith(
-                            color: Colores.tintaSuave,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    final contenido = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(Radios.medio),
+          onTap: abrir,
+          child: Row(
+            children: [
+              IconoRecuadro(
+                icono: enRevision
+                    ? Icons.hourglass_top_rounded
+                    : Icons.shield_outlined,
+                lado: 44,
               ),
-            ),
-            const SizedBox(height: Espacios.s),
-            _LineaPaso(
-              numero: 1,
-              texto: 'Frente de la cédula',
-              hecho: frenteHecho,
-              onTap: abrir,
-            ),
-            _LineaPaso(
-              numero: 2,
-              texto: 'Reverso de la cédula',
-              hecho: reversoHecho,
-              onTap: abrir,
-            ),
-            _LineaPaso(
-              numero: 3,
-              texto: 'Tómate una selfie',
-              hecho: selfieHecha,
-              onTap: abrir,
-            ),
-          ],
+              const SizedBox(width: Espacios.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      enRevision
+                          ? 'Perfil en revisión'
+                          : 'Falta verificar tu identidad',
+                      style: textos.titleSmall,
+                    ),
+                    Text(
+                      enRevision
+                          ? 'Tu verificación se realizará pronto.'
+                          : subtitulo,
+                      style: textos.bodySmall?.copyWith(
+                        color: Colores.tintaSuave,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: Espacios.s),
+        _LineaPaso(
+          numero: 1,
+          texto: 'Frente de la cédula',
+          hecho: frenteHecho,
+          onTap: abrir,
+        ),
+        _LineaPaso(
+          numero: 2,
+          texto: 'Reverso de la cédula',
+          hecho: reversoHecho,
+          onTap: abrir,
+        ),
+        _LineaPaso(
+          numero: 3,
+          texto: 'Tómate una selfie',
+          hecho: selfieHecha,
+          onTap: abrir,
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () =>
+                unawaited(context.push(AppRoutes.privacidadVerificacion)),
+            icon: const Icon(Icons.lock_outline_rounded, size: 16),
+            label: const Text('Uso de datos de verificación'),
+          ),
+        ),
+      ],
+    );
+    return Padding(
+      padding: EdgeInsets.only(top: margenSuperior, bottom: margenInferior),
+      child: estiloInicio
+          ? Container(
+              padding: const EdgeInsets.all(Espacios.l),
+              decoration: BoxDecoration(
+                color: Colores.tarjeta,
+                borderRadius: BorderRadius.circular(Radios.tarjeta),
+                border: Border.all(color: Colores.primarioClaro),
+                boxShadow: Sombras.tarjeta,
+              ),
+              child: contenido,
+            )
+          : TarjetaApp(colorBorde: Colores.primarioClaro, child: contenido),
     );
   }
 }

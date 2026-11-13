@@ -5,8 +5,9 @@ import 'package:tecnicos_app/core/widgets/cabecera_cielo.dart';
 import 'package:tecnicos_app/core/widgets/fila_dato.dart';
 import 'package:tecnicos_app/core/widgets/pildora.dart';
 
-Widget _envolver(Widget hijo) =>
-    MaterialApp(home: Scaffold(body: Center(child: hijo)));
+Widget _envolver(Widget hijo) => MaterialApp(
+  home: Scaffold(body: Center(child: hijo)),
+);
 
 void main() {
   testWidgets('FilaDato muestra etiqueta, valor, detalle y trailing', (

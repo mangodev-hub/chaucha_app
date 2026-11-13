@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../geo/sector_service.dart';
+import '../providers/core_providers.dart';
 import '../theme/tokens.dart';
 
-final sectorServiceProvider = Provider<SectorService>((ref) => SectorService());
+final sectorServiceProvider = Provider<SectorService>(
+  (ref) => SectorService(supabase: ref.watch(supabaseClientProvider)),
+);
 
 /// Sector de un punto (clave = coordenadas redondeadas, ver
 /// [SectorService.clave]). Si la consulta falla devuelve null y la etiqueta

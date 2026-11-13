@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/pie_pagina.dart';
 import '../../../../core/errors/app_failure.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
@@ -11,6 +12,7 @@ import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/responsive_layout.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
@@ -96,61 +98,60 @@ class _MisSolicitudesViewState extends ConsumerState<MisSolicitudesView> {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    return RefreshIndicator(
+    return ListaDePagina(
       onRefresh: () =>
           esperarSinError(ref.refresh(misSolicitudesProvider.future)),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          Espacios.l,
-          Espacios.l,
-          Espacios.l,
-          Espacios.xxl,
-        ),
-        children: [
-          AnchoMaximo(
-            ancho: 1200,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text('Mis solicitudes', style: textos.titleLarge),
-                    ),
-                    // La agenda del cliente no es una pestaña: se abre aquí
-                    // y desde el menú de la cuenta.
-                    IconButton.outlined(
-                      tooltip: 'Mi agenda',
-                      onPressed: () => context.push(AppRoutes.clienteAgenda),
-                      icon: const Icon(Icons.event_outlined),
-                    ),
-                    const SizedBox(width: Espacios.s),
-                    FilledButton.icon(
-                      onPressed: _nueva,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Nueva solicitud'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Espacios.m),
-                AsyncValueView<List<Solicitud>>(
-                  value: ref.watch(misSolicitudesProvider),
-                  onRetry: () => ref.invalidate(misSolicitudesProvider),
-                  onData: (context, solicitudes) => _contenido(solicitudes),
-                ),
-              ],
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.fromLTRB(
+        Espacios.l,
+        Espacios.l,
+        Espacios.l,
+        Espacios.xxl,
       ),
+      children: [
+        AnchoMaximo(
+          ancho: 1200,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Mis solicitudes', style: textos.titleLarge),
+                  ),
+                  // La agenda del cliente no es una pestaña: se abre aquí
+                  // y desde el menú de la cuenta.
+                  IconButton.outlined(
+                    tooltip: 'Mi agenda',
+                    onPressed: () => context.push(AppRoutes.clienteAgenda),
+                    icon: const Icon(Icons.event_outlined),
+                  ),
+                  const SizedBox(width: Espacios.s),
+                  FilledButton.icon(
+                    onPressed: _nueva,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Nueva solicitud'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Espacios.m),
+              AsyncValueView<List<Solicitud>>(
+                value: ref.watch(misSolicitudesProvider),
+                onRetry: () => ref.invalidate(misSolicitudesProvider),
+                onData: (context, solicitudes) => _contenido(solicitudes),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Espacios.xxl),
+        const PiePagina(),
+      ],
     );
   }
 
   Widget _contenido(List<Solicitud> solicitudes) {
     // Novedades sin leer por solicitud (insignia de cada tarjeta).
     final novedades =
-        ref.watch(novedadesPorSolicitudProvider).value ??
-        const <String, int>{};
+        ref.watch(novedadesPorSolicitudProvider).value ?? const <String, int>{};
 
     final activas = [
       for (final s in solicitudes)

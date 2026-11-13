@@ -32,8 +32,9 @@ class SelfieNotifier extends AsyncNotifier<String?> {
       await ref
           .read(storageServiceProvider)
           .subirImagen(bucket: Buckets.perfiles, ruta: ruta, bytes: bytes);
-      final motivo =
-          await ref.read(usuarioRepositoryProvider).registrarSelfie(ruta: ruta);
+      final motivo = await ref
+          .read(usuarioRepositoryProvider)
+          .registrarSelfie(ruta: ruta);
       if (motivo == null) {
         await ref.read(sesionProvider.notifier).recargarUsuario();
       }

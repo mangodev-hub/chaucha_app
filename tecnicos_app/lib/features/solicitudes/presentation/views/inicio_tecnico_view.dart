@@ -12,13 +12,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/pestana_solicitada.dart';
+import '../../../../app/pie_pagina.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/carrusel_aliados.dart';
-import '../../../../core/widgets/cuadricula_adaptable.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
@@ -31,13 +30,14 @@ import '../../../chat/presentation/widgets/chat_flotante.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_publico_provider.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 import '../../../perfil_puntos/presentation/views/verificacion_view.dart';
-import '../../domain/entities/feed.dart';
+import '../../../publicidad/domain/entities/anuncio.dart';
+import '../../../publicidad/presentation/widgets/bloque_publicidad.dart';
 import '../../domain/entities/resumen_tecnico.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/feed_provider.dart';
 import '../providers/inicio_tecnico_provider.dart';
 import '../providers/listas_provider.dart';
-import '../widgets/mapa_zona_perfil.dart';
+import '../widgets/cerca_tecnico.dart';
 import '../widgets/solicitud_widgets.dart';
 
 class InicioTecnicoView extends ConsumerWidget {
@@ -60,9 +60,9 @@ class InicioTecnicoView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final escritorio = ResponsiveLayout.isDesktop(context);
 
-    const urgente = [_ParaEmpezar(), _Pendientes(), _NuevasCerca()];
+    const urgente = [_ParaEmpezar(), _Pendientes()];
     const progreso = [_Publicidad()];
-    const derecha = [_MapaZona(), ...progreso];
+    const derecha = progreso;
 
     return RefreshIndicator(
       onRefresh: () => _recargar(ref),
@@ -82,6 +82,11 @@ class InicioTecnicoView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const _Portada(),
+                // El mapa con las solicitudes de su zona, a todo el ancho.
+                const Padding(
+                  padding: EdgeInsets.only(top: Espacios.bento),
+                  child: CercaTecnico(),
+                ),
                 if (escritorio)
                   const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,7 +109,6 @@ class InicioTecnicoView extends ConsumerWidget {
                     ],
                   )
                 else ...[
-                  const _MapaZona(),
                   ...urgente,
                   ...progreso,
                 ],
@@ -112,6 +116,7 @@ class InicioTecnicoView extends ConsumerWidget {
               ],
             ),
           ),
+          const PiePagina(),
         ],
       ),
     );
@@ -151,25 +156,6 @@ class _Portada extends ConsumerWidget {
       iconoDato: pendientes == 0
           ? Icons.task_alt_rounded
           : Icons.notifications_active_outlined,
-    );
-  }
-}
-
-class _MapaZona extends ConsumerWidget {
-  const _MapaZona();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Sin ubicación no hay mapa, y tampoco se muestra el título.
-    final tieneUbicacion = ref.watch(
-      perfilTecnicoProvider.select((p) => p.value?.ubicacionActual != null),
-    );
-    if (!tieneUbicacion) return const SizedBox.shrink();
-    return _Bloque(
-      titulo: 'Tu zona de trabajo',
-      child: MapaZonaPerfil(
-        onTapSolicitud: (s) => _abrirSolicitud(context, ref, s),
-      ),
     );
   }
 }
@@ -332,7 +318,7 @@ class _Publicidad extends StatelessWidget {
       // El carrusel ya es una tarjeta: va solo, con el respiro bento.
       const Padding(
         padding: EdgeInsets.only(top: Espacios.bento),
-        child: CarruselAliados(),
+        child: BloquePublicidad(ubicacion: UbicacionAnuncio.homeTecnico),
       );
 }
 
@@ -398,60 +384,6 @@ class _ChatPendiente extends ConsumerWidget {
             style: textos.labelSmall?.copyWith(color: Colores.tintaSuave),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// Solicitudes nuevas cerca
-/// Las tres solicitudes más recientes de sus oficios en su zona.
-class _NuevasCerca extends ConsumerWidget {
-  const _NuevasCerca();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final feed = ref.watch(feedProvider);
-    // Con el perfil incompleto no hay feed: lo explica "Para empezar".
-    if (feed.value case DatosFeed(:final perfil) when !perfil.estaCompleto) {
-      return const SizedBox.shrink();
-    }
-    return _Bloque(
-      titulo: 'Solicitudes nuevas cerca',
-      child: _AsyncCompacto<DatosFeed>(
-        valor: feed,
-        onReintentar: () => ref.invalidate(feedProvider),
-        contenido: (datos) {
-          final recientes = [...datos.items]
-            ..sort(
-              (a, b) => b.solicitud.creadoEn.compareTo(a.solicitud.creadoEn),
-            );
-          if (recientes.isEmpty) {
-            return const EstadoMensaje(
-              compacto: true,
-              icono: Icons.search_off,
-              mensaje:
-                  'Por ahora no hay solicitudes de tus oficios en tu zona.',
-            );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              CuadriculaAdaptable(
-                children: [
-                  for (final item in recientes)
-                    SolicitudCard(
-                      solicitud: item.solicitud,
-                      distancia: Formatos.distancia(item.distanciaMetros),
-                      yaCotice: item.yaCotice,
-                      mostrarCliente: true,
-                      onTap: () =>
-                          _abrirSolicitud(context, ref, item.solicitud),
-                    ),
-                ],
-              ),
-            ],
-          );
-        },
       ),
     );
   }

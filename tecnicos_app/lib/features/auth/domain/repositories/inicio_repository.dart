@@ -6,6 +6,7 @@ abstract interface class InicioRepository {
   Future<List<TecnicoCercano>> tecnicosCercanos({
     required LatLng punto,
     required int radioM,
+    int? oficioId,
     int limite = 20,
   });
 }

@@ -18,13 +18,14 @@ class SelfieView extends ConsumerWidget {
 
   final Future<void> Function() onCerrarSesion;
 
-Future<void> _tomar(BuildContext context, WidgetRef ref) async {
-  final Uint8List? bytes = kIsWeb
-      ? await Navigator.of(context).push<Uint8List>(
-          MaterialPageRoute(builder: (_) => const SelfieCamara()))
-      : await SelectorFotos.una(camara: true);
-  if (bytes != null) await ref.read(selfieProvider.notifier).enviar(bytes);
-}
+  Future<void> _tomar(BuildContext context, WidgetRef ref) async {
+    final Uint8List? bytes = kIsWeb
+        ? await Navigator.of(context).push<Uint8List>(
+            MaterialPageRoute(builder: (_) => const SelfieCamara()),
+          )
+        : await SelectorFotos.una(camara: true);
+    if (bytes != null) await ref.read(selfieProvider.notifier).enviar(bytes);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,11 +34,12 @@ Future<void> _tomar(BuildContext context, WidgetRef ref) async {
     final mensaje = cargando
         ? null
         : estado.hasError
-            ? AsyncValueView.mensajeDe(estado.error!)
-            : estado.value;
+        ? AsyncValueView.mensajeDe(estado.error!)
+        : estado.value;
     return AuthLayout(
       titulo: 'Tu foto de perfil',
-      subtitulo: 'Tómate una selfie de frente y con el rostro descubierto. '
+      subtitulo:
+          'Tómate una selfie de frente y con el rostro descubierto. '
           'Será tu foto pública y no podrás cambiarla.',
       tituloCentrado: true,
       anchoEscritorio: 440,

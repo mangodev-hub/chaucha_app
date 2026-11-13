@@ -17,8 +17,8 @@ abstract final class CertificacionModel {
 
   static Certificacion desdeFila(Map<String, dynamic> fila, {String? url}) {
     final usuario = anidado(fila['usuarios']);
-    final nombre =
-        '${usuario?['nombres'] ?? ''} ${usuario?['apellidos'] ?? ''}'.trim();
+    final nombre = '${usuario?['nombres'] ?? ''} ${usuario?['apellidos'] ?? ''}'
+        .trim();
     return Certificacion(
       id: fila['id'] as String,
       tecnicoId: fila['tecnico_id'] as String,

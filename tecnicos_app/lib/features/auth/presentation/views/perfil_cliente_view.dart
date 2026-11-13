@@ -1,51 +1,44 @@
+// "Mi perfil" del cliente: cabecera con sus métricas, lo que dicen los
+// técnicos de él y, a un lado, su ubicación y el menú de la cuenta. Los datos
+// personales están verificados y no se editan; la foto es la selfie validada.
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import '../../../../app/menu_cuenta.dart';
+import '../../../../app/pie_pagina.dart';
+import '../../../../core/geo/geo_mapper.dart';
+import '../../../../core/geo/sector_service.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/tokens.dart';
-import '../../../../core/widgets/avatar_usuario.dart';
-import '../../../../core/widgets/capa_circulos.dart';
-import '../../../../core/widgets/carrusel_aliados.dart';
-import '../../../../core/widgets/tarjeta_onda.dart';
+import '../../../../core/utils/formatos.dart';
+import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/boton_baja.dart';
+import '../../../../core/widgets/cabecera_perfil.dart';
+import '../../../../core/widgets/etiqueta_sector.dart';
+import '../../../../core/widgets/mapa_ubicacion.dart';
+import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
+import '../../../../core/widgets/tarjeta_inicio.dart';
+import '../../../perfil_puntos/domain/entities/perfil_publico.dart';
 import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
-import '../../../perfil_puntos/presentation/widgets/resena_widgets.dart';
+import '../../../perfil_puntos/presentation/widgets/resenas_perfil.dart';
+import '../../../publicidad/domain/entities/anuncio.dart';
+import '../../../publicidad/presentation/widgets/bloque_publicidad.dart';
+import '../../../reclamos/presentation/widgets/entrada_mis_reclamos.dart';
+import '../../data/repositories/supabase_auth_repository.dart';
+import '../../data/repositories/supabase_usuario_repository.dart';
+import '../../domain/entities/usuario.dart';
 import '../providers/resenas_cliente_provider.dart';
 import '../providers/sesion_provider.dart';
+import '../widgets/perfil_cliente_secciones.dart';
 
-// Regla v2: el perfil es contexto, así que va en celeste; el verde queda
-// para las acciones.
-const _azul = Colores.cielo;
-const _azulOscuro = Colores.cieloOscuro;
-const _hielo = Colores.cieloSuave;
-const _fondo = Colores.lienzo;
-const _texto = Colores.tinta;
-const _gris = Colores.tintaSuave;
-const _borde = Colores.linea;
-const _rojo = Colores.error;
-const _blanco = Colores.tarjeta;
-
-String _mesAnio(DateTime f) {
-  const m = [
-    'Ene',
-    'Feb',
-    'Mar',
-    'Abr',
-    'May',
-    'Jun',
-    'Jul',
-    'Ago',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dic',
-  ];
-  return '${m[f.month - 1]} ${f.year}';
+String _iniciales(Usuario u) {
+  final a = u.nombres.trim();
+  final b = u.apellidos.trim();
+  return '${a.isEmpty ? '' : a[0]}${b.isEmpty ? '' : b[0]}'.toUpperCase();
 }
 
 class PerfilClienteView extends ConsumerWidget {
@@ -55,648 +48,334 @@ class PerfilClienteView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final usuario = ref.watch(usuarioActualProvider);
     if (usuario == null) return const SizedBox.shrink();
-    final resumen = ref.watch(resenasRecibidasProvider).value;
+    final resenas = ref.watch(resenasRecibidasProvider);
+    final lista = resenas.value?.resenas ?? const <ResenaPublica>[];
+    final promedio = resenas.value?.promedio ?? 0;
+    final textos = Theme.of(context).textTheme;
+    final ciudad = usuario.ciudad?.trim();
 
-    return ColoredBox(
-      color: _fondo,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                final ancho = c.maxWidth >= 900;
-                const izquierda = _Resenas();
-                const derecha = Column(
-                  children: [
-                    _Ubicacion(),
-                    SizedBox(height: 16),
-                    _Privacidad(),
-                    SizedBox(height: 16),
-                    CarruselAliados(),
-                  ],
-                );
-                return Column(
-                  children: [
-                    _Cabecera(usuario.nombreCompleto),
-                    const SizedBox(height: 24),
-                    const AvisoVerificacionCliente(margenInferior: 24),
-                    _Estadisticas(
-                      promedio: resumen?.promedio ?? 0,
-                      total: resumen?.total ?? 0,
-                      desde: usuario.creadoEn.toLocal(),
-                    ),
-                    const SizedBox(height: 24),
-                    if (ancho)
-                      const Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 8, child: izquierda),
-                          SizedBox(width: 24),
-                          Expanded(flex: 4, child: derecha),
-                        ],
-                      )
-                    else ...[
-                      izquierda,
-                      const SizedBox(height: 24),
-                      derecha,
-                    ],
-                  ],
-                );
-              },
+    final cabecera = CabeceraPerfil(
+      nombre: usuario.nombreCompleto,
+      iniciales: _iniciales(usuario),
+      fotoRuta: usuario.fotoPerfilRuta,
+      datos: Wrap(
+        spacing: Espacios.m,
+        runSpacing: Espacios.s,
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (ciudad != null && ciudad.isNotEmpty)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.location_on_outlined,
+                  size: 16,
+                  color: Colores.tintaSuave,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$ciudad, Ecuador',
+                  style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
+                ),
+              ],
+            ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colores.cieloSuave,
+              borderRadius: BorderRadius.circular(Radios.pildora),
+            ),
+            child: Text(
+              'Cliente',
+              style: textos.labelMedium?.copyWith(
+                color: Colores.cieloOscuro,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
+        ],
+      ),
+      metricas: [
+        MetricaPerfil(
+          icono: Icons.star_rounded,
+          colorIcono: Colores.estrella,
+          valor: lista.isEmpty
+              ? '—'
+              : promedio.toStringAsFixed(1).replaceAll('.', ','),
+          etiqueta: 'Calificación',
+        ),
+        MetricaPerfil(
+          icono: Icons.reviews_outlined,
+          valor: '${lista.length}',
+          etiqueta: lista.length == 1 ? 'Reseña' : 'Reseñas',
+        ),
+        MetricaPerfil(
+          icono: Icons.calendar_month_outlined,
+          valor: Formatos.mesAnio(usuario.creadoEn.toLocal()),
+          etiqueta: 'Miembro desde',
+        ),
+      ],
+    );
+
+    final resenasBloque = AsyncValueView(
+      value: resenas,
+      onRetry: () => ref.invalidate(resenasRecibidasProvider),
+      onData: (context, _) => ResenasPerfil(
+        titulo: 'Lo que dicen los técnicos',
+        resenas: lista,
+        vacio: Text(
+          'Aún no tienes reseñas. Aparecerán cuando completes tu primer '
+          'servicio.',
+          style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
+        ),
+      ),
+    );
+    // Orden: solicitudes activas, reseñas, historial y volver a contratar
+    // (este último no aparece si aún no trabajó con nadie).
+    final principal = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SolicitudesActivasPerfil(),
+        const SizedBox(height: Espacios.l),
+        resenasBloque,
+        const SizedBox(height: Espacios.l),
+        const HistorialServiciosPerfil(),
+        const VolverAContratar(),
+      ],
+    );
+    final lateral = [
+      UbicacionCliente(usuario: usuario),
+      const SizedBox(height: Espacios.l),
+      const MenuCuentaPerfil(),
+      const SizedBox(height: Espacios.l),
+      const EntradaMisReclamos(esCliente: true),
+      const SizedBox(height: Espacios.l),
+      const BloquePublicidad(ubicacion: UbicacionAnuncio.homeCliente),
+    ];
+    final ancho = MediaQuery.sizeOf(context).width >= 1000;
+
+    return ColoredBox(
+      color: Colores.fondoClaro,
+      child: _ConScroll(
+        padding: EdgeInsets.all(ancho ? 0 : Espacios.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AvisoVerificacionCliente(margenInferior: Espacios.l),
+            cabecera,
+            const SizedBox(height: 20),
+            if (ancho)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: principal),
+                  const SizedBox(width: 20),
+                  SizedBox(
+                    width: 340,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: lateral,
+                    ),
+                  ),
+                ],
+              )
+            else ...[
+              principal,
+              const SizedBox(height: Espacios.l),
+              ...lateral,
+            ],
+            const PieLegalMovil(),
+            const SizedBox(height: 32),
+            const PiePagina(),
+          ],
         ),
       ),
     );
   }
 }
 
-class _Tarjeta extends StatelessWidget {
-  const _Tarjeta({
-    required this.child,
-    this.padding = const EdgeInsets.all(24),
-  });
+/// Scroll propio, salvo dentro del scroll único de la página web.
+class _ConScroll extends StatelessWidget {
+  const _ConScroll({required this.padding, required this.child});
 
-  final Widget child;
   final EdgeInsetsGeometry padding;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ScrollDePagina.activo(context)
+      ? Padding(padding: padding, child: child)
+      : SingleChildScrollView(padding: padding, child: child);
+}
+
+/// "Mi ubicación": la zona con la que se buscan técnicos cercanos. Se puede
+/// cambiar con la ubicación actual o eligiéndola en el mapa.
+class UbicacionCliente extends ConsumerStatefulWidget {
+  const UbicacionCliente({super.key, required this.usuario});
+
+  final Usuario usuario;
+
+  @override
+  ConsumerState<UbicacionCliente> createState() => _UbicacionClienteState();
+}
+
+class _UbicacionClienteState extends ConsumerState<UbicacionCliente> {
+  bool _guardando = false;
+
+  Future<void> _guardar(LatLng punto) async {
+    setState(() => _guardando = true);
+    try {
+      await ref.read(usuarioRepositoryProvider).actualizarUbicacion(punto);
+      await ref.read(sesionProvider.notifier).recargarUsuario();
+      if (mounted) {
+        context.mostrarMensaje(
+          'Ubicación actualizada.',
+          tipo: TipoMensaje.exito,
+        );
+      }
+    } on Object catch (e) {
+      if (mounted) {
+        context.mostrarMensaje(
+          AsyncValueView.mensajeDe(e),
+          tipo: TipoMensaje.error,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
+
+  Future<void> _usarActual() async {
+    setState(() => _guardando = true);
+    final punto = await ref.read(ubicacionServiceProvider).obtenerActual();
+    if (!mounted) return;
+    if (punto == null) {
+      setState(() => _guardando = false);
+      context.mostrarMensaje(
+        'No pudimos obtener tu ubicación actual. Revisa los permisos.',
+        tipo: TipoMensaje.error,
+      );
+      return;
+    }
+    await _guardar(punto);
+  }
+
+  Future<void> _elegirEnMapa(LatLng inicial) async {
+    final elegido = await showDialog<LatLng>(
+      context: context,
+      builder: (_) => _ElegirEnMapa(inicial: inicial),
+    );
+    if (elegido != null && mounted) await _guardar(elegido);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: _blanco,
-        borderRadius: BorderRadius.circular(Radios.grande),
-        border: Border.all(color: _borde),
-      ),
-      child: child,
+    final textos = Theme.of(context).textTheme;
+    final guardada = widget.usuario.ubicacionRegistro;
+    final punto = guardada ?? GeoMapper.quito;
+    final barrio = guardada == null
+        ? null
+        : ref.watch(sectorProvider(SectorService.clave(guardada))).value;
+    final forma = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Radios.pequeno),
     );
-  }
-}
-
-class _Etiqueta extends StatelessWidget {
-  const _Etiqueta(this.texto);
-
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: _hielo,
-        borderRadius: BorderRadius.circular(Radios.grande),
-      ),
-      child: Text(
-        texto,
-        style: const TextStyle(
-          color: _azulOscuro,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class _Avatar extends ConsumerWidget {
-  const _Avatar(this.nombre, {this.radio = 30});
-
-  final String nombre;
-  final double radio;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return AvatarUsuario(
-      nombre: nombre,
-      rutaFoto: ref.watch(usuarioActualProvider)?.fotoPerfilRuta,
-      radio: radio,
-    );
-  }
-}
-
-class _Cabecera extends StatelessWidget {
-  const _Cabecera(this.nombre);
-
-  final String nombre;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Tarjeta(
+    return TarjetaInicio(
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              const ClipRRect(
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(Radios.grande),
-                ),
-                child: SizedBox(height: 160, child: FondoOnda()),
-              ),
-              Positioned(
-                left: 32,
-                bottom: -48,
-                child: Stack(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: _blanco,
-                        shape: BoxShape.circle,
-                      ),
-                      child: _Avatar(nombre, radio: 56),
-                    ),
-                    Positioned(
-                      right: 4,
-                      bottom: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: _azul,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.photo_camera,
-                          size: 18,
-                          color: _blanco,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          // En pantallas angostas el nombre va debajo del avatar y el botón
-          // de baja a su propia línea; en anchas, todo a la derecha.
-          LayoutBuilder(
-            builder: (context, restricciones) {
-              final estrecho = restricciones.maxWidth < 520;
-              final datos = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    nombre,
-                    style: TextStyle(
-                      color: _texto,
-                      fontSize: estrecho ? 22 : 28,
-                      fontWeight: FontWeight.w700,
-                      height: 1.15,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Row(
-                    children: [
-                      Icon(Icons.location_on_outlined, size: 16, color: _azul),
-                      SizedBox(width: 4),
-                      // Cede si no hay ancho: nunca desborda la fila.
-                      Flexible(
-                        child: Text(
-                          'Quito, Ecuador',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: _gris, fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-              final baja = _BotonBaja(onPressed: () => _mostrarBaja(context));
-
-              if (estrecho) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      datos,
-                      const SizedBox(height: 16),
-                      Align(alignment: Alignment.centerLeft, child: baja),
-                    ],
-                  ),
-                );
-              }
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(176, 16, 32, 24),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(child: datos),
-                    const SizedBox(width: 16),
-                    baja,
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BotonBaja extends StatelessWidget {
-  const _BotonBaja({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onPressed,
-      icon: const Icon(Icons.person_remove_outlined, size: 18),
-      label: const Text(
-        'Darse de baja',
-        style: TextStyle(fontWeight: FontWeight.w700),
-      ),
-      style: TextButton.styleFrom(
-        foregroundColor: _rojo,
-        backgroundColor: _rojo.withValues(alpha: 0.08),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Radios.medio),
-          side: BorderSide(color: _rojo.withValues(alpha: 0.3)),
-        ),
-      ),
-    );
-  }
-}
-
-Future<void> _mostrarBaja(BuildContext context) {
-  return showDialog<void>(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: _blanco,
-      icon: const Icon(Icons.warning_amber_rounded, color: _rojo, size: 40),
-      title: const Text('¿Quieres darte de baja de ChauchaApp?'),
-      content: const Text(
-        'Tu cuenta quedará desactivada y se cancelarán tus solicitudes activas.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Mantener mi cuenta'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: FilledButton.styleFrom(backgroundColor: _rojo),
-          child: const Text('Continuar con la baja'),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Estadisticas extends StatelessWidget {
-  const _Estadisticas({
-    required this.promedio,
-    required this.total,
-    required this.desde,
-  });
-
-  final double promedio;
-  final int total;
-  final DateTime desde;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final a = _Estadistica(
-          Icons.star_outline_rounded,
-          total == 0 ? '—' : promedio.toStringAsFixed(1),
-          'Calificación promedio',
-        );
-        final b = _Estadistica(
-          Icons.rate_review_outlined,
-          '$total',
-          'Reseñas recibidas',
-        );
-        final d = _Estadistica(
-          Icons.calendar_month_outlined,
-          _mesAnio(desde),
-          'Miembro desde',
-        );
-        if (c.maxWidth >= 900) {
-          return Row(
-            children: [
-              Expanded(child: a),
-              const SizedBox(width: 16),
-              Expanded(child: b),
-              const SizedBox(width: 16),
-              Expanded(child: d),
-            ],
-          );
-        }
-        return Column(
-          children: [
-            a,
-            const SizedBox(height: 12),
-            b,
-            const SizedBox(height: 12),
-            d,
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _Estadistica extends StatelessWidget {
-  const _Estadistica(this.icono, this.valor, this.titulo);
-
-  final IconData icono;
-  final String valor;
-  final String titulo;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Tarjeta(
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _hielo,
-              borderRadius: BorderRadius.circular(Radios.medio),
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(Radios.tarjeta),
             ),
-            child: Icon(icono, color: _azul, size: 26),
+            child: IgnorePointer(
+              child: MapaUbicacion(
+                punto: punto,
+                altura: 150,
+                radioMetros: 500,
+                zoom: 14,
+                colorRadio: Colores.cielo,
+                colorMarcador: Colores.primarioVivo,
+              ),
+            ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.all(Espacios.l),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  valor,
-                  style: const TextStyle(
-                    color: _texto,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
+                  'Mi ubicación',
+                  style: textos.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 Text(
-                  titulo,
-                  style: const TextStyle(color: _gris, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Resenas extends ConsumerWidget {
-  const _Resenas();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final datos = ref.watch(resenasRecibidasProvider);
-    return _Tarjeta(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Reseñas de técnicos',
-                  style: TextStyle(
-                    color: _texto,
-                    fontSize: 20,
+                  guardada == null
+                      ? 'Aún no eliges tu ubicación'
+                      : barrio ?? 'Ubicación guardada',
+                  style: textos.bodyMedium?.copyWith(
+                    color: guardada == null
+                        ? Colores.tintaSuave
+                        : Colores.primario,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-              if (datos.value case final r? when r.total > 0)
-                _Etiqueta('${r.promedio.toStringAsFixed(1)} ★'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          datos.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, s) => const Text(
-              'No pudimos cargar tus reseñas.',
-              style: TextStyle(color: _gris, fontSize: 14),
-            ),
-            data: (r) => r.resenas.isEmpty
-                ? const Text(
-                    'Aún no tienes reseñas. Aparecerán cuando un técnico '
-                    'califique un trabajo contigo.',
-                    style: TextStyle(color: _gris, fontSize: 14),
-                  )
-                : Column(
-                    children: [
-                      for (final res in r.resenas) TarjetaResena(resena: res),
-                    ],
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Ubicacion extends StatelessWidget {
-  const _Ubicacion();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _Tarjeta(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.location_on_outlined, color: _azul, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Mi ubicación',
-                style: TextStyle(
-                  color: _texto,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          _MapaZona(),
-          SizedBox(height: 12),
-          Text(
-            'Se usa para encontrar técnicos cercanos sin exponer tu domicilio particular.',
-            style: TextStyle(color: _gris, fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MapaZona extends StatefulWidget {
-  const _MapaZona();
-
-  @override
-  State<_MapaZona> createState() => _MapaZonaState();
-}
-
-class _MapaZonaState extends State<_MapaZona> {
-  final _controlador = MapController();
-  LatLng _centro = const LatLng(-0.1807, -78.4678);
-  String? _lugar;
-  bool _buscando = false;
-  String? _aviso;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_detectar());
-  }
-
-  Future<void> _detectar({bool manual = false}) async {
-    if (manual) setState(() => _buscando = true);
-    try {
-      var permiso = await Geolocator.checkPermission();
-      if (permiso == LocationPermission.denied) {
-        permiso = await Geolocator.requestPermission();
-      }
-      if (permiso == LocationPermission.denied ||
-          permiso == LocationPermission.deniedForever) {
-        if (manual && mounted) {
-          setState(
-            () => _aviso =
-                'Activa el permiso de ubicación para usar esta opción.',
-          );
-        }
-        return;
-      }
-      final p = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.low,
-        ),
-      );
-      if (!mounted) return;
-      _fijar(_redondear(LatLng(p.latitude, p.longitude)));
-    } catch (_) {
-      if (manual && mounted) {
-        setState(() => _aviso = 'No pudimos obtener tu ubicación actual.');
-      }
-    } finally {
-      if (manual && mounted) setState(() => _buscando = false);
-    }
-  }
-
-  LatLng _redondear(LatLng p) => LatLng(
-    (p.latitude * 200).round() / 200,
-    (p.longitude * 200).round() / 200,
-  );
-
-  void _fijar(LatLng punto) {
-    setState(() {
-      _centro = punto;
-      _lugar = null;
-      _aviso = null;
-    });
-    _controlador.move(punto, 14);
-    unawaited(_resolverLugar(punto));
-  }
-
-  Future<void> _elegir() async {
-    final punto = await showDialog<LatLng>(
-      context: context,
-      builder: (_) => _SelectorUbicacion(inicial: _centro),
-    );
-    if (punto == null || !mounted) return;
-    _fijar(_redondear(punto));
-  }
-
-  Future<void> _resolverLugar(LatLng p) async {
-    try {
-      final r = await http.get(
-        Uri.https('nominatim.openstreetmap.org', '/reverse', {
-          'lat': '${p.latitude}',
-          'lon': '${p.longitude}',
-          'format': 'jsonv2',
-          'zoom': '17',
-          'addressdetails': '1',
-        }),
-        headers: {'Accept-Language': 'es'},
-      );
-      if (r.statusCode != 200) return;
-      final cuerpo = jsonDecode(r.body) as Map?;
-      final a = (cuerpo?['address'] as Map?) ?? const {};
-      final calle = a['road'] as String?;
-      final calleValida =
-          calle != null && !RegExp(r'^[A-Za-z]?\d+[A-Za-z]?$').hasMatch(calle)
-          ? calle
-          : null;
-      final texto = [
-        calleValida,
-        a['neighbourhood'] ?? a['suburb'],
-      ].whereType<String>().join(', ');
-      if (!mounted || texto.isEmpty) return;
-      setState(() => _lugar = texto);
-    } catch (_) {
-      return;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(Radios.medio),
-          child: SizedBox(
-            height: 150,
-            child: FlutterMap(
-              mapController: _controlador,
-              options: MapOptions(
-                initialCenter: _centro,
-                initialZoom: 14,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.drag | InteractiveFlag.pinchZoom,
-                ),
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.eagledev.tecnicosapp',
-                ),
-                CapaCirculos(
-                  circulos: [
-                    CircleMarker(
-                      point: _centro,
-                      radius: 500,
-                      useRadiusInMeter: true,
-                      color: _azul.withValues(alpha: 0.25),
-                      borderColor: _azul,
-                      borderStrokeWidth: 2,
+                const SizedBox(height: Espacios.m),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      child: FilledButton.icon(
+                        onPressed: _guardando ? null : _usarActual,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(0, 44),
+                          shape: forma,
+                        ),
+                        icon: _guardando
+                            ? const SizedBox.square(
+                                dimension: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.my_location_rounded, size: 18),
+                        label: const Text('Usar la actual'),
+                      ),
+                    ),
+                    const SizedBox(height: Espacios.s),
+                    SizedBox(
+                      child: OutlinedButton(
+                        onPressed: _guardando
+                            ? null
+                            : () => _elegirEnMapa(punto),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 44),
+                          shape: forma,
+                        ),
+                        child: const Text('Elegir en el mapa'),
+                      ),
                     ),
                   ],
                 ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _centro,
-                      width: 40,
-                      height: 40,
-                      alignment: Alignment.topCenter,
-                      child: const Icon(
-                        Icons.location_on,
-                        color: _rojo,
-                        size: 40,
+                const SizedBox(height: Espacios.m),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.lock_outline_rounded,
+                      size: 14,
+                      color: Colores.tintaSuave,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Se usa para encontrar técnicos cercanos sin exponer '
+                        'tu domicilio particular.',
+                        style: textos.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: Colores.tintaSuave,
+                        ),
                       ),
                     ),
                   ],
@@ -704,186 +383,239 @@ class _MapaZonaState extends State<_MapaZona> {
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            const Icon(Icons.place_outlined, size: 16, color: _azul),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                _lugar ?? 'Quito, Ecuador',
-                style: const TextStyle(
-                  color: _texto,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (_aviso != null) ...[
-          const SizedBox(height: 8),
-          Text(_aviso!, style: const TextStyle(color: _rojo, fontSize: 12)),
         ],
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: _buscando ? null : () => _detectar(manual: true),
-            icon: _buscando
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.my_location, size: 18),
-            label: const Text('Usar mi ubicación actual'),
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _elegir,
-            icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
-            label: const Text('Seleccionar en el mapa'),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
 
-class _SelectorUbicacion extends StatefulWidget {
-  const _SelectorUbicacion({required this.inicial});
+class _ElegirEnMapa extends StatefulWidget {
+  const _ElegirEnMapa({required this.inicial});
 
   final LatLng inicial;
 
   @override
-  State<_SelectorUbicacion> createState() => _SelectorUbicacionState();
+  State<_ElegirEnMapa> createState() => _ElegirEnMapaState();
 }
 
-class _SelectorUbicacionState extends State<_SelectorUbicacion> {
+class _ElegirEnMapaState extends State<_ElegirEnMapa> {
   late LatLng _punto = widget.inicial;
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: _blanco,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 560),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Selecciona tu ubicación',
-                style: TextStyle(
-                  color: _texto,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
+    return AlertDialog(
+      title: const Text('Elige tu ubicación'),
+      content: SizedBox(
+        width: 480,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Toca el mapa para mover el punto.'),
+            const SizedBox(height: Espacios.m),
+            MapaUbicacion(
+              punto: _punto,
+              altura: 320,
+              colorMarcador: Colores.primarioVivo,
+              mostrarSector: true,
+              onCambio: (p) => setState(() => _punto = p),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_punto),
+          child: const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Menú de la cuenta: datos personales (solo lectura), contraseña, cerrar
+/// sesión y darse de baja.
+class MenuCuentaPerfil extends ConsumerWidget {
+  const MenuCuentaPerfil({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return TarjetaInicio(
+      padding: const EdgeInsets.symmetric(vertical: Espacios.s),
+      child: Column(
+        children: [
+          _FilaMenu(
+            icono: Icons.badge_outlined,
+            texto: 'Datos personales',
+            onTap: () => unawaited(
+              showDialog<void>(
+                context: context,
+                builder: (_) => const _DatosPersonales(),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Toca el mapa para mover el pin.',
-                style: TextStyle(color: _gris, fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(Radios.medio),
-                  child: FlutterMap(
-                    options: MapOptions(
-                      initialCenter: widget.inicial,
-                      initialZoom: 15,
-                      onTap: (_, p) => setState(() => _punto = p),
-                    ),
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.eagledev.tecnicosapp',
-                      ),
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: _punto,
-                            width: 40,
-                            height: 40,
-                            alignment: Alignment.topCenter,
-                            child: const Icon(
-                              Icons.location_on,
-                              color: _rojo,
-                              size: 40,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancelar'),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: () => Navigator.of(context).pop(_punto),
-                    child: const Text('Confirmar'),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
+          const Divider(height: 1, color: Colores.divisor),
+          _FilaMenu(
+            icono: Icons.lock_outline_rounded,
+            texto: 'Contraseña y seguridad',
+            onTap: () => unawaited(mostrarConfiguracionCuenta(context)),
+          ),
+          const Divider(height: 1, color: Colores.divisor),
+          _FilaMenu(
+            icono: Icons.logout_rounded,
+            texto: 'Cerrar sesión',
+            onTap: () =>
+                unawaited(ref.read(sesionProvider.notifier).cerrarSesion()),
+          ),
+          const Divider(height: 1, color: Colores.divisor),
+          _FilaMenu(
+            icono: Icons.person_remove_outlined,
+            texto: 'Darse de baja',
+            color: Colores.error,
+            conChevron: false,
+            onTap: () => unawaited(
+              mostrarDialogoBaja(
+                context,
+                detalle:
+                    'Tu cuenta quedará desactivada y se cancelarán tus '
+                    'solicitudes activas.',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilaMenu extends StatelessWidget {
+  const _FilaMenu({
+    required this.icono,
+    required this.texto,
+    required this.onTap,
+    this.color = Colores.tinta,
+    this.conChevron = true,
+  });
+
+  final IconData icono;
+  final String texto;
+  final VoidCallback onTap;
+  final Color color;
+  final bool conChevron;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 48),
+        padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
+        child: Row(
+          children: [
+            Icon(icono, size: 20, color: color),
+            const SizedBox(width: Espacios.m),
+            Expanded(
+              child: Text(
+                texto,
+                style: Theme.of(context).textTheme.labelLarge
+                    ?.copyWith(color: color, fontWeight: FontWeight.w700),
+              ),
+            ),
+            if (conChevron)
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colores.tintaSuave,
+              ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _Privacidad extends StatelessWidget {
-  const _Privacidad();
+/// Datos personales en solo lectura: están verificados con la cédula.
+class _DatosPersonales extends ConsumerWidget {
+  const _DatosPersonales();
+
+  static String enmascarar(String cedula) {
+    final c = cedula.trim();
+    if (c.length < 5) return '••••••';
+    return '${c.substring(0, 2)}••••••${c.substring(c.length - 2)}';
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return const _Tarjeta(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final textos = Theme.of(context).textTheme;
+    final usuario = ref.watch(usuarioActualProvider);
+    final correo = ref.watch(authRepositoryProvider).correoActual;
+    final f = usuario?.creadoEn.toLocal();
+    Widget dato(String etiqueta, String valor) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.lock_outline, color: _azul),
-          SizedBox(width: 12),
+          SizedBox(
+            width: 130,
+            child: Text(
+              etiqueta,
+              style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
+            ),
+          ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Privacidad protegida',
-                  style: TextStyle(
-                    color: _texto,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Tu dirección exacta solo se comparte con el técnico que aceptes.',
-                  style: TextStyle(color: _gris, fontSize: 13),
-                ),
-              ],
+            child: Text(
+              valor,
+              style: textos.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ],
       ),
+    );
+    return AlertDialog(
+      icon: const Icon(Icons.verified_user_outlined, color: Colores.primario),
+      title: const Text('Datos personales'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            dato('Nombres', usuario?.nombres ?? ''),
+            dato('Apellidos', usuario?.apellidos ?? ''),
+            FutureBuilder<String?>(
+              future: ref.read(usuarioRepositoryProvider).miCedula(),
+              builder: (context, s) => dato(
+                'Cédula',
+                s.hasData && s.data != null
+                    ? enmascarar(s.data!)
+                    : (s.connectionState == ConnectionState.done ? '—' : '…'),
+              ),
+            ),
+            dato('Correo', correo ?? '—'),
+            dato(
+              'Registro',
+              f == null
+                  ? '—'
+                  : '${f.day.toString().padLeft(2, '0')}/'
+                        '${f.month.toString().padLeft(2, '0')}/${f.year}',
+            ),
+            const SizedBox(height: Espacios.m),
+            Text(
+              'Tus datos están verificados y no se pueden modificar. Si hay un '
+              'error, escríbenos a soporte.',
+              style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Entendido'),
+        ),
+      ],
     );
   }
 }

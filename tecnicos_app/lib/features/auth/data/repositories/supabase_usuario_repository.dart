@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/supabase/supabase_extensions.dart';
 import '../../../../core/supabase/supabase_guard.dart';
 import '../../domain/entities/rol.dart';
 import '../../domain/entities/usuario.dart';
@@ -52,7 +55,7 @@ class SupabaseUsuarioRepository implements UsuarioRepository {
     });
   }
 
-    @override
+  @override
   Future<String?> registrarSelfie({required String ruta}) {
     return supabaseGuard(() async {
       await _client
@@ -61,7 +64,7 @@ class SupabaseUsuarioRepository implements UsuarioRepository {
           .eq('id', _client.auth.currentUser!.id);
       final r = await _client.functions.invoke('validar-foto-rostro');
       final datos = r.data as Map<String, dynamic>;
-        if (datos['valida'] == true) {
+      if (datos['valida'] == true) {
         unawaited(
           _client.functions
               .invoke('comparar-rostro-cedula')
@@ -70,6 +73,28 @@ class SupabaseUsuarioRepository implements UsuarioRepository {
         return null;
       }
       return (datos['motivo'] as String?) ?? 'No se ve un rostro claro.';
+    });
+  }
+
+  @override
+  Future<void> actualizarUbicacion(LatLng punto) {
+    return supabaseGuard(() async {
+      await _client
+          .from('usuarios')
+          .update({'ubicacion_registro': GeoMapper.toPostGisPoint(punto)})
+          .eq('id', _client.uidActual);
+    });
+  }
+
+  @override
+  Future<String?> miCedula() {
+    return supabaseGuard(() async {
+      final fila = await _client
+          .from('identidades')
+          .select('cedula')
+          .eq('usuario_id', _client.uidActual)
+          .maybeSingle();
+      return fila?['cedula'] as String?;
     });
   }
 }

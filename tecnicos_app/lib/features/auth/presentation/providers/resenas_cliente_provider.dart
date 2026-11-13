@@ -19,27 +19,28 @@ class ResumenResenas {
       : resenas.fold<int>(0, (s, r) => s + r.calificacion) / total;
 }
 
-final resenasRecibidasProvider =
-    FutureProvider.autoDispose<ResumenResenas>((ref) {
-      final uid = ref.watch(usuarioActualProvider.select((u) => u?.id));
-      if (uid == null) return const ResumenResenas([]);
-      return supabaseGuard(() async {
-        final filas = await ref
-            .watch(supabaseClientProvider)
-            .from('resenas')
-            .select(PerfilPublicoModel.columnasResenas)
-            .eq('destinatario_id', uid)
-            .order('creado_en', ascending: false)
-            .limit(50);
-        return ResumenResenas([
-          for (final f in filas)
-            ResenaPublica(
-              autor: PerfilPublicoModel.nombreCorto(anidado(f['autor'])),
-              calificacion: aInt(f['calificacion']),
-              comentario: (f['comentario'] as String?)?.trim(),
-              etiquetas: List<String>.from(f['etiquetas'] as List? ?? const []),
-              creadoEn: aFecha(f['creado_en']),
-            ),
-        ]);
-      });
-    });
+final resenasRecibidasProvider = FutureProvider.autoDispose<ResumenResenas>((
+  ref,
+) {
+  final uid = ref.watch(usuarioActualProvider.select((u) => u?.id));
+  if (uid == null) return const ResumenResenas([]);
+  return supabaseGuard(() async {
+    final filas = await ref
+        .watch(supabaseClientProvider)
+        .from('resenas')
+        .select(PerfilPublicoModel.columnasResenas)
+        .eq('destinatario_id', uid)
+        .order('creado_en', ascending: false)
+        .limit(50);
+    return ResumenResenas([
+      for (final f in filas)
+        ResenaPublica(
+          autor: PerfilPublicoModel.nombreCorto(anidado(f['autor'])),
+          calificacion: aInt(f['calificacion']),
+          comentario: (f['comentario'] as String?)?.trim(),
+          etiquetas: List<String>.from(f['etiquetas'] as List? ?? const []),
+          creadoEn: aFecha(f['creado_en']),
+        ),
+    ]);
+  });
+});

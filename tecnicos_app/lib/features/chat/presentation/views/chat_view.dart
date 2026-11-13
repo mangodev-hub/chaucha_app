@@ -7,13 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/presence/indicador_presencia.dart';
+import '../../../../core/presence/presencia_service.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
-import '../../../../core/widgets/hoja_clara.dart';
 import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/pantalla_secundaria.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
@@ -44,26 +46,17 @@ class ChatView extends ConsumerWidget {
         : rutaPerfilDelChat(contexto, soyCliente: rol == Rol.cliente);
     // El cliente ve el nombre del técnico en la barra, como en WhatsApp.
     final nombre = rol == Rol.cliente ? contexto?.oferta?.tecnicoNombre : null;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          nombre ?? 'Chat',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: [
-          if (ruta != null)
-            IconButton(
-              tooltip: 'Ver perfil',
-              icon: const Icon(Icons.account_circle_outlined),
-              onPressed: () => context.push(ruta),
-            ),
-        ],
-      ),
-      body: HojaClara(
-        abajoRecto: true,
-        child: ChatPanel(conversacionId: conversacionId),
-      ),
+    return PantallaSecundaria(
+      titulo: nombre ?? 'Chat',
+      acciones: [
+        if (ruta != null)
+          IconButton(
+            tooltip: 'Ver perfil',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () => context.push(ruta),
+          ),
+      ],
+      cuerpo: ChatPanel(conversacionId: conversacionId),
     );
   }
 }
@@ -81,11 +74,15 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
   static const double _anchoMaximo = 720;
 
   final _texto = TextEditingController();
+  late final ConversacionAbierta _abierta;
 
   @override
   void initState() {
     super.initState();
+    // Chat en pantalla: la presencia lo avisa y no llega el push del mensaje.
+    _abierta = ref.read(conversacionAbiertaProvider.notifier);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _abierta.abrir(widget.conversacionId);
       final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
       if (uid == null) return;
       unawaited(
@@ -102,6 +99,9 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
 
   @override
   void dispose() {
+    final id = widget.conversacionId;
+    // Fuera del dispose: no se cambia un provider mientras se desmonta.
+    Future.microtask(() => _abierta.cerrar(id));
     _texto.dispose();
     super.dispose();
   }
@@ -211,8 +211,30 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
           estadoSolicitud: estadoSolicitud,
         );
 
+    final conversacion = contexto.value?.conversacion;
+    final otroId = soyCliente
+        ? conversacion?.tecnicoId
+        : conversacion?.clienteId;
+
     final panel = Column(
       children: [
+        if (otroId != null)
+          ColoredBox(
+            color: Colores.tarjeta,
+            child: AnchoMaximo(
+              ancho: _anchoMaximo,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Espacios.l,
+                  vertical: 6,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IndicadorPresencia(usuarioId: otroId),
+                ),
+              ),
+            ),
+          ),
         FranjaTarifa(
           soyCliente: soyCliente,
           oferta: oferta?.tarifa == null ? oferta : null,

@@ -41,7 +41,6 @@ abstract interface class CotizacionRepository {
   /// El técnico cancela la visita; la solicitud vuelve a cotizada.
   Future<void> cancelarVisita(String cotizacionId);
 
-
   /// Rangos ocupados por otras visitas aceptadas del técnico o del cliente de
   /// esta oferta, entre [desde] y [hasta] (máximo 120 días).
   Future<List<RangoOcupado>> horariosOcupados(

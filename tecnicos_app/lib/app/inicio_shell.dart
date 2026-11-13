@@ -6,17 +6,25 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/geo/sector_service.dart';
+import '../core/presence/presencia_service.dart';
 import '../core/providers/core_providers.dart';
 import '../core/providers/sincronizacion_provider.dart';
 import '../core/push/push_service.dart';
+import '../core/router/app_routes.dart';
 import '../core/theme/tokens.dart';
 import '../core/utils/formatos.dart';
+import '../core/widgets/etiqueta_sector.dart';
+import '../core/widgets/foto_perfil_caja.dart';
 import '../core/widgets/hoja_clara.dart';
 import '../core/widgets/marca.dart';
-import '../core/widgets/responsive_layout.dart';
+import '../core/widgets/pantalla_secundaria.dart';
+import '../core/widgets/scroll_pagina.dart';
 import '../features/auth/domain/entities/rol.dart';
+import '../features/auth/presentation/providers/inicio_provider.dart';
 import '../features/auth/presentation/providers/sesion_provider.dart';
 import '../features/notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
@@ -24,6 +32,7 @@ import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
 import 'encabezado_saludo.dart';
 import 'menu_cuenta.dart';
 import 'pestana_solicitada.dart';
+import 'pie_pagina.dart';
 
 class Destino {
   const Destino(
@@ -35,6 +44,7 @@ class Destino {
     this.tiposNotificacion = const [],
     this.marcaAlEntrar = true,
     this.saludo,
+    this.conteo,
   });
 
   /// Título completo: barra superior y pestañas de escritorio.
@@ -54,6 +64,10 @@ class Destino {
   final List<String> tiposNotificacion;
   final Widget vista;
   final bool marcaAlEntrar;
+
+  /// Número a mostrar en la pestaña además de las notificaciones (por
+  /// ejemplo, reclamos sin tomar en el panel del asesor).
+  final ProviderListenable<AsyncValue<int>>? conteo;
 
   String get etiqueta => corto ?? titulo;
 }
@@ -86,7 +100,21 @@ class InicioShell extends ConsumerStatefulWidget {
     required this.onCerrarSesion,
     this.accionCentral,
     this.rutaAgenda,
+    this.notaMenu,
+    this.claro = false,
+    this.onBuscar,
+    this.pagina,
+    this.paginaLlena = false,
+    this.rutaInicio,
   });
+
+  /// Desde este ancho la navegación es un menú lateral en vez de la barra
+  /// inferior.
+  static const double anchoMenuLateral = 700;
+
+  /// Ancho máximo del contenido y de la barra superior, y su margen lateral.
+  static const double anchoMaximo = 1480;
+  static const double margen = 32;
 
   final List<Destino> destinos;
   final VoidCallback onCerrarSesion;
@@ -96,6 +124,27 @@ class InicioShell extends ConsumerStatefulWidget {
   /// cuenta con esta ruta.
   final String? rutaAgenda;
 
+  /// Texto chico al pie del menú lateral.
+  final String? notaMenu;
+
+  /// Con menú lateral: fondo claro, barra superior blanca y el menú directo
+  /// sobre el fondo (inicio web del cliente).
+  final bool claro;
+
+  /// Buscador de la barra superior clara: recibe lo escrito.
+  final void Function(BuildContext context, WidgetRef ref, String texto)?
+  onBuscar;
+
+  /// Pantalla secundaria (detalle, chat, perfil...) que se dibuja dentro de
+  /// la estructura web del modo claro en lugar de una pestaña. El menú
+  /// marca la pestaña desde donde se llegó y, al tocar otra, vuelve a
+  /// [rutaInicio] con esa pestaña. En el teléfono se muestra sola.
+  final Widget? pagina;
+
+  /// La [pagina] ocupa el alto visible y tiene su propio scroll (chat).
+  final bool paginaLlena;
+  final String? rutaInicio;
+
   @override
   ConsumerState<InicioShell> createState() => _InicioShellState();
 }
@@ -104,9 +153,15 @@ class _InicioShellState extends ConsumerState<InicioShell> {
   int _indice = 0;
   StreamSubscription<ToquePush>? _toques;
 
+  bool get _esSecundaria => widget.pagina != null;
+
   @override
   void initState() {
     super.initState();
+    if (_esSecundaria) {
+      _indice = ref.read(pestanaActualProvider);
+      return;
+    }
     final push = ref.read(pushServiceProvider);
     _toques = push.toques.listen(_abrirDesdePush);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -123,6 +178,20 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   /// Al tocar un push, va a la pestaña que maneja ese tipo de notificación.
   void _abrirDesdePush(ToquePush toque) {
+    final referencia = toque.referenciaId;
+    if (toque.tipo == 'reclamo' && referencia != null) {
+      final rol = ref.read(usuarioActualProvider)?.rol;
+      unawaited(
+        context.push(
+          AppRoutes.reclamo(
+            referencia,
+            esCliente: rol != Rol.tecnico,
+            esAdmin: rol == Rol.admin,
+          ),
+        ),
+      );
+      return;
+    }
     final i = widget.destinos.indexWhere(
       (d) => d.tiposNotificacion.contains(toque.tipo),
     );
@@ -130,7 +199,15 @@ class _InicioShellState extends ConsumerState<InicioShell> {
   }
 
   void _cambiar(int indice) {
+    if (_esSecundaria) {
+      ref
+          .read(pestanaSolicitadaProvider.notifier)
+          .pedir(widget.destinos[indice].titulo);
+      context.go(widget.rutaInicio ?? AppRoutes.clienteInicio);
+      return;
+    }
     setState(() => _indice = indice);
+    ref.read(pestanaActualProvider.notifier).fijar(indice);
     final destino = widget.destinos[indice];
     if (destino.tiposNotificacion.isEmpty || !destino.marcaAlEntrar) return;
     final tipos = destino.tiposNotificacion;
@@ -160,7 +237,14 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   @override
   Widget build(BuildContext context) {
+    final pagina = widget.pagina;
+    if (pagina != null) {
+      final ancho = MediaQuery.sizeOf(context).width;
+      final web = widget.claro && ancho >= InicioShell.anchoMenuLateral;
+      return web ? _paginaClara(context, ancho, secundaria: pagina) : pagina;
+    }
     ref.watch(sincronizacionProvider);
+    ref.watch(presenciaProvider);
     ref.listen(pestanaSolicitadaProvider, (_, titulo) {
       if (titulo == null) return;
       final i = widget.destinos.indexWhere((d) => d.titulo == titulo);
@@ -172,7 +256,8 @@ class _InicioShellState extends ConsumerState<InicioShell> {
 
   Widget _contenido(BuildContext context) {
     final destinos = widget.destinos;
-    final escritorio = ResponsiveLayout.isDesktop(context);
+    final ancho = MediaQuery.sizeOf(context).width;
+    final escritorio = ancho >= InicioShell.anchoMenuLateral;
     // Sobre el fondo oscuro nada va suelto: cada pestaña vive en la gran
     // hoja clara.
     final pestanas = IndexedStack(
@@ -194,18 +279,51 @@ class _InicioShellState extends ConsumerState<InicioShell> {
           )
         : pestanas;
 
+    if (escritorio && widget.claro) return _paginaClara(context, ancho);
+
     if (escritorio) {
+      final claro = widget.claro;
       return Scaffold(
+        backgroundColor: claro ? Colores.fondoClaro : null,
         body: Column(
           children: [
-            _barraSuperior(context),
+            if (claro) _barraClara(context) else _barraSuperior(context),
             Expanded(
-              child: Center(
+              child: Align(
+                alignment: Alignment.topCenter,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1240),
+                  constraints: const BoxConstraints(
+                    maxWidth: InicioShell.anchoMaximo,
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.only(top: Espacios.s),
-                    child: contenido,
+                    // En el modo claro, la pestaña deja 12 px a los lados
+                    // para las sombras de sus tarjetas: se descuentan aquí.
+                    padding: EdgeInsets.fromLTRB(
+                      InicioShell.margen,
+                      claro ? 20 : Espacios.s,
+                      claro ? InicioShell.margen - 12 : InicioShell.margen,
+                      claro ? 0 : 20,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: ancho >= 1280 ? 248 : 220,
+                          child: _MenuLateral(
+                            destinos: destinos,
+                            indice: _indice,
+                            onCambio: _cambiar,
+                            onAgenda: _aLaAgenda,
+                            accion: widget.accionCentral,
+                            onAccion: _accion,
+                            nota: widget.notaMenu,
+                            claro: claro,
+                          ),
+                        ),
+                        SizedBox(width: claro ? 24 - 12 : 24),
+                        Expanded(child: contenido),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -250,43 +368,217 @@ class _InicioShellState extends ConsumerState<InicioShell> {
     );
   }
 
+  /// Web del cliente: toda la página en un solo scroll (barra, menú y
+  /// pestaña, y el pie a todo el ancho). La pestaña sabe que va dentro de
+  /// este scroll ([ScrollDePagina]) y no crea el suyo.
+  Widget _paginaClara(
+    BuildContext context,
+    double ancho, {
+    Widget? secundaria,
+  }) {
+    final usuario = ref.watch(usuarioActualProvider);
+    final destino = widget.destinos[_indice];
+    final menu = SizedBox(
+      width: ancho >= 1280 ? 248 : 220,
+      child: _MenuLateral(
+        destinos: widget.destinos,
+        indice: _indice,
+        onCambio: _cambiar,
+        onAgenda: _aLaAgenda,
+        accion: widget.accionCentral,
+        onAccion: _accion,
+        nota: widget.notaMenu,
+        claro: true,
+      ),
+    );
+    // Chat y pantallas con campo fijo: alto visible, sin pie.
+    if (secundaria != null && widget.paginaLlena) {
+      return Scaffold(
+        backgroundColor: Colores.fondoClaro,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _barraClara(context),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: InicioShell.anchoMaximo,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      InicioShell.margen,
+                      20,
+                      InicioShell.margen,
+                      20,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SingleChildScrollView(child: menu),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child: EstructuraWeb(llena: true, child: secundaria),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Scaffold(
+      backgroundColor: Colores.fondoClaro,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _barraClara(context),
+            if (usuario != null && usuario.estaSuspendido)
+              _BannerSuspension(
+                hasta: usuario.suspendidoHasta!,
+                esCliente: usuario.rol == Rol.cliente,
+              ),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: InicioShell.anchoMaximo,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    InicioShell.margen,
+                    20,
+                    InicioShell.margen,
+                    0,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      menu,
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: ScrollDePagina(
+                          child: secundaria != null
+                              ? EstructuraWeb(llena: false, child: secundaria)
+                              : KeyedSubtree(
+                                  key: ValueKey(_indice),
+                                  child: _Pagina(
+                                    destino: destino,
+                                    escritorio: true,
+                                    claro: true,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 48),
+            const PiePagina(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Barra blanca del modo claro: marca, buscador, ubicación, avisos y la
+  /// cuenta, alineados al mismo ancho máximo que el contenido.
+  Widget _barraClara(BuildContext context) {
+    final usuario = ref.watch(usuarioActualProvider);
+    final noLeidas =
+        ref.watch(notificacionesNoLeidasProvider).value ?? const [];
+    final onBuscar = widget.onBuscar;
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Colores.tarjeta,
+        border: Border(bottom: BorderSide(color: Colores.bordeBarra)),
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: InicioShell.anchoMaximo),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: InicioShell.margen),
+            child: SizedBox(
+              height: 72,
+              child: Row(
+                children: [
+                  const Marca(),
+                  const SizedBox(width: Espacios.l),
+                  Expanded(
+                    child: onBuscar == null
+                        ? const SizedBox.shrink()
+                        : Align(
+                            alignment: Alignment.centerLeft,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 600),
+                              child: _Buscador(
+                                onBuscar: (texto) =>
+                                    onBuscar(context, ref, texto),
+                              ),
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: Espacios.l),
+                  const _UbicacionActual(),
+                  const SizedBox(width: Espacios.s),
+                  _Campana(
+                    cantidad: noLeidas.length,
+                    onTap: noLeidas.isEmpty
+                        ? null
+                        : () => _abrirDesdePush(
+                            ToquePush(
+                              tipo: noLeidas.first.tipo,
+                              referenciaId: noLeidas.first.referenciaId,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: Espacios.s),
+                  MenuCuenta(
+                    compacto: true,
+                    onPerfil: _alPerfil,
+                    onAgenda: _aLaAgenda,
+                    onCerrarSesion: widget.onCerrarSesion,
+                    hijo: FotoPerfilCaja(
+                      tamano: 40,
+                      circular: true,
+                      rutaFoto: usuario?.fotoPerfilRuta,
+                      iniciales: _iniciales(usuario?.nombreCompleto ?? ''),
+                      colorFondo: Colores.cieloSuave,
+                      estiloTexto: Theme.of(context).textTheme.labelLarge
+                          ?.copyWith(
+                            color: Colores.cieloOscuro,
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _barraSuperior(BuildContext context) {
-    final accion = widget.accionCentral;
     return ColoredBox(
       color: Colores.fondo,
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: InicioShell.anchoMaximo),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Espacios.xl),
+            padding: const EdgeInsets.symmetric(horizontal: InicioShell.margen),
             child: SizedBox(
               height: 64,
               child: Row(
                 children: [
                   const Marca(sobreOscuro: true),
-                  const SizedBox(width: Espacios.xl),
-                  for (var i = 0; i < widget.destinos.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(right: Espacios.xs),
-                      child: _Pestana(
-                        titulo: widget.destinos[i].titulo,
-                        tipos: widget.destinos[i].tiposNotificacion,
-                        activa: i == _indice,
-                        onTap: () => _cambiar(i),
-                      ),
-                    ),
                   const Spacer(),
-                  if (accion != null) ...[
-                    FilledButton.icon(
-                      onPressed: _accion,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(0, 44),
-                      ),
-                      icon: Icon(accion.icono),
-                      label: Text(accion.etiqueta),
-                    ),
-                    const SizedBox(width: Espacios.m),
-                  ],
                   Container(
                     padding: const EdgeInsets.only(left: Espacios.m),
                     decoration: BoxDecoration(
@@ -313,52 +605,373 @@ class _InicioShellState extends ConsumerState<InicioShell> {
   }
 }
 
-class _Pestana extends StatelessWidget {
-  const _Pestana({
-    required this.titulo,
-    required this.tipos,
-    required this.activa,
-    required this.onTap,
-  });
+String _iniciales(String nombre) => nombre
+    .split(' ')
+    .where((p) => p.isNotEmpty)
+    .take(2)
+    .map((p) => p[0])
+    .join()
+    .toUpperCase();
 
-  final String titulo;
-  final List<String> tipos;
-  final bool activa;
-  final VoidCallback onTap;
+class _Buscador extends StatefulWidget {
+  const _Buscador({required this.onBuscar});
+
+  final ValueChanged<String> onBuscar;
+
+  @override
+  State<_Buscador> createState() => _BuscadorState();
+}
+
+class _BuscadorState extends State<_Buscador> {
+  final _texto = TextEditingController();
+
+  @override
+  void dispose() {
+    _texto.dispose();
+    super.dispose();
+  }
+
+  void _enviar() {
+    widget.onBuscar(_texto.text.trim());
+    _texto.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final duracion = Movimiento.de(context, Movimiento.normal);
-    final borde = BorderRadius.circular(Radios.pildora);
-    // El fondo y el color del texto cambian con una transición.
-    return AnimatedContainer(
-      duration: duracion,
-      curve: Movimiento.entrada,
+    final textos = Theme.of(context).textTheme;
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: Espacios.l),
       decoration: BoxDecoration(
-        color: activa ? Colores.lienzo : Colores.lienzo.withValues(alpha: 0),
-        borderRadius: borde,
+        color: Colores.fondoClaro,
+        borderRadius: BorderRadius.circular(Radios.pildora),
+        border: Border.all(color: Colores.linea, width: 1.5),
       ),
+      child: Row(
+        children: [
+          const Icon(Icons.search_rounded, color: Colores.tintaSuave, size: 20),
+          const SizedBox(width: Espacios.s + 2),
+          Expanded(
+            child: TextField(
+              controller: _texto,
+              onSubmitted: (_) => _enviar(),
+              textInputAction: TextInputAction.search,
+              style: textos.bodyMedium,
+              decoration: InputDecoration.collapsed(
+                hintText: 'Busca plomero, electricista, cerrajero…',
+                hintStyle: textos.bodyMedium?.copyWith(
+                  color: Colores.tintaSuave,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sector de la ubicación con la que se buscan los técnicos cercanos.
+class _UbicacionActual extends ConsumerWidget {
+  const _UbicacionActual();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final punto = ref.watch(ubicacionInicioProvider).value;
+    final sector = punto == null
+        ? null
+        : ref.watch(sectorProvider(SectorService.clave(punto))).value;
+    if (sector == null || sector.isEmpty) return const SizedBox.shrink();
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 200),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.location_on_outlined,
+            size: 18,
+            color: Colores.primario,
+          ),
+          const SizedBox(width: Espacios.xs),
+          Flexible(
+            child: Text(
+              sector,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontSize: 13,
+                color: Colores.primario,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Campana extends StatelessWidget {
+  const _Campana({required this.cantidad, required this.onTap});
+
+  final int cantidad;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: cantidad == 0 ? 'Avisos' : 'Avisos, $cantidad nuevos',
+      child: InkResponse(
+        onTap: onTap,
+        radius: 24,
+        child: SizedBox.square(
+          dimension: 44,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Colores.fondoClaro,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.notifications_none_rounded,
+                  color: Colores.tinta,
+                  size: 22,
+                ),
+              ),
+              if (cantidad > 0)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 18),
+                    height: 18,
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colores.primario,
+                      borderRadius: BorderRadius.circular(Radios.pildora),
+                      border: Border.all(color: Colores.tarjeta, width: 2),
+                    ),
+                    child: Text(
+                      cantidad > 99 ? '99+' : '$cantidad',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        color: Colores.sobreOscuro,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// En el modo claro el menú va dentro del scroll de la página; si no, tiene
+/// el suyo.
+class _ScrollMenu extends StatelessWidget {
+  const _ScrollMenu({required this.claro, required this.child});
+
+  final bool claro;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => claro
+      ? child
+      : SingleChildScrollView(
+          padding: const EdgeInsets.all(Espacios.m),
+          child: child,
+        );
+}
+
+/// Menú lateral (web y tabletas): los destinos con sus no leídos, la
+/// agenda, la acción principal y una nota al pie, sobre una hoja clara.
+class _MenuLateral extends StatelessWidget {
+  const _MenuLateral({
+    required this.destinos,
+    required this.indice,
+    required this.onCambio,
+    required this.onAgenda,
+    required this.accion,
+    required this.onAccion,
+    required this.nota,
+    required this.claro,
+  });
+
+  final bool claro;
+  final List<Destino> destinos;
+  final int indice;
+  final ValueChanged<int> onCambio;
+  final VoidCallback? onAgenda;
+  final AccionCentral? accion;
+  final VoidCallback onAccion;
+  final String? nota;
+
+  @override
+  Widget build(BuildContext context) {
+    final accion = this.accion;
+    final onAgenda = this.onAgenda;
+    final nota = this.nota;
+    // La agenda del cliente no es una pestaña: va antes de "Mi perfil".
+    final antesDeAgenda = onAgenda == null
+        ? -1
+        : destinos.indexWhere((d) => d.titulo == 'Mi perfil');
+    final agenda = onAgenda == null
+        ? null
+        : _ItemMenu(
+            texto: 'Agenda',
+            icono: Icons.calendar_month_outlined,
+            activo: false,
+            onTap: onAgenda,
+          );
+
+    return Material(
+      color: claro ? Colors.transparent : Colores.lienzo,
+      borderRadius: BorderRadius.circular(Radios.bento),
+      clipBehavior: Clip.antiAlias,
+      child: _ScrollMenu(
+        claro: claro,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < destinos.length; i++) ...[
+              if (i == antesDeAgenda) ?agenda,
+              _ItemMenu(
+                texto: destinos[i].titulo,
+                icono: i == indice
+                    ? destinos[i].iconoActivo ?? destinos[i].icono
+                    : destinos[i].icono,
+                tipos: destinos[i].tiposNotificacion,
+                conteo: destinos[i].conteo,
+                activo: i == indice,
+                onTap: () => onCambio(i),
+              ),
+            ],
+            if (antesDeAgenda < 0) ?agenda,
+            if (accion != null) ...[
+              const SizedBox(height: Espacios.m),
+              FilledButton.icon(
+                onPressed: onAccion,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Radios.pequeno),
+                  ),
+                  textStyle: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                icon: Icon(accion.icono),
+                label: Text(accion.etiqueta),
+              ),
+            ],
+            if (nota != null) ...[
+              const SizedBox(height: Espacios.m),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  nota,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: Colores.tintaSuave,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ItemMenu extends ConsumerWidget {
+  const _ItemMenu({
+    required this.texto,
+    required this.icono,
+    required this.activo,
+    required this.onTap,
+    this.tipos = const [],
+    this.conteo,
+  });
+
+  final String texto;
+  final IconData icono;
+  final bool activo;
+  final VoidCallback onTap;
+  final ProviderListenable<AsyncValue<int>>? conteo;
+  final List<String> tipos;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sinLeer = tipos.isEmpty
+        ? 0
+        : (ref.watch(notificacionesNoLeidasProvider).value ?? const [])
+              .where((n) => tipos.contains(n.tipo))
+              .length;
+    final conteo = this.conteo;
+    final total = sinLeer + (conteo == null ? 0 : ref.watch(conteo).value ?? 0);
+    final color = activo ? Colores.primario : Colores.tinta;
+    final borde = BorderRadius.circular(Radios.pequeno);
+    return Semantics(
+      button: true,
+      selected: activo,
       child: Material(
-        type: MaterialType.transparency,
+        color: activo ? Colores.primarioSuave : Colors.transparent,
+        borderRadius: borde,
         child: InkWell(
           onTap: onTap,
           borderRadius: borde,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Espacios.l,
-              vertical: Espacios.s + 2,
-            ),
-            child: AnimatedDefaultTextStyle(
-              duration: duracion,
-              style:
-                  (Theme.of(context).textTheme.labelLarge ?? const TextStyle())
-                      .copyWith(
-                        color: activa
-                            ? Colores.primario
-                            : Colores.sobreOscuro.withValues(alpha: 0.75),
-                        fontWeight: FontWeight.w700,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 46),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              children: [
+                Icon(
+                  icono,
+                  color: activo ? Colores.primario : Colores.tintaSuave,
+                ),
+                const SizedBox(width: Espacios.m),
+                Expanded(
+                  child: Text(
+                    texto,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontSize: 15,
+                      color: color,
+                      fontWeight: activo ? FontWeight.w800 : FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (total > 0)
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 20),
+                    height: 20,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colores.primario,
+                      borderRadius: BorderRadius.circular(Radios.pildora),
+                    ),
+                    child: Text(
+                      total > 99 ? '99+' : '$total',
+                      semanticsLabel: '$total pendientes',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colores.sobreOscuro,
+                        fontWeight: FontWeight.w800,
                       ),
-              child: PuntoNoLeidas(tipos: tipos, child: Text(titulo)),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -473,6 +1086,26 @@ class _FondoBarra extends CustomPainter {
   bool shouldRepaint(_FondoBarra anterior) => false;
 }
 
+/// Insignia con el número de [conteo] sobre el ícono de una pestaña.
+class _ConConteo extends ConsumerWidget {
+  const _ConConteo({required this.conteo, required this.child});
+
+  final ProviderListenable<AsyncValue<int>>? conteo;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conteo = this.conteo;
+    final n = conteo == null ? 0 : ref.watch(conteo).value ?? 0;
+    return Badge(
+      isLabelVisible: n > 0,
+      backgroundColor: Colores.primario,
+      label: Text(n > 99 ? '99+' : '$n'),
+      child: child,
+    );
+  }
+}
+
 class _ItemBarra extends StatelessWidget {
   const _ItemBarra({
     required this.destino,
@@ -503,14 +1136,17 @@ class _ItemBarra extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              PuntoNoLeidas(
-                tipos: destino.tiposNotificacion,
-                child: activo
-                    ? _IconoActivo(
-                        destino.iconoActivo ?? destino.icono,
-                        color: colorIcono,
-                      )
-                    : Icon(destino.icono, color: colorIcono),
+              _ConConteo(
+                conteo: destino.conteo,
+                child: PuntoNoLeidas(
+                  tipos: destino.tiposNotificacion,
+                  child: activo
+                      ? _IconoActivo(
+                          destino.iconoActivo ?? destino.icono,
+                          color: colorIcono,
+                        )
+                      : Icon(destino.icono, color: colorIcono),
+                ),
               ),
               const SizedBox(height: Espacios.xs),
               AnimatedDefaultTextStyle(
@@ -629,7 +1265,14 @@ class _IconoActivo extends StatelessWidget {
 /// que tienen [Destino.saludo] (los inicios) se arman con tarjetas bento
 /// directo sobre el fondo oscuro, y en móvil llevan el saludo arriba.
 class _Pagina extends StatelessWidget {
-  const _Pagina({required this.destino, required this.escritorio});
+  const _Pagina({
+    required this.destino,
+    required this.escritorio,
+    this.claro = false,
+  });
+
+  /// Web del cliente: la página ya es clara, la pestaña va sin hoja.
+  final bool claro;
 
   final Destino destino;
   final bool escritorio;
@@ -637,6 +1280,7 @@ class _Pagina extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final saludo = destino.saludo;
+    if (claro) return destino.vista;
     if (saludo == null) return HojaClara(child: destino.vista);
     if (escritorio) return destino.vista;
     return Column(

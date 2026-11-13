@@ -5,7 +5,6 @@
 // claras muy redondeadas, botones y campos con forma de píldora y ninguna
 // sombra (`elevation: 0` en todo).
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'tokens.dart';
 
@@ -46,7 +45,11 @@ abstract final class AppTheme {
   static const StadiumBorder _pildora = StadiumBorder();
 
   static ThemeData get light {
-    final base = ThemeData(useMaterial3: true, colorScheme: _colores);
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: _colores,
+      fontFamily: Tipografia.familia,
+    );
     final textos = _textos(base.textTheme);
 
     return base.copyWith(
@@ -256,36 +259,63 @@ abstract final class AppTheme {
 
   /// Tipografía: títulos en negrita, cuerpo en peso medio.
   static TextTheme _textos(TextTheme base) {
-    final conFuente = GoogleFonts.getTextTheme(
-      Tipografia.familia,
-      base,
-    ).apply(bodyColor: Colores.tinta, displayColor: Colores.tinta);
+    final conFuente = base.apply(
+      fontFamily: Tipografia.familia,
+      bodyColor: Colores.tinta,
+      displayColor: Colores.tinta,
+    );
 
     TextStyle? titular(TextStyle? estilo, FontWeight peso) =>
-        estilo?.copyWith(fontWeight: peso, letterSpacing: -0.4, height: 1.15);
+        estilo?.copyWith(fontWeight: peso, height: 1.15);
 
-    return conFuente.copyWith(
-      displaySmall: titular(conFuente.displaySmall, FontWeight.w800),
-      headlineLarge: titular(conFuente.headlineLarge, FontWeight.w800),
-      headlineMedium: titular(conFuente.headlineMedium, FontWeight.w800),
-      headlineSmall: titular(conFuente.headlineSmall, FontWeight.w800),
+    // Sin espaciado de letras: el de Material 3 separa de más los textos
+    // chicos con esta fuente.
+    final sinEspaciado = conFuente.copyWith(
+      displayLarge: conFuente.displayLarge?.copyWith(letterSpacing: 0),
+      displayMedium: conFuente.displayMedium?.copyWith(letterSpacing: 0),
+      displaySmall: conFuente.displaySmall?.copyWith(letterSpacing: 0),
+      headlineLarge: conFuente.headlineLarge?.copyWith(letterSpacing: 0),
+      headlineMedium: conFuente.headlineMedium?.copyWith(letterSpacing: 0),
+      headlineSmall: conFuente.headlineSmall?.copyWith(letterSpacing: 0),
+      titleLarge: conFuente.titleLarge?.copyWith(letterSpacing: 0),
+      titleMedium: conFuente.titleMedium?.copyWith(letterSpacing: 0),
+      titleSmall: conFuente.titleSmall?.copyWith(letterSpacing: 0),
+      bodyLarge: conFuente.bodyLarge?.copyWith(letterSpacing: 0),
+      bodyMedium: conFuente.bodyMedium?.copyWith(letterSpacing: 0),
+      bodySmall: conFuente.bodySmall?.copyWith(letterSpacing: 0),
+      labelLarge: conFuente.labelLarge?.copyWith(letterSpacing: 0),
+      labelMedium: conFuente.labelMedium?.copyWith(letterSpacing: 0),
+      labelSmall: conFuente.labelSmall?.copyWith(letterSpacing: 0),
+    );
+
+    return sinEspaciado.copyWith(
+      displaySmall: titular(sinEspaciado.displaySmall, FontWeight.w800),
+      headlineLarge: titular(sinEspaciado.headlineLarge, FontWeight.w800),
+      headlineMedium: titular(sinEspaciado.headlineMedium, FontWeight.w800),
+      headlineSmall: titular(sinEspaciado.headlineSmall, FontWeight.w800),
       // Títulos de tarjeta: 20-22 en negrita.
       titleLarge: titular(
-        conFuente.titleLarge?.copyWith(fontSize: 21),
+        sinEspaciado.titleLarge?.copyWith(fontSize: 21),
         FontWeight.w700,
       ),
-      titleMedium: conFuente.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-      titleSmall: conFuente.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-      labelLarge: conFuente.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-      bodyLarge: conFuente.bodyLarge?.copyWith(
+      titleMedium: sinEspaciado.titleMedium?.copyWith(
+        fontWeight: FontWeight.w700,
+      ),
+      titleSmall: sinEspaciado.titleSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+      ),
+      labelLarge: sinEspaciado.labelLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      bodyLarge: sinEspaciado.bodyLarge?.copyWith(
         height: 1.45,
         fontWeight: FontWeight.w500,
       ),
-      bodyMedium: conFuente.bodyMedium?.copyWith(
+      bodyMedium: sinEspaciado.bodyMedium?.copyWith(
         height: 1.45,
         fontWeight: FontWeight.w500,
       ),
-      bodySmall: conFuente.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+      bodySmall: sinEspaciado.bodySmall?.copyWith(fontWeight: FontWeight.w500),
     );
   }
 

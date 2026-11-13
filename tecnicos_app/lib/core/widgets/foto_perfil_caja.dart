@@ -17,6 +17,7 @@ class FotoPerfilCaja extends ConsumerWidget {
     this.borde,
     this.sombra,
     this.estiloTexto,
+    this.colorFondo = Colores.primarioSuave,
   });
 
   final String iniciales;
@@ -26,6 +27,7 @@ class FotoPerfilCaja extends ConsumerWidget {
   final BoxBorder? borde;
   final List<BoxShadow>? sombra;
   final TextStyle? estiloTexto;
+  final Color colorFondo;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,7 +49,7 @@ class FotoPerfilCaja extends ConsumerWidget {
       height: tamano,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colores.primarioSuave,
+        color: colorFondo,
         shape: circular ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: radio,
         border: borde,

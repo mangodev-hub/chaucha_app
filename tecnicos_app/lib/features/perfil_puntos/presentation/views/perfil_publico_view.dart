@@ -8,8 +8,9 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
-import '../../../../core/widgets/hoja_clara.dart';
+import '../../../../core/widgets/pantalla_secundaria.dart';
 import '../../../../core/widgets/pildora.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../../core/widgets/tarjeta_onda.dart';
@@ -19,6 +20,7 @@ import '../providers/certificaciones_provider.dart';
 import '../providers/perfil_publico_provider.dart';
 import '../widgets/certificaciones_widgets.dart';
 import '../widgets/resena_widgets.dart';
+import 'perfil_tecnico_publico.dart';
 
 class PerfilPublicoView extends ConsumerWidget {
   const PerfilPublicoView({
@@ -33,95 +35,92 @@ class PerfilPublicoView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // El perfil de un técnico tiene su propia pantalla; aquí queda el del
+    // cliente (lo abre el técnico).
+    if (!esCliente) return PerfilTecnicoPublico(tecnicoId: tecnicoId);
     final perfil = esCliente
         ? perfilClientePublicoProvider(tecnicoId)
         : perfilPublicoProvider(tecnicoId);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(esCliente ? 'Perfil del cliente' : 'Perfil del técnico'),
-      ),
-      body: HojaClara(
-        child: AsyncValueView<PerfilPublico>(
-          value: ref.watch(perfil),
-          onRetry: () => ref.invalidate(perfil),
-          onData: (context, datos) {
-            final certificados = datos.esTecnico
-                ? ref
-                          .watch(certificacionesAprobadasProvider(tecnicoId))
-                          .value ??
-                      const <Certificacion>[]
-                : const <Certificacion>[];
-            return RefreshIndicator(
-              onRefresh: () => esperarSinError(ref.refresh(perfil.future)),
-              child: ListView(
-                padding: const EdgeInsets.all(Espacios.l),
-                children: [
-                  AnchoMaximo(
-                    ancho: 720,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _Encabezado(
-                          perfil: datos,
-                          certificado: certificados.isNotEmpty,
-                        ),
-                        const SizedBox(height: Espacios.m),
-                        _Estadisticas(perfil: datos),
-                        if (datos.esTecnico)
-                          Seccion(
-                            titulo: 'Oficios',
-                            child: datos.oficios.isEmpty
-                                ? const EstadoMensaje(
-                                    compacto: true,
-                                    icono: Icons.handyman_outlined,
-                                    mensaje: 'Todavía no eligió sus oficios.',
-                                  )
-                                : Wrap(
-                                    spacing: Espacios.s,
-                                    runSpacing: Espacios.s,
-                                    children: [
-                                      for (final oficio in datos.oficios)
-                                        Pildora(
-                                          texto: oficio,
-                                          icono: Icons.handyman_outlined,
-                                          color: Colores.primario,
-                                        ),
-                                    ],
-                                  ),
-                          ),
-                        if (certificados.isNotEmpty)
-                          Seccion(
-                            titulo: 'Certificaciones',
-                            child: ListaCertificacionesPublica(
-                              certificaciones: certificados,
-                            ),
-                          ),
+    return PantallaSecundaria(
+      titulo: esCliente ? 'Perfil del cliente' : 'Perfil del técnico',
+      cuerpo: AsyncValueView<PerfilPublico>(
+        value: ref.watch(perfil),
+        onRetry: () => ref.invalidate(perfil),
+        onData: (context, datos) {
+          final certificados = datos.esTecnico
+              ? ref.watch(certificacionesAprobadasProvider(tecnicoId)).value ??
+                    const <Certificacion>[]
+              : const <Certificacion>[];
+          return RefreshIndicator(
+            onRefresh: () => esperarSinError(ref.refresh(perfil.future)),
+            child: ListaDePagina(
+              padding: const EdgeInsets.all(Espacios.l),
+              children: [
+                AnchoMaximo(
+                  ancho: 720,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _Encabezado(
+                        perfil: datos,
+                        certificado: certificados.isNotEmpty,
+                      ),
+                      const SizedBox(height: Espacios.m),
+                      _Estadisticas(perfil: datos),
+                      if (datos.esTecnico)
                         Seccion(
-                          titulo: datos.totalResenas == 0
-                              ? 'Reseñas'
-                              : 'Reseñas (${datos.totalResenas})',
-                          child: datos.resenas.isEmpty
+                          titulo: 'Oficios',
+                          child: datos.oficios.isEmpty
                               ? const EstadoMensaje(
                                   compacto: true,
-                                  icono: Icons.reviews_outlined,
-                                  mensaje: 'Aún no tiene reseñas.',
+                                  icono: Icons.handyman_outlined,
+                                  mensaje: 'Todavía no eligió sus oficios.',
                                 )
-                              : Column(
+                              : Wrap(
+                                  spacing: Espacios.s,
+                                  runSpacing: Espacios.s,
                                   children: [
-                                    for (final r in datos.resenas)
-                                      TarjetaResena(resena: r),
+                                    for (final oficio in datos.oficios)
+                                      Pildora(
+                                        texto: oficio,
+                                        icono: Icons.handyman_outlined,
+                                        color: Colores.primario,
+                                      ),
                                   ],
                                 ),
                         ),
-                        const SizedBox(height: Espacios.xl),
-                      ],
-                    ),
+                      if (certificados.isNotEmpty)
+                        Seccion(
+                          titulo: 'Certificaciones',
+                          child: ListaCertificacionesPublica(
+                            certificaciones: certificados,
+                          ),
+                        ),
+                      Seccion(
+                        titulo: datos.totalResenas == 0
+                            ? 'Reseñas'
+                            : 'Reseñas (${datos.totalResenas})',
+                        child: datos.resenas.isEmpty
+                            ? const EstadoMensaje(
+                                compacto: true,
+                                icono: Icons.reviews_outlined,
+                                mensaje: 'Aún no tiene reseñas.',
+                              )
+                            : Column(
+                                children: [
+                                  for (final r in datos.resenas)
+                                    TarjetaResena(resena: r),
+                                ],
+                              ),
+                      ),
+                      const SizedBox(height: Espacios.xl),
+                    ],
                   ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

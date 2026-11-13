@@ -10,8 +10,9 @@ class PestanaSolicitada extends Notifier<String?> {
   void limpiar() => state = null;
 }
 
-final pestanaSolicitadaProvider =
-    NotifierProvider<PestanaSolicitada, String?>(PestanaSolicitada.new);
+final pestanaSolicitadaProvider = NotifierProvider<PestanaSolicitada, String?>(
+  PestanaSolicitada.new,
+);
 
 /// Sección del perfil del técnico a la que hay que bajar ('oficios' o 'zona').
 class SeccionPerfil extends Notifier<String?> {
@@ -23,5 +24,19 @@ class SeccionPerfil extends Notifier<String?> {
   void limpiar() => state = null;
 }
 
-final seccionPerfilProvider =
-    NotifierProvider<SeccionPerfil, String?>(SeccionPerfil.new);
+final seccionPerfilProvider = NotifierProvider<SeccionPerfil, String?>(
+  SeccionPerfil.new,
+);
+
+/// Pestaña abierta en el shell: la estructura web de una pantalla
+/// secundaria marca ese ítem en el menú lateral (desde donde se llegó).
+class PestanaActual extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void fijar(int indice) => state = indice;
+}
+
+final pestanaActualProvider = NotifierProvider<PestanaActual, int>(
+  PestanaActual.new,
+);

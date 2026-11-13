@@ -30,10 +30,7 @@ class Pildora extends StatelessWidget {
         vertical: Espacios.xs,
       ),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          color.withValues(alpha: 0.12),
-          Colores.tarjeta,
-        ),
+        color: Color.alphaBlend(color.withValues(alpha: 0.12), Colores.tarjeta),
         borderRadius: BorderRadius.circular(Radios.pildora),
       ),
       child: AnimatedSize(

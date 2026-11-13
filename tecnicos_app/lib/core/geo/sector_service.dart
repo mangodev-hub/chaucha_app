@@ -1,15 +1,20 @@
 // Nombre del sector (barrio) de un punto, con la geocodificación inversa de
-// Nominatim (OpenStreetMap). Guarda los resultados en memoria y espacia las
-// consultas: la política de uso de Nominatim permite como máximo 1 por segundo.
+// Nominatim (OpenStreetMap). Se pide a la Edge Function `sector`, que guarda
+// el resultado en Redis para todos los usuarios y respeta el límite global de
+// Nominatim (1 consulta por segundo para toda la app). Si la función falla, se
+// consulta Nominatim directo como antes. Además guarda los resultados en
+// memoria y espacia las consultas.
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SectorService {
-  SectorService({http.Client? cliente}) : _cliente = cliente ?? http.Client();
+  SectorService({http.Client? cliente, this.supabase})
+    : _cliente = cliente ?? http.Client();
 
   static const Duration _intervalo = Duration(milliseconds: 1100);
   static const Duration _tiempoMaximo = Duration(seconds: 8);
@@ -26,6 +31,9 @@ class SectorService {
   ];
 
   final http.Client _cliente;
+
+  /// Para pedir el barrio a la Edge Function `sector` (con caché en Redis).
+  final SupabaseClient? supabase;
   final Map<String, String?> _cache = {};
   Future<void> _cola = Future<void>.value();
 
@@ -63,6 +71,27 @@ class SectorService {
   }
 
   Future<String?> _consultar((double, double) clave) async {
+    final supabase = this.supabase;
+    if (supabase != null && supabase.auth.currentSession != null) {
+      try {
+        final r = await supabase.functions
+            .invoke('sector', body: {'lat': clave.$1, 'lng': clave.$2})
+            .timeout(_tiempoMaximo);
+        final datos = r.data;
+        if (datos is Map) {
+          final sector = datos['sector'];
+          return sector is String && sector.trim().isNotEmpty
+              ? sector.trim()
+              : null;
+        }
+      } on Object {
+        // Sin función (o con su límite agotado): consulta directa.
+      }
+    }
+    return _directo(clave);
+  }
+
+  Future<String?> _directo((double, double) clave) async {
     final r = await _cliente
         .get(
           Uri.https('nominatim.openstreetmap.org', '/reverse', {
@@ -77,7 +106,9 @@ class SectorService {
           // El navegador no deja cambiar el User-Agent; en móvil sí conviene.
           headers: kIsWeb
               ? null
-              : const {'User-Agent': 'ChauchaApp/1.0 (com.eagledev.tecnicos_app)'},
+              : const {
+                  'User-Agent': 'ChauchaApp/1.0 (com.eagledev.tecnicos_app)',
+                },
         )
         .timeout(_tiempoMaximo);
     if (r.statusCode != 200) {

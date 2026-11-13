@@ -4,32 +4,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/pestana_solicitada.dart';
+import '../../../../app/pie_pagina.dart';
 import '../../../../core/errors/app_failure.dart';
 import '../../../../core/geo/geo_mapper.dart';
+import '../../../../core/presence/presencia_service.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/carrusel_aliados.dart';
-import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/dialogos_info.dart';
+import '../../../../core/widgets/esqueleto_carga.dart';
+import '../../../../core/widgets/hoja_clara.dart';
 import '../../../../core/widgets/mensajes.dart';
-import '../../../../core/widgets/pildora.dart';
-import '../../../../core/widgets/seccion.dart';
-import '../../../../core/widgets/tarjeta_onda.dart';
-import '../../../../core/widgets/tarjeta_portada.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
+import '../../../../core/widgets/tarjeta_inicio.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
 import '../../../chat/data/repositories/supabase_chat_repository.dart';
+import '../../../chat/domain/entities/resumen_chat.dart';
+import '../../../chat/presentation/providers/mis_chats_provider.dart';
+import '../../../chat/presentation/views/chats_view.dart';
 import '../../../chat/presentation/widgets/chat_flotante.dart';
+import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
+import '../../../cotizaciones/presentation/widgets/selector_franja.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
+import '../../../publicidad/domain/entities/anuncio.dart';
+import '../../../publicidad/presentation/widgets/bloque_publicidad.dart';
 import '../../../solicitudes/domain/entities/solicitud.dart';
+import '../../../solicitudes/presentation/providers/agenda_provider.dart';
+import '../../../solicitudes/presentation/providers/detalle_provider.dart';
 import '../../../solicitudes/presentation/providers/listas_provider.dart';
 import '../../domain/entities/tecnico_cercano.dart';
 import '../providers/inicio_provider.dart';
+import '../providers/sesion_provider.dart';
+import '../widgets/cerca_cliente.dart';
+import '../widgets/inicio_cliente_widgets.dart';
 import '../widgets/inicio_widgets.dart';
-import '../widgets/mapa_tecnicos.dart';
 
-Future<void> _pedir(
+/// Abre la nueva solicitud (con oficio o descripción) si el cliente ya está
+/// verificado, y luego su detalle.
+Future<void> pedirTecnico(
   BuildContext context,
   WidgetRef ref, {
   int? oficioId,
@@ -50,6 +66,29 @@ Future<void> _pedir(
 
 /// Regla de Selena: antes de negociar hay que publicar la solicitud.
 /// Con solicitudes compatibles, el cliente elige una y se abre el chat.
+Future<void> contactarTecnico(
+  BuildContext context,
+  WidgetRef ref, {
+  required String tecnicoId,
+  required String nombreCorto,
+  required List<String> oficios,
+}) => _solicitarTecnico(
+  context,
+  ref,
+  TecnicoCercano(
+    id: tecnicoId,
+    nombres: nombreCorto,
+    apellidos: '',
+    oficios: oficios,
+    calificacion: 0,
+    totalResenas: 0,
+    metros: 0,
+    ubicacion: GeoMapper.quito,
+    tarifaBase: 0,
+    nivel: '',
+  ),
+);
+
 Future<void> _solicitarTecnico(
   BuildContext context,
   WidgetRef ref,
@@ -89,7 +128,7 @@ Future<void> _solicitarTecnico(
         ],
       ),
     );
-    if (seguir == true && context.mounted) await _pedir(context, ref);
+    if (seguir == true && context.mounted) await pedirTecnico(context, ref);
     return;
   }
 
@@ -157,29 +196,40 @@ Future<Solicitud?> _elegirSolicitud(
   );
 }
 
-class InicioView extends ConsumerStatefulWidget {
+class InicioView extends ConsumerWidget {
   const InicioView({super.key, required this.esCliente});
 
   final bool esCliente;
 
-  @override
-  ConsumerState<InicioView> createState() => _InicioViewState();
-}
+  /// Desde este ancho, el panel derecho va al lado del contenido principal.
+  static const double anchoTresColumnas = 1280;
 
-class _InicioViewState extends ConsumerState<InicioView> {
-  /// Oficio elegido en las píldoras (null = todos).
-  String? _filtro;
+  /// Bajo este ancho es el teléfono: una sola columna.
+  static const double anchoMovil = 700;
 
   @override
-  Widget build(BuildContext context) {
-    final esCliente = widget.esCliente;
+  Widget build(BuildContext context, WidgetRef ref) {
     final tecnicos = ref.watch(tecnicosCercanosProvider);
     final oficios = ref.watch(oficiosProvider);
-    final ancho = MediaQuery.sizeOf(context).width;
-    final margen = ancho >= 1024 ? 48.0 : (ancho >= 640 ? 32.0 : Espacios.l);
-    final dosColumnas = ancho >= 1000;
-    // Bloques bento: cada sección es una tarjeta, separadas por un respiro.
-    const separacion = SizedBox(height: Espacios.bento);
+    final nombre =
+        ref.watch(usuarioActualProvider)?.nombres.trim().split(' ').first ?? '';
+    final radio = ref.watch(radioInicioProvider);
+    final radioKm = (radio / 1000).round();
+    // Técnicos con la app abierta ahora mismo (presencia en Redis).
+    final punto = ref.watch(ubicacionInicioProvider).value;
+    final enLinea = punto == null
+        ? 0
+        : ref
+                  .watch(
+                    tecnicosEnLineaProvider((
+                      lat: punto.latitude,
+                      lng: punto.longitude,
+                      oficioId: null,
+                      radio: radio,
+                    )),
+                  )
+                  .value ??
+              0;
 
     final conteo = <String, int>{};
     for (final t in tecnicos.value ?? const <TecnicoCercano>[]) {
@@ -187,249 +237,372 @@ class _InicioViewState extends ConsumerState<InicioView> {
         conteo[o] = (conteo[o] ?? 0) + 1;
       }
     }
+    final populares = [...?oficios.value]
+      ..sort((a, b) {
+        final c = (conteo[b.nombre] ?? 0).compareTo(conteo[a.nombre] ?? 0);
+        return c != 0 ? c : a.nombre.compareTo(b.nombre);
+      });
 
-    final especialidades = TarjetaOnda.celeste(
-      titulo: 'Servicios populares',
-      accion: esCliente && oficios.hasValue
-          ? EnlaceVerTodos(
-              texto: 'Ver todos (${oficios.value!.length})',
-              onTap: () => _verTodos(context, ref, oficios.value!, conteo),
-            )
-          : null,
-      child: AsyncValueView<List<Oficio>>(
-        value: oficios,
-        onRetry: () => ref.invalidate(oficiosProvider),
-        onData: (context, lista) => Categorias(
-          oficios: lista,
-          conteo: conteo,
-          // En el teléfono, tres filas de dos.
-          maximo: ancho < 600 ? 6 : 8,
-          onTap: esCliente
-              ? (oficio) => _pedir(context, ref, oficioId: oficio.id)
-              : null,
+    final subtitulo =
+        switch (tecnicos.value?.length) {
+          null => 'Buscando técnicos verificados cerca de tu casa…',
+          1 => '1 técnico verificado a menos de $radioKm km de tu casa.',
+          final n =>
+            '$n técnicos verificados a menos de $radioKm km de tu casa.',
+        } +
+        switch (enLinea) {
+          0 => '',
+          1 => ' 1 está en línea ahora.',
+          final n => ' $n están en línea ahora.',
+        };
+
+    final ancho = MediaQuery.sizeOf(context).width;
+    final movil = ancho < anchoMovil;
+    final tresColumnas = ancho >= anchoTresColumnas;
+    const espacio = SizedBox(height: 18);
+    const espacioPanel = SizedBox(height: Espacios.l);
+
+    final portada = PortadaCliente(
+      nombre: nombre,
+      subtitulo: subtitulo,
+      oficios: populares.take(4).toList(),
+      onOficio: (o) => pedirTecnico(context, ref, oficioId: o.id),
+      onTodos: oficios.value == null
+          ? null
+          : () => unawaited(_verTodos(context, ref, oficios.value!, conteo)),
+    );
+    const aviso = AvisoVerificacionCliente(
+      margenSuperior: 18,
+      estiloInicio: true,
+    );
+    final solicitud = _BloqueSolicitudActiva(
+      onPublicar: () => pedirTecnico(context, ref),
+    );
+    final cerca = CercaCliente(
+      onVerPerfil: (t) =>
+          unawaited(context.push(AppRoutes.perfilTecnico(t.id))),
+      onContactar: (t) => _solicitarTecnico(context, ref, t),
+    );
+    final confianza = TarjetasConfianza(
+      onGarantia: () => unawaited(mostrarGarantia(context)),
+    );
+    const chats = _BloqueChats();
+    const visita = _BloqueProximaVisita();
+    const publicidad = BloquePublicidad(
+      ubicacion: UbicacionAnuncio.homeCliente,
+    );
+
+    final Widget contenido;
+    if (tresColumnas) {
+      contenido = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                portada,
+                espacio,
+                confianza,
+                aviso,
+                espacio,
+                solicitud,
+                espacio,
+                cerca,
+              ],
+            ),
+          ),
+          const SizedBox(width: 24),
+          const SizedBox(
+            width: 340,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [chats, espacioPanel, visita, espacioPanel, publicidad],
+            ),
+          ),
+        ],
+      );
+    } else {
+      contenido = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          portada,
+          espacio,
+          confianza,
+          aviso,
+          espacio,
+          solicitud,
+          espacio,
+          cerca,
+          espacio,
+          // En el teléfono la próxima visita va antes que los chats; la
+          // publicidad siempre al final.
+          if (movil) ...[
+            visita,
+            espacio,
+            chats,
+          ] else ...[
+            chats,
+            espacio,
+            visita,
+          ],
+          espacio,
+          publicidad,
+        ],
+      );
+    }
+
+    // Dentro del scroll único de la web, la página ya tiene scroll y pie.
+    if (ScrollDePagina.activo(context)) return contenido;
+
+    final pagina = RefreshIndicator(
+      onRefresh: () => Future.wait([
+        esperarSinError(ref.refresh(tecnicosCercanosProvider.future)),
+        esperarSinError(ref.refresh(solicitudActivaProvider.future)),
+        esperarSinError(ref.refresh(misChatsProvider.future)),
+        esperarSinError(ref.refresh(proximaVisitaProvider.future)),
+      ]),
+      // Un solo scroll para toda la página, sin alturas fijas.
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // En web, 12 px a los lados para que no se corten las sombras de
+        // las tarjetas (el shell descuenta ese margen).
+        padding: movil
+            ? const EdgeInsets.all(Espacios.l)
+            : const EdgeInsets.fromLTRB(12, 0, 12, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            contenido,
+            const SizedBox(height: Espacios.xxl),
+            const PiePagina(),
+          ],
         ),
       ),
     );
-
-    final lista = TarjetaOnda.clara(
-      child: AsyncValueView<List<TecnicoCercano>>(
-        value: tecnicos,
-        onRetry: () => ref.invalidate(tecnicosCercanosProvider),
-        onData: (context, datos) => _destacados(datos),
-      ),
-    );
-
-    final cuerpo = dosColumnas
-        ? Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 58,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    especialidades,
-                    separacion,
-                    lista,
-                    separacion,
-                    const BannerConfianza(),
-                  ],
-                ),
-              ),
-              const SizedBox(width: Espacios.xxl),
-              Expanded(
-                flex: 42,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _mapa(tecnicos, 520),
-                    const SizedBox(height: Espacios.xl),
-                    const CarruselAliados(),
-                  ],
-                ),
-              ),
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              especialidades,
-              separacion,
-              _mapa(tecnicos, 380),
-              separacion,
-              lista,
-              separacion,
-              const CarruselAliados(),
-              separacion,
-              const BannerConfianza(),
-            ],
-          );
-
-    return RefreshIndicator(
-      onRefresh: () =>
-          esperarSinError(ref.refresh(tecnicosCercanosProvider.future)),
-      child: ListView(
-        children: [
-          AnchoMaximo(
-            ancho: 1360,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                margen,
-                Espacios.xs,
-                margen,
-                Espacios.xl,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TarjetaPortada(
-                    titulo: esCliente
-                        ? '¿Qué arreglamos hoy?'
-                        : 'Técnicos en Quito.',
-                    subtitulo: 'Técnicos verificados, a la puerta de tu casa.',
-                    dato: switch (tecnicos.value?.length) {
-                      null => 'Técnicos verificados',
-                      1 => '1 técnico cerca',
-                      final n => '$n técnicos cerca',
-                    },
-                    iconoDato: Icons.near_me_rounded,
-                  ),
-                  separacion,
-                  if (esCliente) ...[
-                    const AvisoVerificacionCliente(
-                      margenInferior: Espacios.bento,
-                    ),
-                    HeroBusqueda(
-                      onNueva: (texto) =>
-                          _pedir(context, ref, descripcion: texto),
-                    ),
-                    separacion,
-                  ],
-                  cuerpo,
-                ],
-              ),
-            ),
-          ),
-          const PieInicio(),
-        ],
-      ),
-    );
+    // En web va directo sobre el fondo claro; en el teléfono, dentro de la
+    // hoja clara del marco oscuro.
+    return movil ? HojaClara(child: pagina) : pagina;
   }
+}
 
-  void _verPerfil(String tecnicoId) => unawaited(
-    context.push(
-      AppRoutes.perfilTecnico(tecnicoId, esCliente: widget.esCliente),
-    ),
-  );
+class _BloqueSolicitudActiva extends ConsumerWidget {
+  const _BloqueSolicitudActiva({required this.onPublicar});
 
-  Widget _mapa(AsyncValue<List<TecnicoCercano>> tecnicos, double alto) {
-    final punto = ref.watch(ubicacionInicioProvider).value ?? GeoMapper.quito;
-    final radioM = ref.watch(radioInicioProvider);
-    return tecnicos.when(
-      skipLoadingOnReload: true,
-      loading: () => SizedBox(
-        height: alto,
-        child: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, _) => const SizedBox.shrink(),
-      data: (lista) => MapaTecnicos(
-        radio: Radios.bento,
-        punto: punto,
-        radioM: radioM,
-        onCambiarRadio: ref.read(radioInicioProvider.notifier).cambiar,
-        tecnicos: lista,
-        alto: alto,
-        onContactar: widget.esCliente
-            ? (t) => _solicitarTecnico(context, ref, t)
-            : null,
-        onVerPerfil: (t) => _verPerfil(t.id),
-      ),
-    );
-  }
+  final VoidCallback onPublicar;
 
-  Widget _destacados(List<TecnicoCercano> lista) {
-    final oficios = ({for (final t in lista) ...t.oficios}.toList())..sort();
-    final ordenados = [...lista]
-      ..sort((a, b) => b.calificacion.compareTo(a.calificacion));
-    final visibles = _filtro == null
-        ? ordenados
-        : [
-            for (final t in ordenados)
-              if (t.oficios.contains(_filtro)) t,
-          ];
-    final textos = Theme.of(context).textTheme;
-
-    final titulo = Wrap(
-      spacing: Espacios.m,
-      runSpacing: Espacios.s,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        Text('Técnicos cerca de ti', style: textos.titleLarge),
-        Pildora(texto: '${lista.length} en tu zona', color: Colores.primario),
-      ],
-    );
-    final filtros = FiltrosTecnicos(
-      oficios: oficios,
-      seleccionado: _filtro,
-      onCambio: (oficio) => setState(() => _filtro = oficio),
-    );
-
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activa = ref.watch(solicitudActivaProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        LayoutBuilder(
-          builder: (context, restricciones) {
-            if (restricciones.maxWidth >= 820) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(flex: 5, child: titulo),
-                  const SizedBox(width: Espacios.l),
-                  Expanded(
-                    flex: 4,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: filtros,
-                    ),
+        TituloBloque(
+          titulo: 'Tu solicitud activa',
+          enlace: 'Ver todas',
+          onEnlace: () => ref
+              .read(pestanaSolicitadaProvider.notifier)
+              .pedir('Mis solicitudes'),
+        ),
+        const SizedBox(height: Espacios.s),
+        AsyncValueView<({Solicitud solicitud, int ofertas})?>(
+          value: activa,
+          onRetry: () => ref.invalidate(solicitudActivaProvider),
+          cargando: (_) => const _CargandoTarjeta(alto: 110),
+          onData: (context, dato) {
+            if (dato == null) return SinSolicitudActiva(onPublicar: onPublicar);
+            return TarjetaSolicitudActiva(
+              solicitud: dato.solicitud,
+              ofertas: dato.ofertas,
+              onTap: () async {
+                await context.push(
+                  AppRoutes.detalleSolicitud(
+                    dato.solicitud.id,
+                    esCliente: true,
                   ),
-                ],
-              );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                titulo,
-                const SizedBox(height: Espacios.m),
-                filtros,
-              ],
+                );
+                ref.invalidate(solicitudActivaProvider);
+              },
             );
           },
         ),
-        const SizedBox(height: Espacios.l + 4),
-        if (visibles.isEmpty)
-          const EstadoMensaje(
-            compacto: true,
-            icono: Icons.location_searching,
-            mensaje: 'Aún no hay técnicos verificados para mostrar.',
-          )
-        else
-          Column(
-            children: [
-              for (var i = 0; i < visibles.length; i++) ...[
-                if (i > 0) const SizedBox(height: Espacios.m),
-                TecnicoFila(
-                  tecnico: visibles[i],
-                  onVerPerfil: () => _verPerfil(visibles[i].id),
-                  onSolicitar: widget.esCliente
-                      ? () => _solicitarTecnico(context, ref, visibles[i])
-                      : null,
-                ),
-              ],
-            ],
-          ),
       ],
     );
   }
+}
+
+class _BloqueChats extends ConsumerWidget {
+  const _BloqueChats();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chats = ref.watch(misChatsProvider);
+    final noLeidas =
+        ref.watch(notificacionesNoLeidasProvider).value ?? const [];
+    int sinLeerDe(String id) => noLeidas
+        .where((n) => tiposDeChat.contains(n.tipo) && n.referenciaId == id)
+        .length;
+
+    return ResumenChats(
+      onVerTodos: () =>
+          ref.read(pestanaSolicitadaProvider.notifier).pedir('Chats'),
+      contenido: AsyncValueView<List<ResumenChat>>(
+        value: chats,
+        onRetry: () => ref.invalidate(misChatsProvider),
+        cargando: (_) => const Padding(
+          padding: EdgeInsets.symmetric(vertical: Espacios.m),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        onData: (context, lista) {
+          if (lista.isEmpty) {
+            return const TextoVacio('Aún no tienes conversaciones.');
+          }
+          final recientes = [...lista]
+            ..sort((a, b) {
+              final fa = a.enviadoEn;
+              final fb = b.enviadoEn;
+              if (fa == null && fb == null) return 0;
+              if (fa == null) return 1;
+              if (fb == null) return -1;
+              return fb.compareTo(fa);
+            });
+          return Column(
+            children: [
+              for (var i = 0; i < recientes.length && i < 3; i++)
+                FilaChat(
+                  chat: recientes[i],
+                  sinLeer: sinLeerDe(recientes[i].conversacionId),
+                  cielo: i.isOdd,
+                  onTap: () => unawaited(
+                    abrirChat(
+                      context,
+                      recientes[i].conversacionId,
+                      esCliente: true,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BloqueProximaVisita extends ConsumerWidget {
+  const _BloqueProximaVisita();
+
+  Future<void> _reagendar(
+    BuildContext context,
+    WidgetRef ref,
+    ItemAgenda item,
+    DateTime inicio,
+  ) async {
+    final oferta = item.oferta;
+    final fecha = await elegirFranja(
+      context,
+      titulo: 'Nueva fecha y hora',
+      inicial: inicio,
+      cargarOcupados: (desde, hasta) => ref
+          .read(cotizacionRepositoryProvider)
+          .horariosOcupados(oferta.id, desde: desde, hasta: hasta),
+    );
+    if (fecha == null || !context.mounted) return;
+    final acciones = accionesSolicitudProvider(item.solicitud.id);
+    final ok = await ref
+        .read(acciones.notifier)
+        .proponerReagendado(oferta.id, fecha);
+    if (!context.mounted) return;
+    if (ok) {
+      ref.invalidate(proximaVisitaProvider);
+      context.mostrarMensaje(
+        'Propuesta enviada. El técnico debe aceptarla.',
+        tipo: TipoMensaje.exito,
+      );
+    } else if (ref.read(acciones) case AsyncError(:final error)) {
+      context.mostrarMensaje(
+        AsyncValueView.mensajeDe(error),
+        tipo: TipoMensaje.error,
+      );
+    }
+  }
+
+  Future<void> _escribir(
+    BuildContext context,
+    WidgetRef ref,
+    ItemAgenda item,
+  ) async {
+    try {
+      final id = await ref
+          .read(chatRepositoryProvider)
+          .obtenerOCrearConversacion(
+            solicitudId: item.solicitud.id,
+            tecnicoId: item.oferta.tecnicoId,
+          );
+      if (!context.mounted) return;
+      await abrirChat(context, id, esCliente: true);
+    } on AppFailure catch (e) {
+      if (context.mounted) {
+        context.mostrarMensaje(e.message, tipo: TipoMensaje.error);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final proxima = ref.watch(proximaVisitaProvider);
+    return TarjetaProximaVisita(
+      contenido: AsyncValueView<ItemAgenda?>(
+        value: proxima,
+        onRetry: () => ref.invalidate(proximaVisitaProvider),
+        cargando: (_) => const Padding(
+          padding: EdgeInsets.symmetric(vertical: Espacios.m),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        onData: (context, item) {
+          if (item == null) {
+            return const TextoVacio('No tienes visitas agendadas');
+          }
+          // Mantiene vivas las acciones mientras se ve la visita.
+          ref.watch(accionesSolicitudProvider(item.solicitud.id));
+          final oferta = item.oferta;
+          final inicio = oferta.inicioVisita ?? item.fecha!;
+          final fin = oferta.finVisita ?? inicio.add(const Duration(hours: 1));
+          return DatosProximaVisita(
+            inicio: inicio,
+            fin: fin,
+            tecnico: oferta.tecnicoNombre,
+            titulo: item.solicitud.descripcion,
+            precio: oferta.tarifa?.precioAcordado ?? oferta.precioBase,
+            onReagendar: () =>
+                unawaited(_reagendar(context, ref, item, inicio)),
+            onEscribir: () => unawaited(_escribir(context, ref, item)),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CargandoTarjeta extends StatelessWidget {
+  const _CargandoTarjeta({required this.alto});
+
+  final double alto;
+
+  @override
+  Widget build(BuildContext context) => EsqueletoCarga(
+    child: TarjetaInicio(
+      alto: alto,
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BloqueEsqueleto(alto: 14, ancho: 180),
+          SizedBox(height: Espacios.s),
+          BloqueEsqueleto(alto: 10),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Hoja con todos los oficios; al elegir uno abre la nueva solicitud.
@@ -472,5 +645,5 @@ Future<void> _verTodos(
     ),
   );
   if (elegido == null || !context.mounted) return;
-  await _pedir(context, ref, oficioId: elegido.id);
+  await pedirTecnico(context, ref, oficioId: elegido.id);
 }

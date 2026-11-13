@@ -13,6 +13,7 @@ import 'package:tecnicos_app/features/cotizaciones/domain/entities/tarifa.dart';
 import 'package:tecnicos_app/features/cotizaciones/domain/repositories/cotizacion_repository.dart';
 import 'package:tecnicos_app/features/solicitudes/domain/entities/foto_solicitud.dart';
 import 'package:tecnicos_app/features/solicitudes/domain/entities/nueva_solicitud.dart';
+import 'package:tecnicos_app/features/solicitudes/domain/entities/servicio_completado.dart';
 import 'package:tecnicos_app/features/solicitudes/domain/entities/solicitud.dart';
 import 'package:tecnicos_app/features/solicitudes/domain/repositories/solicitud_repository.dart';
 
@@ -101,8 +102,21 @@ class SolicitudesFalsas implements SolicitudRepository {
   @override
   Future<void> eliminar(String id) async {}
 
+  final fotosAgregadas = <(String, int)>[];
+
+  @override
+  Future<void> agregarFotos(String solicitudId, List<Uint8List> fotos) async {
+    fotosAgregadas.add((solicitudId, fotos.length));
+  }
+
   @override
   Future<List<FotoSolicitud>> fotos(String solicitudId) async => const [];
+
+  @override
+  Future<List<ServicioCompletado>> historialServicios(
+    String clienteId, {
+    int limite = 50,
+  }) async => const [];
 
   @override
   Future<List<Solicitud>> misSolicitudes() async {

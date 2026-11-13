@@ -40,7 +40,9 @@ class InsigniaSiCertificado extends ConsumerWidget {
     final lista =
         ref.watch(certificacionesAprobadasProvider(tecnicoId)).value ??
         const <Certificacion>[];
-    return lista.isEmpty ? const SizedBox.shrink() : const InsigniaCertificado();
+    return lista.isEmpty
+        ? const SizedBox.shrink()
+        : const InsigniaCertificado();
   }
 }
 
@@ -99,7 +101,10 @@ class SeccionCertificaciones extends ConsumerWidget {
 }
 
 class _FilaCertificacion extends ConsumerWidget {
-  const _FilaCertificacion({required this.certificacion, required this.bloqueado});
+  const _FilaCertificacion({
+    required this.certificacion,
+    required this.bloqueado,
+  });
 
   final Certificacion certificacion;
   final bool bloqueado;
@@ -134,7 +139,9 @@ class _FilaCertificacion extends ConsumerWidget {
           Pildora(texto: etiqueta, color: color),
           IconButton(
             tooltip: 'Eliminar',
-            onPressed: bloqueado ? null : () => unawaited(_eliminar(context, ref)),
+            onPressed: bloqueado
+                ? null
+                : () => unawaited(_eliminar(context, ref)),
             icon: const Icon(Icons.delete_outline),
           ),
         ],
@@ -216,7 +223,9 @@ class _FormularioCertificacionState
   }
 
   String? _validar() {
-    if (_nombre.text.trim().length < 3) return 'Escribe el nombre del certificado.';
+    if (_nombre.text.trim().length < 3) {
+      return 'Escribe el nombre del certificado.';
+    }
     if (_entidad.text.trim().length < 2) return 'Escribe quién lo emitió.';
     final texto = _anio.text.trim();
     if (texto.isNotEmpty) {
@@ -251,8 +260,9 @@ class _FormularioCertificacionState
         'Certificado enviado. Lo revisaremos pronto.',
         tipo: TipoMensaje.exito,
       );
-    } else if (ref.read(accionesCertificacionProvider)
-        case AsyncError(:final error)) {
+    } else if (ref.read(accionesCertificacionProvider) case AsyncError(
+      :final error,
+    )) {
       setState(() => _error = AsyncValueView.mensajeDe(error));
     }
   }
@@ -313,9 +323,8 @@ class _FormularioCertificacionState
                 const SizedBox(height: Espacios.m),
                 Text(
                   _error!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colores.error),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Colores.error),
                 ),
               ],
             ],

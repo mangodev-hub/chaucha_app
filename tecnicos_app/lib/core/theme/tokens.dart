@@ -50,6 +50,15 @@ abstract final class Colores {
   /// va dentro de tarjetas claras (`HojaClara`, `TarjetaOnda`).
   static const Color fondo = Color(0xFF0B2518);
 
+  /// Fondo claro de las pantallas web del cliente (inicio con menú lateral).
+  static const Color fondoClaro = Color(0xFFF4F9F4);
+
+  /// Divisor de la barra inferior del pie de página.
+  static const Color divisor = Color(0xFFEEF3EE);
+
+  /// Borde inferior de la barra superior blanca.
+  static const Color bordeBarra = Color(0xFFE3ECE4);
+
   /// Superficie clara (`surfaceLight`): la gran hoja de cada pantalla, la
   /// barra inferior, hojas inferiores y sub-tarjetas sobre el fondo oscuro.
   static const Color lienzo = Color(0xFFF4F9F6);
@@ -78,6 +87,12 @@ abstract final class Colores {
 
   /// Textos secundarios y placeholders (`textMuted`).
   static const Color tintaSuave = Color(0xFF2D523B);
+
+  /// Texto secundario de la navegación ("‹ Volver").
+  static const Color tintaGris = Color(0xFF4F6654);
+
+  /// Títulos de las barras claras.
+  static const Color tintaTitulo = Color(0xFF0E2A14);
 
   /// Texto e íconos sobre el fondo oscuro y sobre `primario` (`textOnDark`).
   static const Color sobreOscuro = Color(0xFFFFFFFF);
@@ -115,6 +130,9 @@ abstract final class Radios {
   static const double grande = 22;
   static const double subtarjeta = grande;
 
+  /// Tarjetas del inicio del cliente (chats, visita, técnicos, publicidad).
+  static const double tarjeta = 18;
+
   /// Tarjetas grandes y diálogos.
   static const double muyGrande = 30;
 
@@ -124,6 +142,14 @@ abstract final class Radios {
   /// Barra inferior y hojas inferiores (esquinas de arriba).
   static const double hoja = 32;
   static const double pildora = 999;
+}
+
+/// Sombras. Solo las tarjetas blancas del inicio del cliente llevan sombra;
+/// el resto de la app se apoya en el borde fino.
+abstract final class Sombras {
+  static const List<BoxShadow> tarjeta = [
+    BoxShadow(color: Color(0x140E2A14), blurRadius: 18, offset: Offset(0, 6)),
+  ];
 }
 
 abstract final class Espacios {
@@ -165,8 +191,7 @@ abstract final class Movimiento {
 }
 
 abstract final class Tipografia {
-  /// Una sola familia, geométrica y redondeada. Se descarga con
-  /// `google_fonts`; antes de publicar hay que incluir los archivos de la
-  /// fuente en la app (ver `docs/DISENO.md`).
+  /// Una sola familia, geométrica y redondeada. Va incluida en la app
+  /// (`assets/fonts/plus_jakarta_sans`, pesos 400 a 800, ver `pubspec.yaml`).
   static const String familia = 'Plus Jakarta Sans';
 }

@@ -12,8 +12,10 @@ import '../../../../core/supabase/supabase_extensions.dart';
 import '../../../../core/supabase/supabase_guard.dart';
 import '../../domain/entities/foto_solicitud.dart';
 import '../../domain/entities/nueva_solicitud.dart';
+import '../../domain/entities/servicio_completado.dart';
 import '../../domain/entities/solicitud.dart';
 import '../../domain/repositories/solicitud_repository.dart';
+import '../models/servicio_completado_model.dart';
 import '../models/solicitud_db.dart';
 import '../models/solicitud_model.dart';
 
@@ -45,6 +47,27 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
           .eq('cliente_id', _client.uidActual)
           .order('creado_en', ascending: false);
       return _aEntidades(filas);
+    });
+  }
+
+  @override
+  Future<List<ServicioCompletado>> historialServicios(
+    String clienteId, {
+    int limite = 50,
+  }) {
+    return supabaseGuard(() async {
+      // Una sola consulta: solicitud + cotización aceptada + técnico +
+      // la reseña propia (los filtros con punto van sobre los joins).
+      final filas = await _client
+          .from(_tabla)
+          .select(ServicioCompletadoModel.columnas)
+          .eq('cliente_id', clienteId)
+          .eq('estado', 'completada')
+          .eq('cotizaciones.estado', 'aceptada')
+          .eq('resenas.autor_id', clienteId)
+          .order('completada_en', ascending: false)
+          .limit(limite);
+      return [for (final f in filas) ?ServicioCompletadoModel.desdeFila(f)];
     });
   }
 
@@ -203,6 +226,13 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
 
   Future<void> _actualizarEstado(String id, EstadoSolicitud estado) async {
     await _client.from(_tabla).update({'estado': estado.valorDb}).eq('id', id);
+  }
+
+  @override
+  Future<void> agregarFotos(String solicitudId, List<Uint8List> fotos) {
+    return supabaseGuard(
+      () => _subirFotos(solicitudId, TipoArchivo.problema, fotos),
+    );
   }
 
   Future<void> _subirFotos(

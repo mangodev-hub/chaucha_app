@@ -17,6 +17,8 @@ class MapaUbicacion extends StatefulWidget {
     this.altura = 280,
     this.zoom = 15,
     this.mostrarSector = false,
+    this.colorMarcador,
+    this.colorRadio,
   });
 
   final LatLng punto;
@@ -28,6 +30,12 @@ class MapaUbicacion extends StatefulWidget {
 
   /// Muestra sobre el mapa el sector (barrio) del punto.
   final bool mostrarSector;
+
+  /// Color del pin; por defecto, el de error del tema.
+  final Color? colorMarcador;
+
+  /// Color del círculo del radio; por defecto, el primario del tema.
+  final Color? colorRadio;
 
   @override
   State<MapaUbicacion> createState() => _MapaUbicacionState();
@@ -82,8 +90,9 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
                         point: widget.punto,
                         radius: radio,
                         useRadiusInMeter: true,
-                        color: colores.primary.withValues(alpha: 0.15),
-                        borderColor: colores.primary,
+                        color: (widget.colorRadio ?? colores.primary)
+                            .withValues(alpha: 0.15),
+                        borderColor: widget.colorRadio ?? colores.primary,
                         borderStrokeWidth: 2,
                       ),
                     ],
@@ -108,7 +117,7 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
                       alignment: Alignment.topCenter,
                       child: Icon(
                         Icons.location_pin,
-                        color: colores.error,
+                        color: widget.colorMarcador ?? colores.error,
                         size: 44,
                       ),
                     ),

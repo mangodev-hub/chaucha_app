@@ -31,8 +31,18 @@ abstract final class Formatos {
   /// "Nov 2026" (miembro desde).
   static String mesAnio(DateTime f) {
     const m = [
-      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     return '${m[f.month - 1]} ${f.year}';
   }
@@ -40,6 +50,26 @@ abstract final class Formatos {
   static String hora(DateTime fecha) =>
       '${fecha.hour.toString().padLeft(2, '0')}:'
       '${fecha.minute.toString().padLeft(2, '0')}';
+
+  /// "1,2 km": distancia siempre en kilómetros y con coma decimal.
+  static String kilometros(double metros) =>
+      '${(metros / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+
+  /// "\$35" o "\$35.50": precio sin decimales cuando es entero.
+  static String precio(double valor) => valor % 1 == 0
+      ? '\$${valor.toStringAsFixed(0)}'
+      : '\$${valor.toStringAsFixed(2)}';
+
+  /// "hace 5 min", "hace 3 h", "ayer", "hace 4 días" o la fecha.
+  static String haceTiempo(DateTime fecha, {DateTime? ahora}) {
+    final diferencia = (ahora ?? DateTime.now()).difference(fecha);
+    if (diferencia.inMinutes < 1) return 'hace un momento';
+    if (diferencia.inMinutes < 60) return 'hace ${diferencia.inMinutes} min';
+    if (diferencia.inHours < 24) return 'hace ${diferencia.inHours} h';
+    if (diferencia.inDays == 1) return 'ayer';
+    if (diferencia.inDays < 7) return 'hace ${diferencia.inDays} días';
+    return 'el ${dia(fecha, hoy: ahora)}';
+  }
 
   static String distancia(double metros) => metros < 1000
       ? '${metros.round()} m'

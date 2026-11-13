@@ -16,6 +16,7 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/pildora.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
@@ -71,87 +72,84 @@ class _ChatsViewState extends ConsumerState<ChatsView> {
     int sinLeerDe(String conversacionId) => noLeidas
         .where(
           (n) =>
-              tiposDeChat.contains(n.tipo) &&
-              n.referenciaId == conversacionId,
+              tiposDeChat.contains(n.tipo) && n.referenciaId == conversacionId,
         )
         .length;
     final totalSinLeer = noLeidas
         .where((n) => tiposDeChat.contains(n.tipo))
         .length;
 
-    return RefreshIndicator(
+    return ListaDePagina(
       onRefresh: () => esperarSinError(ref.refresh(misChatsProvider.future)),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          Espacios.l,
-          Espacios.l,
-          Espacios.l,
-          Espacios.xxl,
-        ),
-        children: [
-          AnchoMaximo(
-            ancho: _anchoMaximo,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Text('Chats', style: textos.titleLarge),
-                    if (totalSinLeer > 0) ...[
-                      const SizedBox(width: Espacios.s),
-                      Pildora(
-                        texto: '$totalSinLeer sin leer',
-                        color: Colores.primario,
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: Espacios.m),
-                TextField(
-                  controller: _busqueda,
-                  onChanged: (_) => setState(() {}),
-                  textInputAction: TextInputAction.search,
-                  decoration: InputDecoration(
-                    hintText: widget.esCliente
-                        ? 'Buscar técnico u oficio'
-                        : 'Buscar cliente u oficio',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _busqueda.text.isEmpty
-                        ? null
-                        : IconButton(
-                            tooltip: 'Borrar búsqueda',
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => setState(_busqueda.clear),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: Espacios.m),
-                Wrap(
-                  spacing: Espacios.s,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Todos'),
-                      selected: !_soloSinLeer,
-                      onSelected: (_) => setState(() => _soloSinLeer = false),
-                    ),
-                    ChoiceChip(
-                      label: const Text('Sin leer'),
-                      selected: _soloSinLeer,
-                      onSelected: (_) => setState(() => _soloSinLeer = true),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Espacios.m),
-                AsyncValueView<List<ResumenChat>>(
-                  value: ref.watch(misChatsProvider),
-                  onRetry: () => ref.invalidate(misChatsProvider),
-                  onData: (context, chats) => _lista(chats, sinLeerDe),
-                ),
-              ],
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.fromLTRB(
+        Espacios.l,
+        Espacios.l,
+        Espacios.l,
+        Espacios.xxl,
       ),
+      children: [
+        AnchoMaximo(
+          ancho: _anchoMaximo,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Text('Chats', style: textos.titleLarge),
+                  if (totalSinLeer > 0) ...[
+                    const SizedBox(width: Espacios.s),
+                    Pildora(
+                      texto: '$totalSinLeer sin leer',
+                      color: Colores.primario,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: Espacios.m),
+              TextField(
+                controller: _busqueda,
+                onChanged: (_) => setState(() {}),
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: widget.esCliente
+                      ? 'Buscar técnico u oficio'
+                      : 'Buscar cliente u oficio',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _busqueda.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Borrar búsqueda',
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => setState(_busqueda.clear),
+                        ),
+                ),
+              ),
+              const SizedBox(height: Espacios.m),
+              Wrap(
+                spacing: Espacios.s,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Todos'),
+                    selected: !_soloSinLeer,
+                    onSelected: (_) => setState(() => _soloSinLeer = false),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Sin leer'),
+                    selected: _soloSinLeer,
+                    onSelected: (_) => setState(() => _soloSinLeer = true),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Espacios.m),
+              AsyncValueView<List<ResumenChat>>(
+                value: ref.watch(misChatsProvider),
+                onRetry: () => ref.invalidate(misChatsProvider),
+                onData: (context, chats) => _lista(chats, sinLeerDe),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

@@ -135,10 +135,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                     hintText: 'Tu contraseña',
                     autofillHints: const [AutofillHints.password],
                     onFieldSubmitted: (_) => _enviar(),
-                    validator: (valor) => FormValidators.requerido(
-                      valor,
-                      campo: 'La contraseña',
-                    ),
+                    validator: (valor) =>
+                        FormValidators.requerido(valor, campo: 'La contraseña'),
                   ),
                 ),
               ),

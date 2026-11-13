@@ -59,20 +59,23 @@ class AccionesSolicitudNotifier extends AsyncNotifier<void> {
         .read(solicitudRepositoryProvider)
         .cambiarEstado(solicitudId, EstadoSolicitud.cancelada),
   );
-Future<bool> proponerReagendado(String cotizacionId, DateTime fecha) =>
-    _ejecutar(() => ref
-        .read(cotizacionRepositoryProvider)
-        .proponerReagendado(cotizacionId, fecha));
+  Future<bool> proponerReagendado(String cotizacionId, DateTime fecha) =>
+      _ejecutar(
+        () => ref
+            .read(cotizacionRepositoryProvider)
+            .proponerReagendado(cotizacionId, fecha),
+      );
 
-Future<bool> responderReagendado(String cotizacionId, bool acepta) =>
-    _ejecutar(() => ref
-        .read(cotizacionRepositoryProvider)
-        .responderReagendado(cotizacionId, acepta: acepta));
+  Future<bool> responderReagendado(String cotizacionId, bool acepta) =>
+      _ejecutar(
+        () => ref
+            .read(cotizacionRepositoryProvider)
+            .responderReagendado(cotizacionId, acepta: acepta),
+      );
 
-Future<bool> cancelarVisita(String cotizacionId) =>
-    _ejecutar(() => ref
-        .read(cotizacionRepositoryProvider)
-        .cancelarVisita(cotizacionId));
+  Future<bool> cancelarVisita(String cotizacionId) => _ejecutar(
+    () => ref.read(cotizacionRepositoryProvider).cancelarVisita(cotizacionId),
+  );
   Future<bool> editar({
     required String descripcion,
     required int oficioId,
@@ -86,6 +89,11 @@ Future<bool> cancelarVisita(String cotizacionId) =>
           oficioId: oficioId,
           direccion: direccion,
         ),
+  );
+
+  Future<bool> agregarFotos(List<Uint8List> fotos) => _ejecutar(
+    () =>
+        ref.read(solicitudRepositoryProvider).agregarFotos(solicitudId, fotos),
   );
 
   Future<bool> eliminar() => _ejecutar(

@@ -13,8 +13,10 @@ import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../domain/entities/rango_ocupado.dart';
 
-typedef CargarOcupados =
-    Future<List<RangoOcupado>> Function(DateTime desde, DateTime hasta);
+typedef CargarOcupados = Future<List<RangoOcupado>> Function(
+  DateTime desde,
+  DateTime hasta,
+);
 
 Future<DateTime?> elegirFranja(
   BuildContext context, {
@@ -357,7 +359,11 @@ class _Franja extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (estado == _EstadoFranja.ocupada) ...[
-                      Icon(Icons.lock_outline_rounded, size: 16, color: colorTexto),
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 16,
+                        color: colorTexto,
+                      ),
                       const SizedBox(width: Espacios.xs + 2),
                     ],
                     Text(
@@ -386,9 +392,8 @@ class _Leyenda extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final estilo = Theme.of(
-      context,
-    ).textTheme.labelSmall?.copyWith(color: Colores.tintaSuave);
+    final estilo = Theme.of(context).textTheme.labelSmall
+        ?.copyWith(color: Colores.tintaSuave);
     Widget muestra(BoxDecoration decoracion, String texto) => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -411,10 +416,7 @@ class _Leyenda extends StatelessWidget {
           'Libre',
         ),
         muestra(
-          BoxDecoration(
-            color: Colores.superficieFuerte,
-            borderRadius: radio,
-          ),
+          BoxDecoration(color: Colores.superficieFuerte, borderRadius: radio),
           'Ocupada por otra visita',
         ),
         muestra(

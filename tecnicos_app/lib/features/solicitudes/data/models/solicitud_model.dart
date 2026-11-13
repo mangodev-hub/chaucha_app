@@ -19,6 +19,7 @@ class SolicitudModel {
     this.direccionReferencia,
     this.clienteNombre,
     this.clienteFotoRuta,
+    this.completadaEn,
   });
 
   factory SolicitudModel.fromJson(Map<String, dynamic> json) {
@@ -41,13 +42,17 @@ class SolicitudModel {
       creadoEn: aFecha(json['creado_en']),
       clienteNombre: nombreCorto.isEmpty ? null : nombreCorto,
       clienteFotoRuta: cliente?['foto_perfil_ruta'] as String?,
+      completadaEn: json['completada_en'] is String
+          ? aFecha(json['completada_en']).toLocal()
+          : null,
     );
   }
 
   /// Columnas que se piden en el `select`, con el join al oficio.
   static const String columnas =
       'id, cliente_id, oficio_id, descripcion, '
-      'ubicacion, direccion_referencia, estado, creado_en, oficios(nombre), '
+      'ubicacion, direccion_referencia, estado, creado_en, completada_en, '
+      'oficios(nombre), '
       'cliente:usuarios!fk_solicitudes_cliente(nombres, apellidos, foto_perfil_ruta)';
 
   final String id;
@@ -61,6 +66,7 @@ class SolicitudModel {
   final DateTime creadoEn;
   final String? clienteNombre;
   final String? clienteFotoRuta;
+  final DateTime? completadaEn;
 
   Solicitud aEntidad() => Solicitud(
     id: id,
@@ -74,5 +80,6 @@ class SolicitudModel {
     creadoEn: creadoEn,
     clienteNombre: clienteNombre,
     clienteFotoRuta: clienteFotoRuta,
+    completadaEn: completadaEn,
   );
 }

@@ -1,3 +1,6 @@
+import 'package:latlong2/latlong.dart';
+
+import '../../../../core/geo/geo_mapper.dart';
 import '../../domain/entities/rol.dart';
 import '../../domain/entities/usuario.dart';
 import 'rol_db.dart';
@@ -14,6 +17,8 @@ class UsuarioModel {
     this.perfilCompleto = true,
     this.verificado = false,
     this.suspendidoHasta,
+    this.ciudad,
+    this.ubicacionRegistro,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
@@ -34,12 +39,15 @@ class UsuarioModel {
         final String s => DateTime.parse(s).toLocal(),
         _ => null,
       },
+      ciudad: json['ciudad'] as String?,
+      ubicacionRegistro: GeoMapper.fromDb(json['ubicacion_registro']),
     );
   }
 
   /// Columnas que se piden en el `select`.
   static const String columnas =
-      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, foto_rostro_validada, suspendido_hasta,'
+      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, foto_rostro_validada, suspendido_hasta, ciudad, '
+      'ubicacion_registro,'
       'identidades(usuario_id)';
 
   final String id;
@@ -52,6 +60,8 @@ class UsuarioModel {
   final bool perfilCompleto;
   final bool verificado;
   final DateTime? suspendidoHasta;
+  final String? ciudad;
+  final LatLng? ubicacionRegistro;
 
   Usuario aEntidad() => Usuario(
     id: id,
@@ -64,5 +74,7 @@ class UsuarioModel {
     perfilCompleto: perfilCompleto,
     verificado: verificado,
     suspendidoHasta: suspendidoHasta,
+    ciudad: ciudad,
+    ubicacionRegistro: ubicacionRegistro,
   );
 }

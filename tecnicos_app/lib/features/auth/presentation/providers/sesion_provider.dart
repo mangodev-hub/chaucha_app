@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/auth_redirect.dart';
 import '../../../../core/errors/app_failure.dart';
+import '../../../../core/presence/presencia_service.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_usuario_repository.dart';
@@ -67,6 +68,8 @@ class SesionNotifier extends Notifier<SesionEstado> {
     await ref
         .read(pushServiceProvider)
         .olvidar(ref.read(supabaseClientProvider));
+    // También "desconectado" ya (la función necesita la sesión).
+    await ref.read(presenciaRepositoryProvider).salir();
     await _auth.cerrarSesion();
   }
 

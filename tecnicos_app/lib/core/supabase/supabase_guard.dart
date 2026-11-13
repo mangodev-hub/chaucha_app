@@ -16,7 +16,27 @@ Future<R> supabaseGuard<R>(Future<R> Function() action) async {
       code: e.statusCode,
       cause: e,
     );
+  } on FunctionException catch (e) {
+    throw AppFailure(mensajeFuncion(e), code: '${e.status}', cause: e);
   }
+}
+
+/// Error de una Edge Function. 429: el límite de uso (Redis) se superó y la
+/// función dice cuántos segundos esperar.
+String mensajeFuncion(FunctionException e) {
+  final detalles = e.details;
+  if (e.status == 429) {
+    final segundos = detalles is Map ? detalles['reintentar_en'] : null;
+    return segundos is num && segundos > 0
+        ? 'Hiciste muchos intentos seguidos. Espera ${segundos.ceil()} s '
+              'e inténtalo de nuevo.'
+        : 'Hiciste muchos intentos seguidos. Espera un momento e inténtalo '
+              'de nuevo.';
+  }
+  final texto = detalles is Map ? detalles['error'] : null;
+  return texto is String && texto.trim().isNotEmpty
+      ? texto
+      : 'No se pudo completar la operación. Inténtalo de nuevo.';
 }
 
 String _mensajeAuth(AuthException e) {

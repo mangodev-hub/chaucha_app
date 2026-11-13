@@ -21,6 +21,7 @@ class SupabaseInicioRepository implements InicioRepository {
   Future<List<TecnicoCercano>> tecnicosCercanos({
     required LatLng punto,
     required int radioM,
+    int? oficioId,
     int limite = 20,
   }) {
     return supabaseGuard(() async {
@@ -29,6 +30,7 @@ class SupabaseInicioRepository implements InicioRepository {
         params: {
           'p_lat': punto.latitude,
           'p_lng': punto.longitude,
+          'p_oficio_id': oficioId,
           'p_radio_m': radioM,
           'p_limite': limite,
         },

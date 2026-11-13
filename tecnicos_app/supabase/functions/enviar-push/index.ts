@@ -10,6 +10,7 @@
 //   APP_URL (opcional)        URL https de la app web; se abre al tocar el aviso
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { importPKCS8, SignJWT } from 'npm:jose@5';
+import { clave, conRedis } from '../_shared/redis.ts';
 
 type Notificacion = {
   id: string;
@@ -89,6 +90,18 @@ Deno.serve(async (req) => {
   try {
     const { record } = (await req.json()) as { record?: Notificacion };
     if (!record?.usuario_id) return responder({ error: 'Falta record' }, 400);
+
+    // Si el destinatario tiene ese chat abierto (presencia en Redis), ya ve el
+    // mensaje en vivo: no se manda el push. Sin Redis, se envía igual.
+    if (record.tipo === 'mensaje' && record.referencia_id) {
+      const abierta = await conRedis(
+        (r) => r.hget<string>(clave('pres', record.usuario_id), 'conversacion'),
+        null,
+      );
+      if (abierta === record.referencia_id) {
+        return responder({ enviados: 0, omitido: 'viendo_chat' });
+      }
+    }
 
     const { data: dispositivos, error } = await db
       .from('dispositivos_push')

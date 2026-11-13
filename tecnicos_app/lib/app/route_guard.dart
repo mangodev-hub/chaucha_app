@@ -13,6 +13,9 @@ String? resolverRedireccion({
   required SesionEstado sesion,
   required String ubicacion,
 }) {
+  if (AppRoutes.legales.contains(ubicacion) && sesion is! SesionVerificando) {
+    return null;
+  }
   return switch (sesion) {
     SesionVerificando() =>
       ubicacion == AppRoutes.splash ? null : AppRoutes.splash,
