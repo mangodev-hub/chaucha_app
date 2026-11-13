@@ -90,6 +90,35 @@ Future<void> mostrarGarantia(BuildContext context) => _dialogo(
   ],
 );
 
+Future<void> mostrarVerificacion(BuildContext context) => _dialogo(
+  context,
+  icono: Icons.verified_user_rounded,
+  titulo: 'Técnicos verificados',
+  puntos: const [
+    'Cada técnico registra su cédula ecuatoriana y su código dactilar, y '
+        'validamos el número de cédula.',
+    'Se toma una selfie con la cámara en vivo (no se puede subir desde la '
+        'galería) y la comparamos con la foto de su cédula.',
+    'Nuestro equipo revisa sus documentos. Hasta que no esté verificado, no '
+        'puede enviar propuestas.',
+    'En su perfil verás la insignia "Verificado", su nivel y sus reseñas.',
+  ],
+);
+
+Future<void> mostrarPagoVisita(BuildContext context) => _dialogo(
+  context,
+  icono: Icons.payments_outlined,
+  titulo: 'Pagas solo la visita',
+  puntos: const [
+    'Antes de agendar, cada técnico te envía su precio por la visita y cómo '
+        'resolvería el problema.',
+    'Comparas las propuestas y conversas por el chat antes de elegir.',
+    'En la app solo se acuerda el precio de la visita; el trabajo en sí lo '
+        'conversas directamente con el técnico.',
+    'ChauchaApp no te cobra comisión.',
+  ],
+);
+
 Future<void> mostrarComoFunciona(BuildContext context) => _dialogo(
   context,
   icono: Icons.lightbulb_outline_rounded,

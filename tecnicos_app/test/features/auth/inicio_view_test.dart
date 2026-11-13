@@ -341,4 +341,33 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('cada tarjeta de confianza abre su ventana con más información', (
+    tester,
+  ) async {
+    await _montar(tester, const Size(1280, 900));
+    for (final (tarjeta, dialogo, punto) in const [
+      (
+        'Técnicos 100 % verificados',
+        'Técnicos verificados',
+        'Se toma una selfie',
+      ),
+      ('Garantía de 30 días', 'Garantía de 30 días', 'Reportar un problema'),
+      ('Pagas solo la visita', 'Pagas solo la visita', 'no te cobra comisión'),
+    ]) {
+      await tester.tap(find.text(tarjeta).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget, reason: tarjeta);
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text(dialogo),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining(punto), findsOneWidget);
+      Navigator.of(tester.element(find.byType(AlertDialog))).pop();
+      await tester.pumpAndSettle();
+    }
+  });
 }

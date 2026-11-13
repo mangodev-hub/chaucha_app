@@ -284,7 +284,9 @@ class InicioView extends ConsumerWidget {
       onContactar: (t) => _solicitarTecnico(context, ref, t),
     );
     final confianza = TarjetasConfianza(
+      onVerificacion: () => unawaited(mostrarVerificacion(context)),
       onGarantia: () => unawaited(mostrarGarantia(context)),
+      onPago: () => unawaited(mostrarPagoVisita(context)),
     );
     const chats = _BloqueChats();
     const visita = _BloqueProximaVisita();

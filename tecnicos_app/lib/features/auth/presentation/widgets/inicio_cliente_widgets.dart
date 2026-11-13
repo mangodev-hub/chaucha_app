@@ -923,21 +923,30 @@ class TextoVacio extends StatelessWidget {
 }
 
 /// Tres razones para confiar: verificación, garantía y precio. En fila
-/// desde 700 px; en el teléfono, una debajo de otra.
+/// desde 700 px; en el teléfono, una debajo de otra. Cada una abre una
+/// ventana con más información.
 class TarjetasConfianza extends StatelessWidget {
-  const TarjetasConfianza({super.key, required this.onGarantia});
+  const TarjetasConfianza({
+    super.key,
+    required this.onVerificacion,
+    required this.onGarantia,
+    required this.onPago,
+  });
 
+  final VoidCallback onVerificacion;
   final VoidCallback onGarantia;
+  final VoidCallback onPago;
 
   @override
   Widget build(BuildContext context) {
     final tarjetas = [
-      const _TarjetaConfianza(
+      _TarjetaConfianza(
         icono: Icons.verified_user_rounded,
         fondo: Colores.primarioSuave,
         color: Colores.primarioVivo,
         titulo: 'Técnicos 100 % verificados',
         texto: 'Cédula y selfie revisadas por nuestro equipo.',
+        onTap: onVerificacion,
       ),
       _TarjetaConfianza(
         icono: Icons.shield_outlined,
@@ -948,12 +957,13 @@ class TarjetasConfianza extends StatelessWidget {
         texto: 'Si algo falla, repórtalo desde tu ticket.',
         onTap: onGarantia,
       ),
-      const _TarjetaConfianza(
+      _TarjetaConfianza(
         icono: Icons.payments_outlined,
         fondo: Colores.avisoSuave,
         color: Colores.aviso,
         titulo: 'Pagas solo la visita',
         texto: 'Precio acordado antes de agendar, sin comisiones.',
+        onTap: onPago,
       ),
     ];
     return LayoutBuilder(
