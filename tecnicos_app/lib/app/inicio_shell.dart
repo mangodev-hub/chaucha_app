@@ -225,9 +225,23 @@ class _InicioShellState extends ConsumerState<InicioShell> {
   VoidCallback? get _alPerfil =>
       _indicePerfil < 0 ? null : () => _cambiar(_indicePerfil);
 
+  /// La ruta abierta es la agenda (pantalla secundaria del cliente).
+  bool get _enAgenda {
+    final ruta = widget.rutaAgenda;
+    if (ruta == null || !_esSecundaria) return false;
+    return GoRouterState.of(context).matchedLocation == ruta;
+  }
+
+  /// Abre la agenda. Si ya está abierta no hace nada: volver a apilar la
+  /// misma ruta duplica la página y go_router deja la pantalla en blanco.
+  /// Con `go` (y no `push`) tampoco se apila sobre otra pantalla secundaria.
   VoidCallback? get _aLaAgenda {
     final ruta = widget.rutaAgenda;
-    return ruta == null ? null : () => context.push(ruta);
+    if (ruta == null) return null;
+    return () {
+      if (_enAgenda) return;
+      context.go(ruta);
+    };
   }
 
   void _accion() {
@@ -382,7 +396,8 @@ class _InicioShellState extends ConsumerState<InicioShell> {
       width: ancho >= 1280 ? 248 : 220,
       child: _MenuLateral(
         destinos: widget.destinos,
-        indice: _indice,
+        indice: _enAgenda ? -1 : _indice,
+        agendaActiva: _enAgenda,
         onCambio: _cambiar,
         onAgenda: _aLaAgenda,
         accion: widget.accionCentral,
@@ -804,9 +819,13 @@ class _MenuLateral extends StatelessWidget {
     required this.onAccion,
     required this.nota,
     required this.claro,
+    this.agendaActiva = false,
   });
 
   final bool claro;
+
+  /// La agenda está abierta: su ítem se marca como el de una pestaña.
+  final bool agendaActiva;
   final List<Destino> destinos;
   final int indice;
   final ValueChanged<int> onCambio;
@@ -828,8 +847,10 @@ class _MenuLateral extends StatelessWidget {
         ? null
         : _ItemMenu(
             texto: 'Agenda',
-            icono: Icons.calendar_month_outlined,
-            activo: false,
+            icono: agendaActiva
+                ? Icons.calendar_month_rounded
+                : Icons.calendar_month_outlined,
+            activo: agendaActiva,
             onTap: onAgenda,
           );
 

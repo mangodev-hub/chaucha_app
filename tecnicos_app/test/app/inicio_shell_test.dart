@@ -197,4 +197,88 @@ void main() {
       expect(find.text('Cerca'), findsNothing);
     });
   }
+
+  testWidgets(
+    'agenda del cliente: se marca en el menú y otro clic no la vuelve a apilar',
+    (tester) async {
+      tester.view
+        ..physicalSize = const Size(1440, 1000)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      InicioShell shell({Widget? pagina}) => InicioShell(
+        destinos: _destinos,
+        onCerrarSesion: () {},
+        claro: true,
+        rutaAgenda: '/cliente/agenda',
+        rutaInicio: '/cliente',
+        pagina: pagina,
+      );
+      final router = GoRouter(
+        initialLocation: '/cliente',
+        routes: [
+          GoRoute(
+            path: '/cliente',
+            builder: (context, state) => shell(),
+            routes: [
+              GoRoute(
+                path: 'agenda',
+                builder: (context, state) =>
+                    shell(pagina: const Text('vista agenda')),
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      final semantica = tester.ensureSemantics();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            usuarioActualProvider.overrideWithValue(null),
+            authRepositoryProvider.overrideWithValue(_AuthSinSesion()),
+            sincronizacionProvider.overrideWith((ref) {}),
+            presenciaProvider.overrideWith((ref) {}),
+            ubicacionInicioProvider.overrideWith(
+              (ref) async => const LatLng(-0.18, -78.48),
+            ),
+            sectorProvider.overrideWith((ref, clave) async => 'La Carolina'),
+            notificacionesNoLeidasProvider.overrideWith(
+              (ref) => Stream.value(const []),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      bool seleccionado(String texto) =>
+          tester
+              .getSemantics(find.bySemanticsLabel(RegExp('^$texto')))
+              .getSemanticsData()
+              .flagsCollection
+              .isSelected
+              .toBoolOrNull() ??
+          false;
+
+      expect(seleccionado('Agenda'), isFalse);
+
+      await tester.tap(find.text('Agenda'));
+      await tester.pumpAndSettle();
+      expect(find.text('vista agenda'), findsOneWidget);
+      expect(router.state.matchedLocation, '/cliente/agenda');
+      expect(seleccionado('Agenda'), isTrue);
+      expect(seleccionado('Inicio'), isFalse);
+
+      // Segundo clic: no apila otra agenda ni deja la pantalla en blanco.
+      await tester.tap(find.text('Agenda'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('vista agenda'), findsOneWidget);
+      expect(router.canPop(), isTrue);
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(router.state.matchedLocation, '/cliente');
+      semantica.dispose();
+    },
+  );
 }
