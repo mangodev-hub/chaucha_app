@@ -18,8 +18,8 @@ final perfilTecnicoProvider = FutureProvider.autoDispose<PerfilTecnico>((ref) {
 
 final guardarPerfilProvider =
     AsyncNotifierProvider.autoDispose<GuardarPerfilNotifier, void>(
-  GuardarPerfilNotifier.new,
-);
+      GuardarPerfilNotifier.new,
+    );
 
 class GuardarPerfilNotifier extends AsyncNotifier<void> {
   @override

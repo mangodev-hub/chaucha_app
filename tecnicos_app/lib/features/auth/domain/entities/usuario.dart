@@ -1,4 +1,5 @@
-// Usuario de la app (perfil de `public.usuarios`).
+import 'package:latlong2/latlong.dart';
+
 import 'rol.dart';
 
 class Usuario {
@@ -9,16 +10,35 @@ class Usuario {
     required this.apellidos,
     required this.creadoEn,
     this.fotoPerfilRuta,
+    this.fotoRostroValidada = false,
+    this.perfilCompleto = true,
+    this.verificado = false,
+    this.suspendidoHasta,
+    this.ciudad,
+    this.ubicacionRegistro,
   });
 
   final String id;
   final Rol rol;
   final String nombres;
   final String apellidos;
-
-  /// Ruta del archivo en Storage (no una URL).
+  final bool perfilCompleto;
+  final bool verificado;
   final String? fotoPerfilRuta;
+  final bool fotoRostroValidada;
   final DateTime creadoEn;
 
+  /// Fin de la sanción por reseñas negativas (null si nunca la tuvo).
+  final DateTime? suspendidoHasta;
+  final String? ciudad;
+
+  /// Ubicación que eligió el cliente para buscar técnicos cercanos.
+  final LatLng? ubicacionRegistro;
+
+  bool get estaSuspendido =>
+      suspendidoHasta != null && suspendidoHasta!.isAfter(DateTime.now());
+
   String get nombreCompleto => '$nombres $apellidos'.trim();
+
+  bool get fotoVerificada => fotoPerfilRuta != null && fotoRostroValidada;
 }

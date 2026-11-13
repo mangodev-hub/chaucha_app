@@ -5,12 +5,21 @@ import 'package:tecnicos_app/core/errors/app_failure.dart';
 import 'package:tecnicos_app/features/auth/presentation/providers/sesion_provider.dart';
 import 'package:tecnicos_app/features/perfil_puntos/data/repositories/supabase_perfil_repository.dart';
 import 'package:tecnicos_app/features/perfil_puntos/domain/entities/cambios_perfil.dart';
+import 'package:tecnicos_app/features/perfil_puntos/domain/entities/nivel.dart';
 import 'package:tecnicos_app/features/perfil_puntos/domain/entities/nueva_resena.dart';
+import 'package:tecnicos_app/features/perfil_puntos/domain/entities/perfil_publico.dart';
 import 'package:tecnicos_app/features/perfil_puntos/domain/entities/perfil_tecnico.dart';
 import 'package:tecnicos_app/features/perfil_puntos/domain/repositories/perfil_repository.dart';
 import 'package:tecnicos_app/features/perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 
 class _PerfilFalso implements PerfilRepository {
+  @override
+  Future<PerfilPublico> perfilPublico(String tecnicoId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<Nivel>> niveles() async => const [];
+
   int cargas = 0;
   final guardados = <CambiosPerfil>[];
   AppFailure? fallaAlGuardar;
@@ -44,11 +53,11 @@ class _PerfilFalso implements PerfilRepository {
 }
 
 CambiosPerfil _cambios({Set<int> oficios = const {1, 2}}) => CambiosPerfil(
-      tarifaBase: 20,
-      rangoCoberturaM: 3000,
-      ubicacion: const LatLng(-0.2, -78.5),
-      oficioIds: oficios,
-    );
+  tarifaBase: 20,
+  rangoCoberturaM: 3000,
+  ubicacion: const LatLng(-0.2, -78.5),
+  oficioIds: oficios,
+);
 
 void main() {
   late _PerfilFalso perfil;

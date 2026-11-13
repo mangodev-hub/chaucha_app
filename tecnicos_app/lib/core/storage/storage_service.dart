@@ -5,12 +5,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../supabase/supabase_guard.dart';
 
-
 abstract final class Buckets {
   static const String solicitudes = 'solicitudes';
   static const String documentos = 'cedulas';
-}
+  static const String perfiles = 'perfiles';
 
+  /// Público: imágenes de la publicidad.
+  static const String anuncios = 'anuncios';
+
+  /// Privado: fotos de evidencia de los reclamos (`{uid}/{id}.jpg`).
+  static const String reclamos = 'reclamos';
+}
 
 abstract interface class StorageService {
   Future<void> subirImagen({
@@ -18,8 +23,7 @@ abstract interface class StorageService {
     required String ruta,
     required Uint8List bytes,
   });
-
-
+  String urlPublica({required String bucket, required String ruta});
   Future<String> urlFirmada({required String bucket, required String ruta});
 }
 
@@ -37,7 +41,9 @@ class SupabaseStorageService implements StorageService {
     required Uint8List bytes,
   }) {
     return supabaseGuard(() async {
-      await _client.storage.from(bucket).uploadBinary(
+      await _client.storage
+          .from(bucket)
+          .uploadBinary(
             ruta,
             bytes,
             fileOptions: const FileOptions(contentType: 'image/jpeg'),
@@ -48,7 +54,12 @@ class SupabaseStorageService implements StorageService {
   @override
   Future<String> urlFirmada({required String bucket, required String ruta}) {
     return supabaseGuard(
-      () => _client.storage.from(bucket).createSignedUrl(ruta, _segundosValidez),
+      () =>
+          _client.storage.from(bucket).createSignedUrl(ruta, _segundosValidez),
     );
   }
+
+  @override
+  String urlPublica({required String bucket, required String ruta}) =>
+      _client.storage.from(bucket).getPublicUrl(ruta);
 }

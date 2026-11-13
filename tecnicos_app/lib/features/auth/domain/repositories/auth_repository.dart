@@ -11,4 +11,28 @@ abstract interface class AuthRepository {
   Future<RegistroResultado> registrar(RegistroDatos datos);
 
   Future<void> cerrarSesion();
+  Future<void> iniciarConGoogle();
+  Stream<void> get recuperacionIniciada;
+
+  String? get usuarioId;
+
+  Future<void> enviarRecuperacion(String email);
+
+  Future<void> reenviarConfirmacion(String email);
+
+  Future<void> cambiarContrasena(String nueva);
+  String? get correoActual;
+
+  bool get usaContrasena;
+
+  Future<void> cambiarContrasenaConActual({
+    required String actual,
+    required String nueva,
+  });
+
+  Future<void> cambiarCorreo({
+    required String contrasena,
+    required String nuevo,
+  });
+  Future<void> cerrarSesionEnTodos();
 }

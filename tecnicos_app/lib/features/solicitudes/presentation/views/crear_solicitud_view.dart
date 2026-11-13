@@ -1,4 +1,3 @@
-// Formulario para pedir un técnico: oficio, descripción, ubicación, fotos.
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -10,19 +9,32 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/media/selector_fotos.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/barra_accion.dart';
 import '../../../../core/widgets/boton_carga.dart';
+import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/encabezado_pantalla.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/pantalla_secundaria.dart';
+import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/seccion.dart';
+import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../../catalogo/domain/entities/oficio.dart';
 import '../../../catalogo/presentation/providers/oficios_provider.dart';
+import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
 import '../../domain/entities/nueva_solicitud.dart';
 import '../providers/crear_solicitud_provider.dart';
+import '../widgets/solicitud_publicada.dart';
 
 class CrearSolicitudView extends ConsumerStatefulWidget {
-  const CrearSolicitudView({super.key});
+  const CrearSolicitudView({super.key, this.oficioId, this.descripcion});
+
+  final int? oficioId;
+  final String? descripcion;
 
   @override
   ConsumerState<CrearSolicitudView> createState() => _CrearSolicitudViewState();
@@ -38,12 +50,16 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
   bool _buscandoGps = false;
   List<Uint8List> _fotos = const [];
 
+  /// Id de la solicitud recién publicada: con él se muestra el éxito.
+  String? _creadaId;
+
   @override
   void initState() {
     super.initState();
-    // Aquí no se puede usar setState: se marca directo y se busca el GPS.
-    _buscandoGps = true;
+    _oficioId = widget.oficioId;
+    _descripcion.text = widget.descripcion ?? '';
     unawaited(_buscarUbicacion());
+    unawaited(refrescarVerificacion(ref));
   }
 
   @override
@@ -73,6 +89,7 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
     if (!ok && mounted) {
       context.mostrarMensaje(
         'No pudimos obtener tu ubicación. Toca el mapa para marcarla.',
+        tipo: TipoMensaje.error,
       );
     }
   }
@@ -83,8 +100,7 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
     );
     if (!mounted) return;
     setState(() {
-      _fotos =
-          [..._fotos, ...nuevas].take(NuevaSolicitud.maximoFotos).toList();
+      _fotos = [..._fotos, ...nuevas].take(NuevaSolicitud.maximoFotos).toList();
     });
   }
 
@@ -93,8 +109,11 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
   }
 
   Future<void> _enviar() async {
+    if (!await exigirVerificado(context, ref)) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final id = await ref.read(crearSolicitudProvider.notifier).crear(
+    final id = await ref
+        .read(crearSolicitudProvider.notifier)
+        .crear(
           oficioId: _oficioId,
           descripcion: _descripcion.text,
           direccion: _direccion.text,
@@ -103,82 +122,197 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
         );
     if (!mounted) return;
     if (id != null) {
-      context
-        ..mostrarMensaje('Solicitud publicada. Los técnicos ya pueden verla.')
-        ..pop(id);
+      setState(() => _creadaId = id);
     } else if (ref.read(crearSolicitudProvider) case AsyncError(:final error)) {
-      context.mostrarMensaje(AsyncValueView.mensajeDe(error));
+      context.mostrarMensaje(
+        AsyncValueView.mensajeDe(error),
+        tipo: TipoMensaje.error,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final publicando = ref.watch(crearSolicitudProvider).isLoading;
+    // Ya publicada: éxito en lugar del formulario. "Ver mi solicitud"
+    // devuelve el id (quien abrió el formulario abre el detalle); "Volver" y
+    // la flecha devuelven null.
+    if (_creadaId case final id?) {
+      return PantallaSecundaria(
+        titulo: 'Solicitud publicada',
+        cuerpo: SolicitudPublicada(
+          onVerSolicitud: () => context.pop(id),
+          onVolver: () => context.pop(),
+        ),
+      );
+    }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Nueva solicitud')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: AnchoMaximo(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _selectorOficio(),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descripcion,
-                  minLines: 3,
-                  maxLines: 6,
-                  decoration: const InputDecoration(
-                    labelText: '¿Qué problema tienes?',
-                    hintText: 'Ej.: la llave del lavabo gotea desde ayer',
-                  ),
-                  validator: (v) =>
-                      FormValidators.requerido(v, campo: 'La descripción'),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _direccion,
-                  decoration: const InputDecoration(
-                    labelText: 'Referencia de la dirección (opcional)',
-                    hintText: 'Ej.: casa esquinera, portón negro',
-                  ),
-                ),
-                Seccion(titulo: 'Ubicación', child: _mapa()),
-                Seccion(
-                  titulo:
-                      'Fotos del problema (máx. ${NuevaSolicitud.maximoFotos})',
-                  child: _fotosSeleccionadas(),
-                ),
-                const SizedBox(height: 32),
-                BotonCarga(
-                  texto: 'Publicar solicitud',
-                  cargando: publicando,
-                  onPressed: _enviar,
-                ),
-              ],
+    final publicando = ref.watch(crearSolicitudProvider).isLoading;
+    final verificado = ref.watch(usuarioActualProvider)?.verificado ?? true;
+    final aviso = verificado
+        ? const SizedBox.shrink()
+        : const Padding(
+            padding: EdgeInsets.only(bottom: Espacios.l),
+            child: AvisoVerificacionCliente(),
+          );
+    final escritorio = ResponsiveLayout.isDesktop(context);
+    final boton = BotonCarga(
+      texto: 'Publicar solicitud',
+      icono: Icons.send_outlined,
+      cargando: publicando,
+      onPressed: _enviar,
+    );
+
+    const intro = Padding(
+      padding: EdgeInsets.only(bottom: Espacios.xl),
+      child: EncabezadoPantalla(
+        titulo: 'Pide un técnico',
+        subtitulo:
+            'Cuéntanos qué pasa y recibe ofertas de técnicos '
+            'cerca de ti.',
+      ),
+    );
+    final servicio = BloqueTarjeta(
+      numero: 1,
+      titulo: 'Tipo de servicio',
+      child: _selectorOficio(),
+    );
+    final problema = BloqueTarjeta(
+      numero: 2,
+      titulo: 'Describe el problema',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          CampoEtiquetado(
+            etiqueta: '¿Qué problema tienes?',
+            child: TextFormField(
+              controller: _descripcion,
+              minLines: 3,
+              maxLines: 6,
+              decoration: const InputDecoration(
+                hintText: 'Ej.: la llave del lavabo gotea desde ayer',
+              ),
+              validator: (v) =>
+                  FormValidators.requerido(v, campo: 'La descripción'),
             ),
+          ),
+          const SizedBox(height: Espacios.l),
+          CampoEtiquetado(
+            etiqueta: 'Referencia de la dirección',
+            ayuda: 'Opcional',
+            child: TextFormField(
+              controller: _direccion,
+              decoration: const InputDecoration(
+                hintText: 'Ej.: casa esquinera, portón negro',
+                prefixIcon: Icon(Icons.place_outlined),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    final ubicacion = BloqueTarjeta(
+      numero: 3,
+      titulo: 'Ubicación',
+      subtitulo: 'Toca el mapa para mover el pin al lugar exacto.',
+      child: _mapa(),
+    );
+    final fotos = BloqueTarjeta(
+      numero: 4,
+      titulo: 'Fotos del problema',
+      subtitulo: 'Opcional · hasta ${NuevaSolicitud.maximoFotos} fotos',
+      child: _fotosSeleccionadas(),
+    );
+
+    return PantallaSecundaria(
+      titulo: 'Nueva solicitud',
+      barraInferior: escritorio ? null : BarraAccion(child: boton),
+      cuerpo: Form(
+        key: _formKey,
+        child: ScrollOpcional(
+          padding: EdgeInsets.all(escritorio ? Espacios.xl : Espacios.l),
+          child: AnchoMaximo(
+            ancho: escritorio ? 1100 : 900,
+            child: escritorio
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      aviso,
+                      intro,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [servicio, problema, fotos],
+                            ),
+                          ),
+                          const SizedBox(width: Espacios.xl),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [ubicacion, boton],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      aviso,
+                      intro,
+                      servicio,
+                      problema,
+                      ubicacion,
+                      fotos,
+                    ],
+                  ),
           ),
         ),
       ),
     );
   }
 
+  /// Oficios como chips (se ven todos de un vistazo). Es un campo del
+  /// formulario para validar que se elija uno.
   Widget _selectorOficio() {
     return AsyncValueView<List<Oficio>>(
       value: ref.watch(oficiosProvider),
       onRetry: () => ref.invalidate(oficiosProvider),
-      onData: (context, oficios) => DropdownButtonFormField<int>(
+      onData: (context, oficios) => FormField<int>(
         initialValue: _oficioId,
-        decoration: const InputDecoration(labelText: 'Tipo de servicio'),
-        items: [
-          for (final oficio in oficios)
-            DropdownMenuItem(value: oficio.id, child: Text(oficio.nombre)),
-        ],
-        onChanged: (id) => setState(() => _oficioId = id),
         validator: (v) => v == null ? 'Selecciona el tipo de servicio.' : null,
+        builder: (campo) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: Espacios.s,
+              runSpacing: Espacios.s,
+              children: [
+                for (final oficio in oficios)
+                  ChoiceChip(
+                    label: Text(oficio.nombre),
+                    selected: _oficioId == oficio.id,
+                    onSelected: (_) {
+                      setState(() => _oficioId = oficio.id);
+                      campo.didChange(oficio.id);
+                    },
+                  ),
+              ],
+            ),
+            if (campo.errorText case final error?)
+              Padding(
+                padding: const EdgeInsets.only(top: Espacios.s),
+                child: Text(
+                  error,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Colores.error),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -187,60 +321,95 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Toca el mapa para mover el pin al lugar exacto.'),
-        const SizedBox(height: 8),
         MapaUbicacion(
           punto: _ubicacion,
           onCambio: (punto) => setState(() => _ubicacion = punto),
         ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: _buscandoGps ? null : _usarGps,
-            icon: const Icon(Icons.my_location),
-            label: Text(_buscandoGps ? 'Buscando...' : 'Usar mi ubicación'),
-          ),
+        const SizedBox(height: Espacios.m),
+        OutlinedButton.icon(
+          onPressed: _buscandoGps ? null : _usarGps,
+          icon: const Icon(Icons.my_location),
+          label: Text(_buscandoGps ? 'Buscando...' : 'Usar mi ubicación'),
         ),
       ],
     );
   }
 
   Widget _fotosSeleccionadas() {
+    const lado = 96.0;
+    final blanco = Theme.of(context).colorScheme.onPrimary;
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: Espacios.s,
+      runSpacing: Espacios.s,
       children: [
         for (var i = 0; i < _fotos.length; i++)
           Stack(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(Radios.medio),
                 child: Image.memory(
                   _fotos[i],
-                  width: 96,
-                  height: 96,
+                  width: lado,
+                  height: lado,
                   fit: BoxFit.cover,
                 ),
               ),
               Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton.filledTonal(
-                  iconSize: 16,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => _quitarFoto(i),
-                  icon: const Icon(Icons.close),
+                right: Espacios.xs,
+                top: Espacios.xs,
+                child: Material(
+                  color: Colores.tinta.withValues(alpha: 0.7),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => _quitarFoto(i),
+                    child: Padding(
+                      padding: const EdgeInsets.all(Espacios.xs),
+                      child: Icon(
+                        Icons.close,
+                        size: 16,
+                        color: blanco,
+                        semanticLabel: 'Quitar foto',
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         if (_fotos.length < NuevaSolicitud.maximoFotos)
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: OutlinedButton(
-              onPressed: _agregarFotos,
-              child: const Icon(Icons.add_a_photo_outlined),
+          SizedBox.square(
+            dimension: lado,
+            child: Material(
+              color: Colores.superficie,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(Radios.medio),
+                side: const BorderSide(
+                  color: Colores.primarioClaro,
+                  width: 1.5,
+                ),
+              ),
+              child: InkWell(
+                customBorder: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(Radios.medio),
+                ),
+                onTap: _agregarFotos,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.add_a_photo_outlined,
+                      color: Colores.primario,
+                    ),
+                    const SizedBox(height: Espacios.xs),
+                    Text(
+                      'Agregar',
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: Colores.primario),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
       ],

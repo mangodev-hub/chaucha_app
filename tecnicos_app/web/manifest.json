@@ -1,11 +1,11 @@
 {
-    "name": "tecnicos_app",
-    "short_name": "tecnicos_app",
+    "name": "ChauchaApp",
+    "short_name": "ChauchaApp",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F3FAF4",
+    "theme_color": "#006414",
+    "description": "Técnicos de confianza a tu puerta en Quito.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-
-
-
-
+import '../theme/tokens.dart';
+import 'capa_circulos.dart';
+import 'etiqueta_sector.dart';
 
 class MapaUbicacion extends StatefulWidget {
   const MapaUbicacion({
@@ -16,6 +15,10 @@ class MapaUbicacion extends StatefulWidget {
     this.radioMetros,
     this.otrosPuntos = const [],
     this.altura = 280,
+    this.zoom = 15,
+    this.mostrarSector = false,
+    this.colorMarcador,
+    this.colorRadio,
   });
 
   final LatLng punto;
@@ -23,13 +26,22 @@ class MapaUbicacion extends StatefulWidget {
   final double? radioMetros;
   final List<LatLng> otrosPuntos;
   final double altura;
+  final double zoom;
+
+  /// Muestra sobre el mapa el sector (barrio) del punto.
+  final bool mostrarSector;
+
+  /// Color del pin; por defecto, el de error del tema.
+  final Color? colorMarcador;
+
+  /// Color del círculo del radio; por defecto, el primario del tema.
+  final Color? colorRadio;
 
   @override
   State<MapaUbicacion> createState() => _MapaUbicacionState();
 }
 
 class _MapaUbicacionState extends State<MapaUbicacion> {
-  static const double _zoomInicial = 15;
   final MapController _controller = MapController();
 
   @override
@@ -54,52 +66,71 @@ class _MapaUbicacionState extends State<MapaUbicacion> {
     return SizedBox(
       height: widget.altura,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: FlutterMap(
-          mapController: _controller,
-          options: MapOptions(
-            initialCenter: widget.punto,
-            initialZoom: _zoomInicial,
-            onTap: widget.onCambio == null
-                ? null
-                : (_, punto) => widget.onCambio!(punto),
-          ),
+        borderRadius: BorderRadius.circular(Radios.medio),
+        child: Stack(
           children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.eagledev.tecnicos_app',
-            ),
-            if (radio != null)
-              CircleLayer(
-                circles: [
-                  CircleMarker(
-                    point: widget.punto,
-                    radius: radio,
-                    useRadiusInMeter: true,
-                    color: colores.primary.withValues(alpha: 0.15),
-                    borderColor: colores.primary,
-                    borderStrokeWidth: 2,
-                  ),
-                ],
+            FlutterMap(
+              mapController: _controller,
+              options: MapOptions(
+                initialCenter: widget.punto,
+                initialZoom: widget.zoom,
+                onTap: widget.onCambio == null
+                    ? null
+                    : (_, punto) => widget.onCambio!(punto),
               ),
-            MarkerLayer(
-              markers: [
-                for (final otro in widget.otrosPuntos)
-                  Marker(
-                    point: otro,
-                    width: 32,
-                    height: 32,
-                    child: Icon(Icons.place, color: colores.tertiary, size: 32),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.eagledev.tecnicos_app',
+                ),
+                if (radio != null)
+                  CapaCirculos(
+                    circulos: [
+                      CircleMarker(
+                        point: widget.punto,
+                        radius: radio,
+                        useRadiusInMeter: true,
+                        color: (widget.colorRadio ?? colores.primary)
+                            .withValues(alpha: 0.15),
+                        borderColor: widget.colorRadio ?? colores.primary,
+                        borderStrokeWidth: 2,
+                      ),
+                    ],
                   ),
-                Marker(
-                  point: widget.punto,
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.topCenter,
-                  child: Icon(Icons.location_pin, color: colores.error, size: 44),
+                MarkerLayer(
+                  markers: [
+                    for (final otro in widget.otrosPuntos)
+                      Marker(
+                        point: otro,
+                        width: 32,
+                        height: 32,
+                        child: Icon(
+                          Icons.place,
+                          color: colores.tertiary,
+                          size: 32,
+                        ),
+                      ),
+                    Marker(
+                      point: widget.punto,
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.topCenter,
+                      child: Icon(
+                        Icons.location_pin,
+                        color: widget.colorMarcador ?? colores.error,
+                        size: 44,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+            if (widget.mostrarSector)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: EtiquetaSector(punto: widget.punto),
+              ),
           ],
         ),
       ),

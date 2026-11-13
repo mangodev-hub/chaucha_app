@@ -1,10 +1,10 @@
 // Implementación de [SolicitudRepository] con Supabase (tablas + Storage).
 // Ruta de fotos en Storage: `{solicitudId}/{tipo}_{marcaDeTiempo}_{n}.jpg`.
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/errors/app_failure.dart';
 import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/storage/storage_service.dart';
@@ -12,8 +12,10 @@ import '../../../../core/supabase/supabase_extensions.dart';
 import '../../../../core/supabase/supabase_guard.dart';
 import '../../domain/entities/foto_solicitud.dart';
 import '../../domain/entities/nueva_solicitud.dart';
+import '../../domain/entities/servicio_completado.dart';
 import '../../domain/entities/solicitud.dart';
 import '../../domain/repositories/solicitud_repository.dart';
+import '../models/servicio_completado_model.dart';
 import '../models/solicitud_db.dart';
 import '../models/solicitud_model.dart';
 
@@ -48,8 +50,54 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
     });
   }
 
-  // OJO: inserta la solicitud y después sube las fotos. Si falla una foto,
-  // la solicitud ya quedó creada (y reintentar la duplica). Candidato a RPC.
+  @override
+  Future<List<ServicioCompletado>> historialServicios(
+    String clienteId, {
+    int limite = 50,
+  }) {
+    return supabaseGuard(() async {
+      // Una sola consulta: solicitud + cotización aceptada + técnico +
+      // la reseña propia (los filtros con punto van sobre los joins).
+      final filas = await _client
+          .from(_tabla)
+          .select(ServicioCompletadoModel.columnas)
+          .eq('cliente_id', clienteId)
+          .eq('estado', 'completada')
+          .eq('cotizaciones.estado', 'aceptada')
+          .eq('resenas.autor_id', clienteId)
+          .order('completada_en', ascending: false)
+          .limit(limite);
+      return [for (final f in filas) ?ServicioCompletadoModel.desdeFila(f)];
+    });
+  }
+
+  @override
+  Future<void> editar(
+    String id, {
+    required String descripcion,
+    required int oficioId,
+    String? direccion,
+  }) {
+    return supabaseGuard(() async {
+      await _client.rpc(
+        'editar_solicitud',
+        params: {
+          'p_id': id,
+          'p_descripcion': descripcion,
+          'p_oficio_id': oficioId,
+          'p_direccion': direccion,
+        },
+      );
+    });
+  }
+
+  @override
+  Future<void> eliminar(String id) {
+    return supabaseGuard(() async {
+      await _client.rpc('eliminar_solicitud', params: {'p_id': id});
+    });
+  }
+
   @override
   Future<String> crear(NuevaSolicitud nueva) {
     return supabaseGuard(() async {
@@ -108,6 +156,18 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
   }
 
   @override
+  Future<List<Solicitud>> porIds(List<String> ids) {
+    if (ids.isEmpty) return Future.value(const <Solicitud>[]);
+    return supabaseGuard(() async {
+      final filas = await _client
+          .from(_tabla)
+          .select(SolicitudModel.columnas)
+          .inFilter('id', ids);
+      return _aEntidades(filas);
+    });
+  }
+
+  @override
   Future<void> marcarTerminada(String solicitudId, List<Uint8List> evidencias) {
     return supabaseGuard(() async {
       await _subirFotos(solicitudId, TipoArchivo.evidencia, evidencias);
@@ -135,15 +195,27 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
           .select('tipo, ruta')
           .eq('solicitud_id', solicitudId)
           .order('creado_en');
-      return Future.wait(
+      final fotos = await Future.wait(
         filas.map((fila) async {
-          final url = await _storage.urlFirmada(
-            bucket: Buckets.solicitudes,
-            ruta: fila['ruta'] as String,
-          );
-          return FotoSolicitud(tipo: TipoArchivoDb.desdeDb(fila['tipo']), url: url);
+          final ruta = fila['ruta'] as String;
+          try {
+            final url = await _storage.urlFirmada(
+              bucket: Buckets.solicitudes,
+              ruta: ruta,
+            );
+            return FotoSolicitud(
+              tipo: TipoArchivoDb.desdeDb(fila['tipo']),
+              url: url,
+            );
+          } on AppFailure catch (e) {
+            // Una foto que no se puede firmar (por ejemplo, el archivo ya no
+            // existe) no debe tumbar todo el detalle: se omite.
+            debugPrint('No se pudo firmar la foto $ruta: ${e.cause ?? e}');
+            return null;
+          }
         }),
       );
+      return fotos.nonNulls.toList();
     });
   }
 
@@ -154,6 +226,13 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
 
   Future<void> _actualizarEstado(String id, EstadoSolicitud estado) async {
     await _client.from(_tabla).update({'estado': estado.valorDb}).eq('id', id);
+  }
+
+  @override
+  Future<void> agregarFotos(String solicitudId, List<Uint8List> fotos) {
+    return supabaseGuard(
+      () => _subirFotos(solicitudId, TipoArchivo.problema, fotos),
+    );
   }
 
   Future<void> _subirFotos(

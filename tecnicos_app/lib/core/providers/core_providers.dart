@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../geo/ubicacion_service.dart';
+import '../push/push_service.dart';
 import '../storage/storage_service.dart';
 
 /// Cliente de Supabase ya inicializado.
@@ -20,4 +21,9 @@ final storageServiceProvider = Provider<StorageService>(
 
 final ubicacionServiceProvider = Provider<UbicacionService>(
   (ref) => GeolocatorUbicacionService(),
+);
+
+/// Notificaciones push. Se sobrescribe en `main.dart` tras inicializar Firebase.
+final pushServiceProvider = Provider<PushService>(
+  (ref) => PushService.desactivado,
 );

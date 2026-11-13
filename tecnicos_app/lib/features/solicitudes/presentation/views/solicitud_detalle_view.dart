@@ -1,26 +1,61 @@
 // Detalle de una solicitud. La misma pantalla sirve al cliente y al técnico;
 // lo que ve y puede hacer cada uno lo decide `DetalleSolicitud`.
+//
+// Flujo: el técnico ofrece sus servicios (precio de la visita y solución); el
+// cliente revisa las ofertas, le escribe al que le guste y acuerdan el precio
+// por chat.
+//
+// En móvil: una columna y la acción principal fija abajo. En escritorio: dos
+// columnas (la solicitud a la izquierda; guía, acción y ofertas a la
+// derecha).
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/pestana_solicitada.dart';
 import '../../../../core/media/selector_fotos.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../../../core/router/app_routes.dart';
-import '../../../../core/utils/formatos.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/barra_accion.dart';
+import '../../../../core/widgets/boton_carga.dart';
+import '../../../../core/widgets/esqueleto_carga.dart';
+import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/pantalla_secundaria.dart';
+import '../../../../core/widgets/responsive_layout.dart';
+import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
+import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
+import '../../../chat/presentation/widgets/chat_flotante.dart';
+import '../../../cotizaciones/data/repositories/ofertas_en_vivo.dart';
+import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/presentation/widgets/cotizacion_widgets.dart';
+import '../../../cotizaciones/presentation/widgets/selector_franja.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
+import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_dialog.dart';
+import '../../../reclamos/presentation/widgets/tarjeta_garantia.dart';
 import '../../domain/entities/detalle_solicitud.dart';
 import '../../domain/entities/foto_solicitud.dart';
 import '../../domain/entities/solicitud.dart';
 import '../providers/detalle_provider.dart';
+import '../providers/novedades_provider.dart';
+import '../widgets/detalle_cliente_widgets.dart';
+import '../widgets/detalle_widgets.dart';
+import '../widgets/editar_solicitud_dialog.dart';
 import '../widgets/solicitud_widgets.dart';
+
+/// Acción principal del detalle según el rol y el estado.
+typedef _Accion = ({String texto, IconData icono, VoidCallback alPulsar});
 
 class SolicitudDetalleView extends ConsumerStatefulWidget {
   const SolicitudDetalleView({super.key, required this.solicitudId});
@@ -42,7 +77,7 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     final ok = await accion;
     if (!mounted) return;
     if (ok) {
-      context.mostrarMensaje(exito);
+      context.mostrarMensaje(exito, tipo: TipoMensaje.exito);
     } else {
       _mostrarErrorDeAccion();
     }
@@ -51,23 +86,20 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
   void _mostrarErrorDeAccion() {
     final estado = ref.read(accionesSolicitudProvider(widget.solicitudId));
     if (estado case AsyncError(:final error)) {
-      context.mostrarMensaje(AsyncValueView.mensajeDe(error));
+      context.mostrarMensaje(
+        AsyncValueView.mensajeDe(error),
+        tipo: TipoMensaje.error,
+      );
     }
-  }
-
-  Future<void> _aceptar(Cotizacion cotizacion) async {
-    final ok = await context.confirmar(
-      'Aceptar cotización',
-      '¿Contratar a ${cotizacion.tecnicoNombre} por '
-          '${Formatos.dinero(cotizacion.total)}? Las demás se rechazarán.',
-    );
-    if (ok) await _resultado(_acciones.aceptar(cotizacion), 'Cotización aceptada.');
   }
 
   Future<void> _confirmarTerminado() async {
     final ok = await context.confirmar(
       'Confirmar trabajo',
       '¿El técnico terminó el trabajo correctamente?',
+      textoConfirmar: 'Sí, confirmar',
+      icono: Icons.verified_outlined,
+      textoCancelar: 'Todavía no',
     );
     if (ok) {
       await _resultado(_acciones.confirmarTerminado(), 'Trabajo completado.');
@@ -77,29 +109,157 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
   Future<void> _cancelar() async {
     final ok = await context.confirmar(
       'Cancelar solicitud',
-      'Los técnicos ya no podrán cotizarla.',
+      'Los técnicos ya no podrán enviarte ofertas.',
+      textoConfirmar: 'Sí, cancelar',
+      textoCancelar: 'Volver',
+      destructivo: true,
+      icono: Icons.cancel_outlined,
     );
     if (ok) await _resultado(_acciones.cancelar(), 'Solicitud cancelada.');
   }
 
-  Future<void> _cotizar() async {
-    final datos = await mostrarFormularioCotizacion(context);
+  Future<DateTime?> _elegirFechaHora(String cotizacionId) => elegirFranja(
+    context,
+    titulo: 'Nueva fecha y hora',
+    cargarOcupados: (desde, hasta) => ref
+        .read(cotizacionRepositoryProvider)
+        .horariosOcupados(cotizacionId, desde: desde, hasta: hasta),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_marcarNovedadesLeidas());
+  }
+
+  Future<void> _marcarNovedadesLeidas() async {
+    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final detalle = await ref.read(
+        detalleSolicitudProvider(widget.solicitudId).future,
+      );
+      await ref
+          .read(notificacionesRepoProvider)
+          .marcarLeidasDe(
+            uid,
+            tipos: const [...tiposDeSolicitud, 'cotizacion_aceptada'],
+            referenciaIds: [
+              widget.solicitudId,
+              for (final c in detalle.cotizaciones) c.id,
+            ],
+          );
+    } on Object {
+      // Marcar las notificaciones como leídas es secundario: si falla, el
+      // detalle se muestra igual y no se avisa.
+    }
+  }
+
+  Future<void> _reagendar(String cotizacionId) async {
+    final fecha = await _elegirFechaHora(cotizacionId);
+    if (fecha == null || !mounted) return;
+    await _resultado(
+      _acciones.proponerReagendado(cotizacionId, fecha),
+      'Propuesta enviada. La otra persona debe aceptarla.',
+    );
+  }
+
+  Future<void> _responderReagendado(String cotizacionId, bool acepta) =>
+      _resultado(
+        _acciones.responderReagendado(cotizacionId, acepta),
+        acepta ? 'Nuevo horario confirmado.' : 'Propuesta rechazada.',
+      );
+
+  Future<void> _cancelarVisita(
+    String cotizacionId, {
+    bool esCliente = false,
+  }) async {
+    final ok = await context.confirmar(
+      'Cancelar visita',
+      esCliente
+          ? 'Se cancelará la visita y tu solicitud. Solo es posible con al menos 24 horas de anticipación.'
+          : 'La solicitud seguirá publicada para que el cliente elija a otro técnico. Solo es posible con al menos 24 horas de anticipación.',
+      textoConfirmar: 'Sí, cancelar visita',
+      textoCancelar: 'Volver',
+      destructivo: true,
+      icono: Icons.event_busy_outlined,
+    );
+    if (ok) {
+      await _resultado(
+        _acciones.cancelarVisita(cotizacionId),
+        'Visita cancelada.',
+      );
+    }
+  }
+
+  Future<void> _ofrecer() async {
+    final perfil = await ref.read(perfilTecnicoProvider.future);
+    if (!mounted) return;
+    if (perfil.tarifaBase <= 0) {
+      context.mostrarMensaje(
+        'Configura tu tarifa base en Mi perfil antes de ofertar.',
+        tipo: TipoMensaje.error,
+      );
+      return;
+    }
+    final solucion = await mostrarFormularioOferta(
+      context,
+      tarifaBase: perfil.tarifaBase,
+    );
+    if (solucion == null) return;
+    await _resultado(
+      _acciones.enviarOferta(solucion: solucion),
+      'Oferta enviada. Si al cliente le interesa, te escribirá.',
+    );
+  }
+
+  Future<void> _editar(Solicitud solicitud) async {
+    final datos = await mostrarEditarSolicitud(context, solicitud);
     if (datos == null) return;
     await _resultado(
-      _acciones.enviarCotizacion(
-        manoObra: datos.manoObra,
-        materiales: datos.materiales,
-        detalle: datos.detalle,
+      _acciones.editar(
+        descripcion: datos.descripcion,
+        oficioId: datos.oficioId,
+        direccion: datos.direccion,
       ),
-      'Cotización enviada.',
+      'Solicitud actualizada.',
     );
+  }
+
+  Future<void> _eliminar() async {
+    final ok = await context.confirmar(
+      'Eliminar solicitud',
+      'Se borrará la solicitud junto con las propuestas y los chats con '
+          'técnicos. No se puede deshacer.',
+      textoConfirmar: 'Sí, eliminar',
+      textoCancelar: 'Volver',
+      destructivo: true,
+      icono: Icons.delete_outline,
+    );
+    if (!ok) return;
+    final hecho = await _acciones.eliminar();
+    if (!mounted) return;
+    if (hecho) {
+      context
+        ..mostrarMensaje(
+          'La solicitud y sus propuestas se borraron.',
+          tipo: TipoMensaje.eliminado,
+          titulo: 'Eliminado correctamente',
+        )
+        ..pop();
+    } else {
+      _mostrarErrorDeAccion();
+    }
   }
 
   Future<void> _marcarTerminada() async {
     final evidencias = await SelectorFotos.elegir(maximo: 3);
     if (!mounted) return;
     if (evidencias.isEmpty) {
-      context.mostrarMensaje('Sube al menos una foto del trabajo.');
+      context.mostrarMensaje(
+        'Sube al menos una foto del trabajo.',
+        tipo: TipoMensaje.error,
+      );
       return;
     }
     await _resultado(
@@ -108,14 +268,23 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     );
   }
 
-  Future<void> _calificar(String destinatarioId, String nombre) async {
-    final resena = await mostrarDialogoResena(context, nombre: nombre);
+  Future<void> _calificar(
+    String destinatarioId,
+    String nombre, {
+    required bool paraTecnico,
+  }) async {
+    final resena = await mostrarDialogoResena(
+      context,
+      nombre: nombre,
+      paraTecnico: paraTecnico,
+    );
     if (resena == null) return;
     await _resultado(
       _acciones.calificar(
         destinatarioId: destinatarioId,
         estrellas: resena.estrellas,
         comentario: resena.comentario,
+        etiquetas: resena.etiquetas,
       ),
       '¡Gracias por tu calificación!',
     );
@@ -129,184 +298,544 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
       return;
     }
     final esCliente = ref.read(usuarioActualProvider)?.id != tecnicoId;
-    await context.push(AppRoutes.chat(id, esCliente: esCliente));
+    await abrirChat(context, id, esCliente: esCliente);
+    if (!mounted) return;
+    // En el chat se pudo confirmar un ticket (la solicitud pasa a "En curso").
+    ref.invalidate(detalleSolicitudProvider(widget.solicitudId));
   }
+
+  /// Vuelve a la pantalla anterior o, si se entró directo por la URL, al
+  /// inicio del rol.
+  void _regresar() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    final esCliente = ref.read(usuarioActualProvider)?.rol == Rol.cliente;
+    context.go(esCliente ? AppRoutes.clienteInicio : AppRoutes.tecnicoInicio);
+  }
+
+  void _verPerfil(String tecnicoId) => unawaited(
+    context.push(
+      AppRoutes.perfilTecnico(
+        tecnicoId,
+        esCliente: ref.read(usuarioActualProvider)?.rol != Rol.tecnico,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     final detalle = detalleSolicitudProvider(widget.solicitudId);
-    final procesando =
-        ref.watch(accionesSolicitudProvider(widget.solicitudId)).isLoading;
+    final valor = ref.watch(detalle);
+    final procesando = ref
+        .watch(accionesSolicitudProvider(widget.solicitudId))
+        .isLoading;
+    final escritorio = ResponsiveLayout.isDesktop(context);
+    // Ofertas en vivo: una oferta nueva o un cambio de estado recarga el
+    // detalle (sin contar la primera lectura).
+    ref.listen(ofertasEnVivoProvider(widget.solicitudId), (antes, ahora) {
+      final previas = antes?.value;
+      final nuevas = ahora.value;
+      if (previas != null &&
+          nuevas != null &&
+          previas.join(',') != nuevas.join(',')) {
+        ref.invalidate(detalle);
+      }
+    });
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Detalle de la solicitud')),
-      body: AsyncValueView<DetalleSolicitud>(
-        value: ref.watch(detalle),
-        onRetry: () => ref.invalidate(detalle),
+    // La barra y el menú solo existen cuando se ven los datos (no en error).
+    final datos = valor.hasError ? null : valor.value;
+    final accion = datos == null ? null : _accionPrincipal(datos);
+    final boton = accion == null
+        ? null
+        : BotonCarga(
+            texto: accion.texto,
+            icono: accion.icono,
+            cargando: procesando,
+            onPressed: accion.alPulsar,
+          );
+
+    return PantallaSecundaria(
+      titulo: 'Detalle de la solicitud',
+      // El cliente ya tiene su ruta "‹ Mis solicitudes / Oficio · fecha".
+      conMigas: !(datos?.soyCliente ?? false),
+      barraInferior: boton == null || escritorio
+          ? null
+          : BarraAccion(child: boton),
+      color: datos != null && datos.soyCliente
+          ? Colores.fondoClaro
+          : Colores.lienzo,
+      cuerpo: AsyncValueView<DetalleSolicitud>(
+        value: valor,
+        cargando: (_) => _DetalleCargando(escritorio: escritorio),
+        onError: (context, mensaje) => EstadoMensaje(
+          icono: Icons.cloud_off_outlined,
+          tipo: TipoEstado.error,
+          titulo: 'No se pudo cargar la solicitud',
+          mensaje: mensaje,
+          textoAccion: 'Reintentar',
+          onAccion: () => ref.invalidate(detalle),
+          textoAccionSecundaria: 'Regresar',
+          onAccionSecundaria: _regresar,
+        ),
         onData: (context, datos) => RefreshIndicator(
           onRefresh: () => esperarSinError(ref.refresh(detalle.future)),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              AnchoMaximo(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: datos.soyCliente
+              ? _vistaCliente(
+                  datos,
+                  procesando: procesando,
+                  boton: escritorio ? boton : null,
+                )
+              : escritorio
+              ? _Escritorio(
+                  izquierda: [
+                    EncabezadoSolicitud(solicitud: datos.solicitud),
+                    ..._cliente(datos),
+                    ..._evidencia(datos),
+                    ..._fotosProblema(datos),
+                    ..._ubicacion(datos, altura: 280),
+                  ],
+                  derecha: [
+                    QueSigueCard(detalle: datos),
+                    ..._garantia(datos),
+                    if (boton != null) ...[
+                      const SizedBox(height: Espacios.l),
+                      boton,
+                    ],
+                    ..._ofertas(datos, procesando: procesando),
+                  ],
+                )
+              : _Movil(
                   children: [
-                    _Encabezado(solicitud: datos.solicitud),
-                    ..._contenido(datos),
-                    const SizedBox(height: 16),
-                    if (procesando) const LinearProgressIndicator(),
-                    const SizedBox(height: 16),
-                    ..._botones(datos),
-                    const SizedBox(height: 48),
+                    EncabezadoSolicitud(solicitud: datos.solicitud),
+                    ..._cliente(datos),
+                    const SizedBox(height: Espacios.l),
+                    QueSigueCard(detalle: datos),
+                    ..._garantia(datos),
+                    // Por confirmar, la evidencia es lo que hay que revisar.
+                    if (datos.estado == EstadoSolicitud.porConfirmar)
+                      ..._evidencia(datos),
+                    ..._ofertas(datos, procesando: procesando),
+                    if (datos.estado != EstadoSolicitud.porConfirmar)
+                      ..._evidencia(datos),
+                    ..._fotosProblema(datos),
+                    ..._ubicacion(datos, altura: 220),
                   ],
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  List<Widget> _contenido(DetalleSolicitud detalle) {
-    final ubicacion = detalle.solicitud.ubicacion;
-    final evidencias = detalle.fotosDe(TipoArchivo.evidencia);
+  /// Garantía de 30 días: solo para el cliente y el técnico del servicio,
+  /// cuando ya se completó.
+  List<Widget> _garantia(DetalleSolicitud d) {
+    final completadaEn = d.solicitud.completadaEn;
+    if (d.estado != EstadoSolicitud.completada ||
+        completadaEn == null ||
+        !(d.soyCliente || d.soyTecnicoAsignado)) {
+      return const [];
+    }
     return [
-      if (ubicacion != null)
-        Seccion(
-          titulo: 'Ubicación',
-          child: MapaUbicacion(punto: ubicacion, altura: 220),
-        ),
-      Seccion(
-        titulo: 'Fotos del problema',
-        child: GaleriaFotos(
-          urls: [for (final f in detalle.fotosDe(TipoArchivo.problema)) f.url],
-        ),
+      TarjetaGarantia(
+        solicitudId: d.solicitud.id,
+        completadaEn: completadaEn,
+        esCliente: d.soyCliente,
       ),
-      if (evidencias.isNotEmpty)
-        Seccion(
+    ];
+  }
+
+  Future<void> _agregarFotos() async {
+    final fotos = await SelectorFotos.elegir(maximo: 5);
+    if (!mounted || fotos.isEmpty) return;
+    await _resultado(_acciones.agregarFotos(fotos), 'Fotos agregadas.');
+  }
+
+  /// "Mis solicitudes" en la ruta: vuelve a la lista.
+  void _aLaLista() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    ref.read(pestanaSolicitadaProvider.notifier).pedir('Mis solicitudes');
+    context.go(AppRoutes.clienteInicio);
+  }
+
+  /// Detalle para el cliente: cabecera con el progreso, ofertas a la
+  /// izquierda y detalles, ubicación y garantía a la derecha (desde 1000 px);
+  /// en el teléfono, los detalles van antes de las ofertas.
+  Widget _vistaCliente(
+    DetalleSolicitud d, {
+    required bool procesando,
+    required Widget? boton,
+  }) {
+    final s = d.solicitud;
+    final recibe = d.estado.recibeCotizaciones;
+    final aceptada = d.cotizacionAceptada;
+    final ancho = MediaQuery.sizeOf(context).width >= 1000;
+    final miId = ref.read(usuarioActualProvider)?.id;
+    final evidencias = d.fotosDe(TipoArchivo.evidencia);
+    final ubicacion = s.ubicacion;
+
+    final ofertas = OfertasRecibidas(
+      ofertas: d.cotizaciones,
+      puntoSolicitud: ubicacion,
+      recibeOfertas: recibe,
+      aceptada: aceptada,
+      activas: !procesando,
+      onChat: (c) => _chat(c.tecnicoId),
+      onVerPerfil: (c) => _verPerfil(c.tecnicoId),
+      accionesVisita: aceptada != null && d.estado == EstadoSolicitud.aceptada
+          ? AccionesVisita(
+              cotizacion: aceptada,
+              miId: miId,
+              activas: !procesando,
+              onReagendar: () => _reagendar(aceptada.id),
+              onResponder: (a) => _responderReagendado(aceptada.id, a),
+              onCancelar: () => _cancelarVisita(aceptada.id, esCliente: true),
+            )
+          : null,
+    );
+    final lateral = <Widget>[
+      DetallesProblema(
+        descripcion: s.descripcion,
+        fotos: [for (final f in d.fotosDe(TipoArchivo.problema)) f.url],
+        onAgregar: d.estado.activa ? _agregarFotos : null,
+        agregando: procesando,
+      ),
+      if (evidencias.isNotEmpty) ...[
+        const SizedBox(height: Espacios.l),
+        DetallesProblema(
           titulo: 'Evidencia del trabajo',
-          child: GaleriaFotos(urls: [for (final f in evidencias) f.url]),
+          descripcion: '',
+          mostrarDescripcion: false,
+          fotos: [for (final f in evidencias) f.url],
         ),
-      ..._cotizaciones(detalle),
+      ],
+      if (ubicacion != null) ...[
+        const SizedBox(height: Espacios.l),
+        UbicacionSolicitud(
+          punto: ubicacion,
+          direccion: s.direccionReferencia,
+          ciudad: d.usuario.ciudad,
+        ),
+      ],
+      ..._garantia(d),
     ];
+    Widget columna(List<Widget> hijos) =>
+        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: hijos);
+
+    return ListaDePagina(
+      padding: EstructuraWeb.de(context) != null
+          ? const EdgeInsets.only(top: 16, bottom: 20)
+          : const EdgeInsets.all(20),
+      children: [
+        AnchoMaximo(
+          ancho: 1180,
+          child: columna([
+            RutaSolicitud(solicitud: s, onLista: _aLaLista),
+            const SizedBox(height: Espacios.m),
+            CabeceraSolicitud(
+              solicitud: s,
+              ofertas: d.cotizaciones.length,
+              onEditar: recibe && !procesando ? () => _editar(s) : null,
+              onCancelar: recibe && !procesando ? _cancelar : null,
+              onEliminar: recibe && !procesando ? _eliminar : null,
+              accion: boton,
+            ),
+            const SizedBox(height: 20),
+            if (ancho)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: ofertas),
+                  const SizedBox(width: 20),
+                  SizedBox(width: 340, child: columna(lateral)),
+                ],
+              )
+            else ...[
+              ...lateral,
+              const SizedBox(height: 20),
+              ofertas,
+            ],
+            const SizedBox(height: Espacios.xxl),
+          ]),
+        ),
+      ],
+    );
   }
 
-  List<Widget> _cotizaciones(DetalleSolicitud detalle) {
-    if (detalle.soyCliente) {
-      final puedeAceptar = detalle.estado.recibeCotizaciones;
-      return [
-        Seccion(
-          titulo: 'Cotizaciones (${detalle.cotizaciones.length})',
-          child: detalle.cotizaciones.isEmpty
-              ? const Text('Aún no hay cotizaciones. Te avisaremos.')
-              : Column(
-                  children: [
-                    for (final c in detalle.cotizaciones)
-                      CotizacionCard(
-                        cotizacion: c,
-                        onAceptar: puedeAceptar &&
-                                c.estado == EstadoCotizacion.pendiente
-                            ? () => _aceptar(c)
-                            : null,
-                        onChat: () => _chat(c.tecnicoId),
-                      ),
-                  ],
-                ),
-        ),
-      ];
+  _Accion? _accionPrincipal(DetalleSolicitud d) {
+    final estado = d.estado;
+    if (d.soyCliente) {
+      final aceptada = d.cotizacionAceptada;
+      if (estado == EstadoSolicitud.porConfirmar) {
+        return (
+          texto: 'Confirmar trabajo terminado',
+          icono: Icons.verified_outlined,
+          alPulsar: _confirmarTerminado,
+        );
+      }
+      if (estado == EstadoSolicitud.completada && aceptada != null) {
+        return (
+          texto: 'Calificar al técnico',
+          icono: Icons.star_outline,
+          alPulsar: () => _calificar(
+            aceptada.tecnicoId,
+            aceptada.tecnicoNombre,
+            paraTecnico: true,
+          ),
+        );
+      }
+      return null;
     }
-    final mia = detalle.miCotizacion;
-    if (mia == null) return const [];
+    if (estado.recibeCotizaciones && d.miCotizacion == null) {
+      return (
+        texto: 'Ofrecer mis servicios',
+        icono: Icons.handyman_outlined,
+        alPulsar: _ofrecer,
+      );
+    }
+    if (d.soyTecnicoAsignado && estado == EstadoSolicitud.aceptada) {
+      return (
+        texto: 'Marcar como terminado',
+        icono: Icons.task_alt,
+        alPulsar: _marcarTerminada,
+      );
+    }
+    if (d.soyTecnicoAsignado && estado == EstadoSolicitud.completada) {
+      return (
+        texto: 'Calificar al cliente',
+        icono: Icons.star_outline,
+        alPulsar: () =>
+            _calificar(d.solicitud.clienteId, 'el cliente', paraTecnico: false),
+      );
+    }
+    return null;
+  }
+
+  List<Widget> _cliente(DetalleSolicitud d) {
+    if (ref.read(usuarioActualProvider)?.rol != Rol.tecnico) return const [];
     return [
-      Seccion(
-        titulo: 'Tu cotización',
-        child: CotizacionCard(
-          cotizacion: mia,
-          onChat: () => _chat(mia.tecnicoId),
+      Padding(
+        padding: const EdgeInsets.only(top: Espacios.m),
+        child: OutlinedButton.icon(
+          onPressed: () => unawaited(
+            context.push(AppRoutes.perfilCliente(d.solicitud.clienteId)),
+          ),
+          icon: const Icon(Icons.person_outline),
+          label: const Text('Ver perfil del cliente'),
         ),
       ),
     ];
   }
 
-  List<Widget> _botones(DetalleSolicitud detalle) {
-    final estado = detalle.estado;
-    if (detalle.soyCliente) {
-      final aceptada = detalle.cotizacionAceptada;
+  List<Widget> _evidencia(DetalleSolicitud d) {
+    final evidencias = d.fotosDe(TipoArchivo.evidencia);
+    if (evidencias.isEmpty) return const [];
+    return [
+      Seccion(
+        titulo: 'Evidencia del trabajo',
+        child: GaleriaFotos(urls: [for (final f in evidencias) f.url]),
+      ),
+    ];
+  }
+
+  List<Widget> _fotosProblema(DetalleSolicitud d) => [
+    Seccion(
+      titulo: 'Fotos del problema',
+      child: GaleriaFotos(
+        urls: [for (final f in d.fotosDe(TipoArchivo.problema)) f.url],
+        mensajeVacio: d.soyCliente
+            ? 'No adjuntaste fotos.'
+            : 'El cliente no adjuntó fotos.',
+      ),
+    ),
+  ];
+
+  List<Widget> _ubicacion(DetalleSolicitud d, {required double altura}) {
+    final ubicacion = d.solicitud.ubicacion;
+    if (ubicacion == null) return const [];
+    return [
+      Seccion(
+        titulo: 'Ubicación',
+        child: MapaUbicacion(punto: ubicacion, altura: altura),
+      ),
+    ];
+  }
+
+  List<Widget> _ofertas(DetalleSolicitud d, {required bool procesando}) {
+    if (!d.soyCliente) {
+      final mia = d.miCotizacion;
+      if (mia == null) return const [];
+      // El técnico abre el chat para leer o responder; solo el cliente
+      // puede escribir primero (lo controla la pantalla del chat).
       return [
-        if (estado == EstadoSolicitud.porConfirmar)
-          FilledButton.icon(
-            onPressed: _confirmarTerminado,
-            icon: const Icon(Icons.verified_outlined),
-            label: const Text('Confirmar trabajo terminado'),
+        Seccion(
+          titulo: 'Tu oferta',
+          child: Builder(
+            builder: (_) {
+              final activa =
+                  mia.estado == EstadoCotizacion.aceptada &&
+                  d.estado == EstadoSolicitud.aceptada;
+              return CotizacionCard(
+                cotizacion: mia,
+                destacada: mia.estado == EstadoCotizacion.aceptada,
+                accionesActivas: !procesando,
+                textoChat: 'Abrir chat',
+                onChat: mia.estado == EstadoCotizacion.rechazada
+                    ? null
+                    : () => _chat(mia.tecnicoId),
+                miId: ref.read(usuarioActualProvider)?.id,
+                onReagendar: activa ? () => _reagendar(mia.id) : null,
+                onResponderReagendado: activa
+                    ? (a) => _responderReagendado(mia.id, a)
+                    : null,
+                onCancelarVisita: activa ? () => _cancelarVisita(mia.id) : null,
+              );
+            },
           ),
-        if (estado == EstadoSolicitud.completada && aceptada != null)
-          FilledButton.tonalIcon(
-            onPressed: () =>
-                _calificar(aceptada.tecnicoId, aceptada.tecnicoNombre),
-            icon: const Icon(Icons.star_outline),
-            label: const Text('Calificar al técnico'),
-          ),
-        if (estado.recibeCotizaciones)
-          TextButton.icon(
-            onPressed: _cancelar,
-            icon: const Icon(Icons.cancel_outlined),
-            label: const Text('Cancelar solicitud'),
-          ),
+        ),
       ];
     }
-    return [
-      if (estado.recibeCotizaciones && detalle.miCotizacion == null)
-        FilledButton.icon(
-          onPressed: _cotizar,
-          icon: const Icon(Icons.request_quote_outlined),
-          label: const Text('Enviar cotización'),
-        ),
-      if (detalle.soyTecnicoAsignado && estado == EstadoSolicitud.aceptada)
-        FilledButton.icon(
-          onPressed: _marcarTerminada,
-          icon: const Icon(Icons.task_alt),
-          label: const Text('Marcar como terminado (subir fotos)'),
-        ),
-      if (detalle.soyTecnicoAsignado && estado == EstadoSolicitud.completada)
-        FilledButton.tonalIcon(
-          onPressed: () => _calificar(detalle.solicitud.clienteId, 'el cliente'),
-          icon: const Icon(Icons.star_outline),
-          label: const Text('Calificar al cliente'),
-        ),
-    ];
+
+    // El cliente ve las ofertas en `_vistaCliente`.
+    return const [];
   }
 }
 
-class _Encabezado extends StatelessWidget {
-  const _Encabezado({required this.solicitud});
+/// Esqueleto del detalle mientras carga: la misma forma que la pantalla
+/// (encabezado, guía, fotos y mapa).
+class _DetalleCargando extends StatelessWidget {
+  const _DetalleCargando({required this.escritorio});
 
-  final Solicitud solicitud;
+  final bool escritorio;
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    final direccion = solicitud.direccionReferencia;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(solicitud.oficioNombre, style: textos.headlineSmall),
-            ),
-            EstadoChip(solicitud.estado),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(Formatos.fecha(solicitud.creadoEn), style: textos.bodySmall),
-        const SizedBox(height: 12),
-        Text(solicitud.descripcion, style: textos.bodyLarge),
-        if (direccion != null) ...[
-          const SizedBox(height: 8),
-          Text('Referencia: $direccion'),
+    const separacion = SizedBox(height: Espacios.l);
+    const encabezado = TarjetaApp(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              BloqueEsqueleto.circulo(tamano: 44),
+              SizedBox(width: Espacios.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BloqueEsqueleto(alto: 18, ancho: 160),
+                    SizedBox(height: Espacios.s),
+                    BloqueEsqueleto(ancho: 96),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: Espacios.l),
+          BloqueEsqueleto(),
+          SizedBox(height: Espacios.s),
+          BloqueEsqueleto(ancho: 220),
         ],
+      ),
+    );
+    const queSigue = TarjetaApp(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BloqueEsqueleto(alto: 16, ancho: 120),
+          SizedBox(height: Espacios.m),
+          BloqueEsqueleto(),
+          SizedBox(height: Espacios.s),
+          BloqueEsqueleto(ancho: 200),
+        ],
+      ),
+    );
+    const foto = BloqueEsqueleto(alto: 96, ancho: 96, radio: Radios.medio);
+    const fotos = Wrap(
+      spacing: Espacios.s,
+      runSpacing: Espacios.s,
+      children: [foto, foto, foto],
+    );
+    final mapa = BloqueEsqueleto(
+      alto: escritorio ? 280 : 220,
+      radio: Radios.grande,
+    );
+
+    return EsqueletoCarga(
+      etiqueta: 'Cargando la solicitud',
+      child: escritorio
+          ? _Escritorio(
+              izquierda: [encabezado, separacion, fotos, separacion, mapa],
+              derecha: const [queSigue],
+            )
+          : _Movil(
+              children: [
+                encabezado,
+                separacion,
+                queSigue,
+                separacion,
+                fotos,
+                separacion,
+                mapa,
+              ],
+            ),
+    );
+  }
+}
+
+class _Movil extends StatelessWidget {
+  const _Movil({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListaDePagina(
+      padding: const EdgeInsets.all(Espacios.l),
+      children: [
+        AnchoMaximo(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ...children,
+              const SizedBox(height: Espacios.xl),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Escritorio extends StatelessWidget {
+  const _Escritorio({required this.izquierda, required this.derecha});
+
+  final List<Widget> izquierda;
+  final List<Widget> derecha;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget columna(List<Widget> hijos) =>
+        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: hijos);
+    return ListaDePagina(
+      padding: const EdgeInsets.all(Espacios.xl),
+      children: [
+        AnchoMaximo(
+          ancho: 1200,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 3, child: columna(izquierda)),
+              const SizedBox(width: Espacios.xl),
+              Expanded(flex: 2, child: columna(derecha)),
+            ],
+          ),
+        ),
+        const SizedBox(height: Espacios.xxl),
       ],
     );
   }

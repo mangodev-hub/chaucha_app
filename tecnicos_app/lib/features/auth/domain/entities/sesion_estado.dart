@@ -12,13 +12,18 @@ final class SesionVerificando extends SesionEstado {
 
 /// Sin sesión. [aviso] explica por qué se cerró (p. ej. cuenta sin perfil).
 final class SinSesion extends SesionEstado {
-  const SinSesion({this.aviso});
+  const SinSesion({this.aviso, this.correoVerificado = false});
 
   final String? aviso;
+  final bool correoVerificado;
 }
 
 final class ConSesion extends SesionEstado {
   const ConSesion(this.usuario);
 
   final Usuario usuario;
+}
+
+final class SesionRecuperando extends SesionEstado {
+  const SesionRecuperando();
 }

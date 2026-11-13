@@ -1,5 +1,6 @@
 // Implementación de [DocumentoRepository] con Supabase (tabla + Storage).
 // Ruta en Storage: `{id_del_tecnico}/{tipo}_{marcaDeTiempo}.jpg`.
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -69,11 +70,41 @@ class SupabaseDocumentoRepository implements DocumentoRepository {
         ruta: ruta,
         bytes: bytes,
       );
-      await _client.from(_tabla).insert({
-        'tecnico_id': uid,
-        'tipo': tipo.valorDb,
-        'ruta_archivo': ruta,
-      });
+      final previo = await _client
+          .from(_tabla)
+          .select('tipo')
+          .eq('tecnico_id', uid)
+          .eq('tipo', tipo.valorDb)
+          .maybeSingle();
+      if (previo == null) {
+        await _client.from(_tabla).insert({
+          'tecnico_id': uid,
+          'tipo': tipo.valorDb,
+          'ruta_archivo': ruta,
+        });
+      } else {
+        await _client
+            .from(_tabla)
+            .update({
+              'ruta_archivo': ruta,
+              'estado': 'pendiente',
+              'revisado_por': null,
+              'revisado_en': null,
+            })
+            .eq('tecnico_id', uid)
+            .eq('tipo', tipo.valorDb);
+      }
+      if (tipo == TipoDocumento.cedulaFrontal) _compararRostro();
     });
+  }
+
+  // Apoyo a la revisión: guarda el resultado en `comparaciones_rostro`.
+  // No bloquea ni afecta la subida si falla.
+  void _compararRostro() {
+    unawaited(
+      _client.functions
+          .invoke('comparar-rostro-cedula')
+          .then((_) {}, onError: (_) {}),
+    );
   }
 }

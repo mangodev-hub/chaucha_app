@@ -1,150 +1,195 @@
 // Tema visual único de la app, construido a partir de los tokens.
 //
-// DISEÑO PROVISIONAL: ver `docs/DISENO.md`. Estilo: títulos grandes en
-// negrita, botones negros, tarjetas grises planas y un solo color de acento.
+// Estilo "Bento orgánico" (ver `docs/DISENO.md`): fondo verde bosque
+// profundo, barra superior oscura con texto blanco, contenido en tarjetas
+// claras muy redondeadas, botones y campos con forma de píldora y ninguna
+// sombra (`elevation: 0` en todo).
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'tokens.dart';
 
 abstract final class AppTheme {
+  // El esquema describe las superficies claras (tarjetas, hojas, diálogos):
+  // ahí vive casi todo el texto. Lo que va directo sobre el fondo oscuro
+  // usa `Colores.sobreOscuro` de forma explícita.
   static const ColorScheme _colores = ColorScheme(
     brightness: Brightness.light,
-    primary: Colores.tinta,
-    onPrimary: Colors.white,
-    primaryContainer: Colores.acentoSuave,
-    onPrimaryContainer: Colores.acentoOscuro,
-    secondary: Colores.acento,
-    onSecondary: Colors.white,
-    secondaryContainer: Colores.acentoSuave,
-    onSecondaryContainer: Colores.acentoOscuro,
+    primary: Colores.primario,
+    onPrimary: Colores.sobreOscuro,
+    primaryContainer: Colores.primarioSuave,
+    onPrimaryContainer: Colores.primarioOscuro,
+    // Secundario: celeste. Con texto blanco no llega a AA, así que lleva
+    // texto oscuro encima.
+    secondary: Colores.cielo,
+    onSecondary: Colores.tinta,
+    secondaryContainer: Colores.cieloSuave,
+    onSecondaryContainer: Colores.cieloOscuro,
     tertiary: Colores.info,
-    onTertiary: Colors.white,
+    onTertiary: Colores.sobreOscuro,
     error: Colores.error,
-    onError: Colors.white,
+    onError: Colores.sobreOscuro,
     errorContainer: Colores.errorSuave,
-    onErrorContainer: Color(0xFF8C1D18),
-    surface: Colores.fondo,
+    onErrorContainer: Colores.errorOscuro,
+    surface: Colores.tarjeta,
     onSurface: Colores.tinta,
     onSurfaceVariant: Colores.tintaSuave,
-    surfaceContainerLowest: Colors.white,
-    surfaceContainerLow: Color(0xFFF8F8F8),
+    surfaceContainerLowest: Colores.tarjeta,
+    surfaceContainerLow: Colores.lienzo,
     surfaceContainer: Colores.superficie,
-    surfaceContainerHigh: Color(0xFFEEEEEE),
+    surfaceContainerHigh: Colores.superficie,
     surfaceContainerHighest: Colores.superficieFuerte,
-    outline: Color(0xFFBDBDBD),
+    outline: Color(0xFF9DB5A5),
     outlineVariant: Colores.linea,
   );
 
-  static final RoundedRectangleBorder _formaMedia = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(Radios.medio),
-  );
+  static const StadiumBorder _pildora = StadiumBorder();
 
   static ThemeData get light {
-    final base = ThemeData(useMaterial3: true, colorScheme: _colores);
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: _colores,
+      fontFamily: Tipografia.familia,
+    );
     final textos = _textos(base.textTheme);
 
     return base.copyWith(
       scaffoldBackgroundColor: Colores.fondo,
       textTheme: textos,
+      // Barra superior sobre el fondo oscuro: título e íconos blancos.
       appBarTheme: AppBarTheme(
         backgroundColor: Colores.fondo,
-        foregroundColor: Colores.tinta,
+        foregroundColor: Colores.sobreOscuro,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
-        titleTextStyle: textos.titleLarge,
+        titleTextStyle: textos.titleLarge?.copyWith(color: Colores.sobreOscuro),
+        iconTheme: const IconThemeData(color: Colores.sobreOscuro),
+        actionsIconTheme: const IconThemeData(color: Colores.sobreOscuro),
       ),
+      // Botón principal: píldora verde oscuro con texto blanco en negrita.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, 52),
-          shape: _formaMedia,
-          textStyle: textos.labelLarge?.copyWith(fontSize: 16),
+          shape: _pildora,
+          elevation: 0,
+          textStyle: textos.labelLarge?.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
+      // Botón secundario: píldora blanca con borde fino y texto oscuro, para
+      // que el verde quede solo en la acción principal.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: Colores.tinta,
+          backgroundColor: Colores.tarjeta,
           minimumSize: const Size(0, 48),
-          side: const BorderSide(color: Colores.linea),
-          shape: _formaMedia,
-          textStyle: textos.labelLarge,
+          side: const BorderSide(color: Colores.superficieFuerte, width: 1.5),
+          shape: _pildora,
+          textStyle: textos.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(elevation: 0, shape: _pildora),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: Colores.tinta,
-          textStyle: textos.labelLarge,
+          foregroundColor: Colores.primario,
+          shape: _pildora,
+          textStyle: textos.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
-          selectedBackgroundColor: Colores.tinta,
-          selectedForegroundColor: Colors.white,
+          selectedBackgroundColor: Colores.primario,
+          selectedForegroundColor: Colores.sobreOscuro,
           side: const BorderSide(color: Colores.linea),
           textStyle: textos.labelLarge,
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: Colores.tinta,
-        foregroundColor: Colors.white,
+        backgroundColor: Colores.primario,
+        foregroundColor: Colores.sobreOscuro,
         elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
         highlightElevation: 0,
         shape: StadiumBorder(),
       ),
+      // Campos: relleno verdoso, sin borde y muy redondeados (los de una
+      // línea quedan como píldora); borde verde medio al enfocarlos.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colores.superficie,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: Espacios.l,
-          vertical: 14,
+          horizontal: Espacios.l + 4,
+          vertical: Espacios.l,
         ),
         border: _bordeCampo(BorderSide.none),
         enabledBorder: _bordeCampo(BorderSide.none),
-        focusedBorder:
-            _bordeCampo(const BorderSide(color: Colores.tinta, width: 1.5)),
+        focusedBorder: _bordeCampo(
+          const BorderSide(color: Colores.primarioVivo, width: 1.5),
+        ),
         errorBorder: _bordeCampo(const BorderSide(color: Colores.error)),
-        focusedErrorBorder:
-            _bordeCampo(const BorderSide(color: Colores.error, width: 1.5)),
+        focusedErrorBorder: _bordeCampo(
+          const BorderSide(color: Colores.error, width: 1.5),
+        ),
         labelStyle: textos.bodyLarge?.copyWith(color: Colores.tintaSuave),
         hintStyle: textos.bodyLarge?.copyWith(color: Colores.tintaSuave),
+        prefixIconColor: Colores.tintaSuave,
+        suffixIconColor: Colores.primario,
       ),
       cardTheme: CardThemeData(
-        color: Colores.superficie,
+        color: Colores.tarjeta,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         margin: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Radios.grande),
+          borderRadius: BorderRadius.circular(Radios.subtarjeta),
+          side: const BorderSide(color: Colores.linea),
         ),
       ),
+      // Chips: píldoras verdosas; la elegida en verde suave con borde verde.
       chipTheme: ChipThemeData(
         backgroundColor: Colores.superficie,
-        selectedColor: Colores.acentoSuave,
-        checkmarkColor: Colores.acentoOscuro,
+        selectedColor: Colores.primarioSuave,
+        checkmarkColor: Colores.primarioOscuro,
+        elevation: 0,
+        pressElevation: 0,
         labelStyle: textos.labelLarge?.copyWith(color: Colores.tinta),
-        side: BorderSide.none,
+        secondaryLabelStyle: textos.labelLarge?.copyWith(
+          color: Colores.primarioOscuro,
+        ),
+        side: WidgetStateBorderSide.resolveWith(
+          (estados) => estados.contains(WidgetState.selected)
+              ? const BorderSide(color: Colores.primario)
+              : const BorderSide(color: Colors.transparent),
+        ),
         shape: const StadiumBorder(),
-        padding: const EdgeInsets.symmetric(horizontal: Espacios.s),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Espacios.s,
+          vertical: Espacios.xs,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colores.fondo,
+        backgroundColor: Colores.lienzo,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: Colors.transparent,
+        indicatorColor: Colores.primarioSuave,
         elevation: 0,
         height: 68,
         iconTheme: WidgetStateProperty.resolveWith(
           (estados) => IconThemeData(
             color: estados.contains(WidgetState.selected)
-                ? Colores.tinta
-                : Colores.tintaSuave,
+                ? Colores.primario
+                : Colores.cielo.withValues(alpha: 0.7),
           ),
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (estados) => textos.labelMedium?.copyWith(
             color: estados.contains(WidgetState.selected)
-                ? Colores.tinta
+                ? Colores.primario
                 : Colores.tintaSuave,
             fontWeight: estados.contains(WidgetState.selected)
                 ? FontWeight.w700
@@ -152,76 +197,130 @@ abstract final class AppTheme {
           ),
         ),
       ),
-      navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: Colores.fondo,
-        indicatorColor: Colores.superficie,
-        selectedIconTheme: const IconThemeData(color: Colores.tinta),
-        unselectedIconTheme: const IconThemeData(color: Colores.tintaSuave),
-        selectedLabelTextStyle:
-            textos.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-        unselectedLabelTextStyle:
-            textos.labelMedium?.copyWith(color: Colores.tintaSuave),
-      ),
       dividerTheme: const DividerThemeData(color: Colores.linea, space: 1),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colores.tinta,
-        contentTextStyle: textos.bodyMedium?.copyWith(color: Colors.white),
-        shape: _formaMedia,
-      ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: Colores.fondo,
-        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        contentTextStyle: textos.bodyMedium?.copyWith(
+          color: Colores.sobreOscuro,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Radios.grande),
         ),
-        titleTextStyle: textos.titleLarge,
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: Colores.fondo,
+      dialogTheme: DialogThemeData(
+        backgroundColor: Colores.lienzo,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(Radios.grande)),
+          borderRadius: BorderRadius.circular(Radios.bento),
+        ),
+        titleTextStyle: textos.titleLarge,
+        iconColor: Colores.primario,
+      ),
+      // Hojas inferiores: superficie clara, esquinas de arriba muy
+      // redondeadas y un indicador celeste tipo píldora.
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Colores.lienzo,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        modalElevation: 0,
+        showDragHandle: true,
+        dragHandleColor: Colores.cielo,
+        dragHandleSize: Size(40, 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(Radios.hoja),
+          ),
         ),
       ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: Colores.lienzo,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radios.subtarjeta),
+          side: const BorderSide(color: Colores.linea),
+        ),
+      ),
+      // Verde medio: se ve tanto sobre el fondo oscuro como sobre las hojas.
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: Colores.tinta,
-        linearTrackColor: Colores.superficie,
+        color: Colores.primarioVivo,
+        linearTrackColor: Colores.superficieFuerte,
       ),
       sliderTheme: const SliderThemeData(
-        activeTrackColor: Colores.tinta,
+        activeTrackColor: Colores.primario,
         inactiveTrackColor: Colores.superficieFuerte,
-        thumbColor: Colores.tinta,
+        thumbColor: Colores.primario,
       ),
     );
   }
 
-  /// Tipografía provisional: títulos grandes, en negrita y algo apretados.
+  /// Tipografía: títulos en negrita, cuerpo en peso medio.
   static TextTheme _textos(TextTheme base) {
-    final conFuente = GoogleFonts.getTextTheme(Tipografia.familia, base)
-        .apply(bodyColor: Colores.tinta, displayColor: Colores.tinta);
+    final conFuente = base.apply(
+      fontFamily: Tipografia.familia,
+      bodyColor: Colores.tinta,
+      displayColor: Colores.tinta,
+    );
 
     TextStyle? titular(TextStyle? estilo, FontWeight peso) =>
-        estilo?.copyWith(fontWeight: peso, letterSpacing: -0.5, height: 1.15);
+        estilo?.copyWith(fontWeight: peso, height: 1.15);
 
-    return conFuente.copyWith(
-      displaySmall: titular(conFuente.displaySmall, FontWeight.w800),
-      headlineLarge: titular(conFuente.headlineLarge, FontWeight.w800),
-      headlineMedium: titular(conFuente.headlineMedium, FontWeight.w800),
-      headlineSmall: titular(conFuente.headlineSmall, FontWeight.w800),
-      titleLarge: titular(conFuente.titleLarge, FontWeight.w700),
-      titleMedium:
-          conFuente.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-      titleSmall: conFuente.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-      labelLarge: conFuente.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-      bodyLarge: conFuente.bodyLarge?.copyWith(height: 1.45),
-      bodyMedium: conFuente.bodyMedium?.copyWith(height: 1.45),
+    // Sin espaciado de letras: el de Material 3 separa de más los textos
+    // chicos con esta fuente.
+    final sinEspaciado = conFuente.copyWith(
+      displayLarge: conFuente.displayLarge?.copyWith(letterSpacing: 0),
+      displayMedium: conFuente.displayMedium?.copyWith(letterSpacing: 0),
+      displaySmall: conFuente.displaySmall?.copyWith(letterSpacing: 0),
+      headlineLarge: conFuente.headlineLarge?.copyWith(letterSpacing: 0),
+      headlineMedium: conFuente.headlineMedium?.copyWith(letterSpacing: 0),
+      headlineSmall: conFuente.headlineSmall?.copyWith(letterSpacing: 0),
+      titleLarge: conFuente.titleLarge?.copyWith(letterSpacing: 0),
+      titleMedium: conFuente.titleMedium?.copyWith(letterSpacing: 0),
+      titleSmall: conFuente.titleSmall?.copyWith(letterSpacing: 0),
+      bodyLarge: conFuente.bodyLarge?.copyWith(letterSpacing: 0),
+      bodyMedium: conFuente.bodyMedium?.copyWith(letterSpacing: 0),
+      bodySmall: conFuente.bodySmall?.copyWith(letterSpacing: 0),
+      labelLarge: conFuente.labelLarge?.copyWith(letterSpacing: 0),
+      labelMedium: conFuente.labelMedium?.copyWith(letterSpacing: 0),
+      labelSmall: conFuente.labelSmall?.copyWith(letterSpacing: 0),
+    );
+
+    return sinEspaciado.copyWith(
+      displaySmall: titular(sinEspaciado.displaySmall, FontWeight.w800),
+      headlineLarge: titular(sinEspaciado.headlineLarge, FontWeight.w800),
+      headlineMedium: titular(sinEspaciado.headlineMedium, FontWeight.w800),
+      headlineSmall: titular(sinEspaciado.headlineSmall, FontWeight.w800),
+      // Títulos de tarjeta: 20-22 en negrita.
+      titleLarge: titular(
+        sinEspaciado.titleLarge?.copyWith(fontSize: 21),
+        FontWeight.w700,
+      ),
+      titleMedium: sinEspaciado.titleMedium?.copyWith(
+        fontWeight: FontWeight.w700,
+      ),
+      titleSmall: sinEspaciado.titleSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+      ),
+      labelLarge: sinEspaciado.labelLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      bodyLarge: sinEspaciado.bodyLarge?.copyWith(
+        height: 1.45,
+        fontWeight: FontWeight.w500,
+      ),
+      bodyMedium: sinEspaciado.bodyMedium?.copyWith(
+        height: 1.45,
+        fontWeight: FontWeight.w500,
+      ),
+      bodySmall: sinEspaciado.bodySmall?.copyWith(fontWeight: FontWeight.w500),
     );
   }
 
   static OutlineInputBorder _bordeCampo(BorderSide lado) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(Radios.medio),
-        borderSide: lado,
-      );
+    borderRadius: BorderRadius.circular(Radios.subtarjeta + 6),
+    borderSide: lado,
+  );
 }

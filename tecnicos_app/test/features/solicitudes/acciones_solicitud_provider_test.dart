@@ -71,12 +71,28 @@ void main() {
     expect(solicitudes.obtenidas, 1);
   });
 
-  test('aceptar llama al repositorio; el estado lo cambia la base', () async {
-    expect(await acciones().aceptar(cotizacionDePrueba(id: 'q7')), isTrue);
-    await container.read(detalleSolicitudProvider('s1').future);
+  group('enviarOferta', () {
+    test('envía la solución sin espacios extra', () async {
+      final ok = await acciones().enviarOferta(
+        solucion: '  Cambio el empaque.  ',
+      );
 
-    expect(cotizaciones.aceptadas, ['q7']);
-    expect(solicitudes.cambiosDeEstado, isEmpty);
-    expect(solicitudes.obtenidas, 2); // recarga el detalle
+      expect(ok, isTrue);
+      final enviada = cotizaciones.enviadas.single;
+      expect(enviada.solicitudId, 's1');
+      expect(enviada.solucion, 'Cambio el empaque.');
+    });
+
+    test('sin solución no envía y deja el error', () async {
+      final ok = await acciones().enviarOferta(solucion: ' ');
+
+      expect(ok, isFalse);
+      expect(cotizaciones.enviadas, isEmpty);
+      final error = container.read(accionesSolicitudProvider('s1')).error;
+      expect(
+        (error! as AppFailure).message,
+        'Explica cómo resolverías el problema.',
+      );
+    });
   });
 }

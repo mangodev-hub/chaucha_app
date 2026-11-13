@@ -1,178 +1,431 @@
-// Tarjeta de una cotización con sus montos y acciones opcionales.
+// Tarjeta de la oferta de un técnico (precio de la visita y solución) con sus
+// acciones, y el formulario con el que el técnico ofrece sus servicios.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/validators/form_validators.dart';
+import '../../../../core/widgets/aviso_banner.dart';
+import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/fila_dato.dart';
+import '../../../../core/widgets/pildora.dart';
+import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/cotizacion.dart';
+import '../../domain/entities/tarifa.dart';
 
+extension EstadoCotizacionVista on EstadoCotizacion {
+  String get etiqueta => switch (this) {
+    EstadoCotizacion.pendiente => 'Pendiente',
+    EstadoCotizacion.aceptada => 'Aceptada',
+    EstadoCotizacion.rechazada => 'No elegida',
+  };
 
+  /// Mismo criterio que los estados de solicitud: acento solo para lo positivo.
+  Color get color => switch (this) {
+    EstadoCotizacion.pendiente => Colores.info,
+    EstadoCotizacion.aceptada => Colores.acento,
+    EstadoCotizacion.rechazada => Colores.tintaSuave,
+  };
+}
+
+/// Oferta de un técnico. Los botones solo aparecen si su callback no es null.
 class CotizacionCard extends StatelessWidget {
   const CotizacionCard({
     super.key,
     required this.cotizacion,
-    this.onAceptar,
     this.onChat,
+    this.textoChat = 'Escribir al técnico',
+    this.onVerPerfil,
+    this.accionesActivas = true,
+    this.destacada = false,
+    this.miId,
+    this.onReagendar,
+    this.onResponderReagendado,
+    this.onCancelarVisita,
   });
 
   final Cotizacion cotizacion;
-  final VoidCallback? onAceptar;
+
+  /// Abre el chat con el técnico.
   final VoidCallback? onChat;
+  final String textoChat;
+
+  /// Abre el perfil público del técnico (al tocar su nombre).
+  final VoidCallback? onVerPerfil;
+
+  /// En false, los botones se ven pero desactivados (hay una acción en curso).
+  final bool accionesActivas;
+
+  /// Borde de acento para la oferta aceptada.
+  final bool destacada;
+
+  /// Id del usuario conectado, para saber quién hizo la propuesta de fecha.
+  final String? miId;
+  final VoidCallback? onReagendar;
+  final void Function(bool acepta)? onResponderReagendado;
+  final VoidCallback? onCancelarVisita;
 
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final c = cotizacion;
-    final detalle = c.detalle;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(c.tecnicoNombre, style: textos.titleMedium)),
-                const Icon(Icons.star, size: 18, color: Colores.estrella),
-                Text(' ${c.tecnicoCalificacion.toStringAsFixed(1)}'),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text('Mano de obra: ${Formatos.dinero(c.manoObra)}'),
-            Text('Materiales: ${Formatos.dinero(c.materiales)}'),
-            const SizedBox(height: 4),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text('Total', style: textos.titleMedium),
-                const Spacer(),
-                Text(Formatos.dinero(c.total), style: textos.headlineSmall),
-              ],
-            ),
-            if (detalle != null && detalle.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(detalle),
-            ],
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Chip(label: Text(_etiqueta(c.estado))),
-                const Spacer(),
-                if (onChat != null)
-                  TextButton.icon(
-                    onPressed: onChat,
-                    icon: const Icon(Icons.chat_bubble_outline),
-                    label: const Text('Chat'),
-                  ),
-                if (onAceptar != null)
-                  FilledButton(
-                    onPressed: onAceptar,
-                    child: const Text('Aceptar'),
-                  ),
-              ],
+    final solucion = c.solucion;
+    return TarjetaApp(
+      margin: const EdgeInsets.only(bottom: Espacios.m),
+      colorBorde: destacada ? Colores.acento : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Tecnico(cotizacion: c, onVerPerfil: onVerPerfil),
+          const SizedBox(height: Espacios.l),
+          FilaDato(
+            etiqueta: 'Precio de la visita',
+            valor: Formatos.dinero(c.precioBase),
+          ),
+          if (solucion != null) ...[
+            const SizedBox(height: Espacios.m),
+            Text('Cómo lo resolvería', style: textos.labelLarge),
+            const SizedBox(height: Espacios.xs),
+            Text(
+              solucion,
+              style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
             ),
           ],
-        ),
+          if (c.tarifa case final tarifa?) ...[
+            const SizedBox(height: Espacios.m),
+            _ResumenTicket(
+              tarifa: tarifa,
+              confirmado: c.estado == EstadoCotizacion.aceptada,
+            ),
+          ],
+          if (onReagendar != null ||
+              onResponderReagendado != null ||
+              onCancelarVisita != null) ...[
+            const SizedBox(height: Espacios.m),
+            AccionesVisita(
+              cotizacion: c,
+              miId: miId,
+              activas: accionesActivas,
+              onReagendar: onReagendar,
+              onResponder: onResponderReagendado,
+              onCancelar: onCancelarVisita,
+            ),
+          ],
+          if (onChat != null) ...[
+            const SizedBox(height: Espacios.l),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+              onPressed: accionesActivas ? onChat : null,
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: Text(textoChat),
+            ),
+          ],
+        ],
       ),
     );
   }
-
-  static String _etiqueta(EstadoCotizacion estado) => switch (estado) {
-        EstadoCotizacion.pendiente => 'Pendiente',
-        EstadoCotizacion.aceptada => 'Aceptada',
-        EstadoCotizacion.rechazada => 'Rechazada',
-      };
 }
 
+/// Una línea con el ticket de trabajo: total acordado, fecha y su estado.
+class _ResumenTicket extends StatelessWidget {
+  const _ResumenTicket({required this.tarifa, required this.confirmado});
 
-typedef DatosCotizacion = ({
-  double manoObra,
-  double materiales,
-  String? detalle,
-});
+  final Tarifa tarifa;
+  final bool confirmado;
 
+  @override
+  Widget build(BuildContext context) {
+    final fecha = tarifa.fechaServicio;
+    return FilaDato(
+      icono: Icons.receipt_long_outlined,
+      etiqueta: 'Ticket: ${Formatos.dinero(tarifa.total)}',
+      detalle: fecha == null
+          ? 'Sin fecha de visita'
+          : 'Visita: ${Formatos.fechaCorta(fecha)} · ${Formatos.hora(fecha)}',
+      trailing: confirmado
+          ? const Pildora(texto: 'Confirmado', color: Colores.acento)
+          : const Pildora(texto: 'Por confirmar', color: Colores.aviso),
+    );
+  }
+}
 
-Future<DatosCotizacion?> mostrarFormularioCotizacion(BuildContext context) {
-  return showDialog<DatosCotizacion>(
+/// Reagendar (por propuesta) y cancelar la visita acordada.
+class AccionesVisita extends StatelessWidget {
+  const AccionesVisita({
+    super.key,
+    required this.cotizacion,
+    required this.miId,
+    required this.activas,
+    this.onReagendar,
+    this.onResponder,
+    this.onCancelar,
+  });
+
+  final Cotizacion cotizacion;
+  final String? miId;
+  final bool activas;
+  final VoidCallback? onReagendar;
+  final void Function(bool acepta)? onResponder;
+  final VoidCallback? onCancelar;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = cotizacion;
+
+    // Reagendar y cancelar exigen 24 h de anticipación (la base también lo valida).
+    final falta = c.tarifa?.fechaServicio?.difference(DateTime.now());
+    final puedeCambiar = falta == null || falta >= const Duration(hours: 24);
+
+    // Una propuesta vencida ya no cuenta (la base tampoco la considera).
+    final f = c.fechaPropuesta;
+    final propuesta = f != null && f.isAfter(DateTime.now()) ? f : null;
+    final esMia = c.propuestaPor != null && c.propuestaPor == miId;
+    final cuando = propuesta == null
+        ? ''
+        : '${Formatos.fechaCorta(propuesta)} · ${Formatos.hora(propuesta)}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (propuesta != null) ...[
+          AvisoBanner(
+            compacto: true,
+            mensaje: esMia
+                ? 'Propusiste reagendar para $cuando. Esperando respuesta.'
+                : 'Te proponen reagendar la visita para $cuando.',
+          ),
+          const SizedBox(height: Espacios.s),
+        ],
+        if (propuesta != null && !esMia && onResponder != null)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: activas ? () => onResponder!(false) : null,
+                  child: const Text('Rechazar'),
+                ),
+              ),
+              const SizedBox(width: Espacios.s),
+              Expanded(
+                child: FilledButton(
+                  onPressed: activas ? () => onResponder!(true) : null,
+                  child: const Text('Aceptar'),
+                ),
+              ),
+            ],
+          )
+        else if (propuesta == null && onReagendar != null && puedeCambiar)
+          OutlinedButton.icon(
+            onPressed: activas ? onReagendar : null,
+            icon: const Icon(Icons.event_repeat_outlined),
+            label: const Text('Reagendar visita'),
+          ),
+        if (onCancelar != null && puedeCambiar)
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: activas ? onCancelar : null,
+            icon: const Icon(Icons.event_busy_outlined),
+            label: const Text('Cancelar visita'),
+          ),
+        if (!puedeCambiar && (onReagendar != null || onCancelar != null))
+          Text(
+            'Ya no se puede reagendar ni cancelar: faltan menos de 24 horas.',
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: Colores.tintaSuave),
+          ),
+      ],
+    );
+  }
+}
+
+/// Inicial, nombre y calificación del técnico, con el estado a la derecha.
+/// Si hay [onVerPerfil], la fila se puede tocar para ver su perfil.
+class _Tecnico extends StatelessWidget {
+  const _Tecnico({required this.cotizacion, this.onVerPerfil});
+
+  final Cotizacion cotizacion;
+  final VoidCallback? onVerPerfil;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    final c = cotizacion;
+    final nombre = c.tecnicoNombre.trim();
+    final inicial = nombre.isEmpty ? '?' : nombre[0].toUpperCase();
+    final esNuevo = c.tecnicoCalificacion <= 0;
+    final fila = Row(
+      children: [
+        CircleAvatar(
+          backgroundColor: Colores.cieloSuave,
+          foregroundColor: Colores.cieloOscuro,
+          child: Text(
+            inicial,
+            style: textos.titleMedium?.copyWith(color: Colores.cieloOscuro),
+          ),
+        ),
+        const SizedBox(width: Espacios.m),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                c.tecnicoNombre,
+                style: textos.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Row(
+                children: [
+                  if (!esNuevo) ...[
+                    const Icon(Icons.star, size: 16, color: Colores.estrella),
+                    const SizedBox(width: Espacios.xs),
+                  ],
+                  Flexible(
+                    child: Text(
+                      // Sin reseñas todavía: "0.0" parecería una mala nota.
+                      [
+                        if (esNuevo)
+                          'Técnico nuevo'
+                        else
+                          c.tecnicoCalificacion.toStringAsFixed(1),
+                        if (onVerPerfil != null) 'Ver perfil',
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textos.bodySmall?.copyWith(
+                        color: onVerPerfil != null
+                            ? Colores.info
+                            : Colores.tintaSuave,
+                        fontWeight: onVerPerfil != null
+                            ? FontWeight.w700
+                            : null,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: Espacios.s),
+        Flexible(
+          child: Pildora(texto: c.estado.etiqueta, color: c.estado.color),
+        ),
+      ],
+    );
+    if (onVerPerfil == null) return fila;
+    return Semantics(
+      button: true,
+      label: 'Ver perfil de ${c.tecnicoNombre}',
+      child: InkWell(
+        onTap: onVerPerfil,
+        borderRadius: BorderRadius.circular(Radios.medio),
+        child: fila,
+      ),
+    );
+  }
+}
+
+/// Formulario del técnico: precio de la visita y cómo resolvería el problema.
+Future<String?> mostrarFormularioOferta(
+  BuildContext context, {
+  required double tarifaBase,
+}) {
+  return showDialog<String>(
     context: context,
-    builder: (context) => const _FormularioCotizacion(),
+    builder: (context) => _FormularioOferta(tarifaBase: tarifaBase),
   );
 }
 
-class _FormularioCotizacion extends StatefulWidget {
-  const _FormularioCotizacion();
+class _FormularioOferta extends StatefulWidget {
+  const _FormularioOferta({required this.tarifaBase});
+
+  final double tarifaBase;
 
   @override
-  State<_FormularioCotizacion> createState() => _FormularioCotizacionState();
+  State<_FormularioOferta> createState() => _FormularioOfertaState();
 }
 
-class _FormularioCotizacionState extends State<_FormularioCotizacion> {
+class _FormularioOfertaState extends State<_FormularioOferta> {
   final _formKey = GlobalKey<FormState>();
-  final _manoObra = TextEditingController();
-  final _materiales = TextEditingController(text: '0');
-  final _detalle = TextEditingController();
+  final _solucion = TextEditingController();
 
   @override
   void dispose() {
-    _manoObra.dispose();
-    _materiales.dispose();
-    _detalle.dispose();
+    _solucion.dispose();
     super.dispose();
   }
 
-  double _leer(TextEditingController c) =>
-      double.parse(c.text.trim().replaceAll(',', '.'));
-
   void _enviar() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final detalle = _detalle.text.trim();
-    Navigator.pop<DatosCotizacion>(context, (
-      manoObra: _leer(_manoObra),
-      materiales: _leer(_materiales),
-      detalle: detalle.isEmpty ? null : detalle,
-    ));
+    Navigator.pop<String>(context, _solucion.text.trim());
   }
 
   @override
   Widget build(BuildContext context) {
-    const teclado = TextInputType.numberWithOptions(decimal: true);
     return AlertDialog(
-      title: const Text('Enviar cotización'),
+      icon: const Icon(Icons.handyman_outlined),
+      title: const Text('Ofrecer mis servicios'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _manoObra,
-                keyboardType: teclado,
-                decoration: const InputDecoration(
-                  labelText: 'Mano de obra (USD)',
-                  prefixText: '\$ ',
+              Container(
+                padding: const EdgeInsets.all(Espacios.m),
+                decoration: BoxDecoration(
+                  color: Colores.superficie,
+                  borderRadius: BorderRadius.circular(Radios.medio),
                 ),
-                validator: (v) => FormValidators.monto(v, campo: 'La mano de obra'),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 18,
+                      color: Colores.tintaSuave,
+                    ),
+                    const SizedBox(width: Espacios.s),
+                    Expanded(
+                      child: Text(
+                        'Tu tarifa base (de tu perfil)',
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: Colores.tintaSuave),
+                      ),
+                    ),
+                    Text(
+                      Formatos.dinero(widget.tarifaBase),
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _materiales,
-                keyboardType: teclado,
-                decoration: const InputDecoration(
-                  labelText: 'Materiales (USD)',
-                  prefixText: '\$ ',
+              const SizedBox(height: Espacios.l),
+              CampoEtiquetado(
+                etiqueta: '¿Cómo lo resolverías?',
+                child: TextFormField(
+                  controller: _solucion,
+                  minLines: 3,
+                  maxLines: 6,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    hintText:
+                        'Qué harías, cuánto tiempo te tomaría y qué incluye '
+                        'tu precio.',
+                  ),
+                  validator: (v) =>
+                      FormValidators.requerido(v, campo: 'La solución'),
                 ),
-                validator: (v) => FormValidators.monto(v, campo: 'Materiales'),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _detalle,
-                minLines: 2,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Detalle (opcional)',
-                  hintText: 'Qué incluye, tiempo estimado...',
-                ),
+              const SizedBox(height: Espacios.l),
+              const AvisoBanner(
+                compacto: true,
+                mensaje:
+                    'Si al cliente le interesa, te escribirá para acordar el '
+                    'precio final.',
               ),
             ],
           ),
@@ -183,7 +436,11 @@ class _FormularioCotizacionState extends State<_FormularioCotizacion> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancelar'),
         ),
-        FilledButton(onPressed: _enviar, child: const Text('Enviar')),
+        FilledButton(
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+          onPressed: _enviar,
+          child: const Text('Enviar oferta'),
+        ),
       ],
     );
   }

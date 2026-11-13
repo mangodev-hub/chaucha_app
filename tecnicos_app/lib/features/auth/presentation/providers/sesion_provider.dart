@@ -3,7 +3,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/auth_redirect.dart';
 import '../../../../core/errors/app_failure.dart';
+import '../../../../core/presence/presencia_service.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_usuario_repository.dart';
 import '../../domain/entities/sesion_estado.dart';
@@ -11,8 +14,9 @@ import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/usuario_repository.dart';
 
-final sesionProvider =
-    NotifierProvider<SesionNotifier, SesionEstado>(SesionNotifier.new);
+final sesionProvider = NotifierProvider<SesionNotifier, SesionEstado>(
+  SesionNotifier.new,
+);
 
 /// Usuario conectado, o null si no hay sesión.
 final usuarioActualProvider = Provider<Usuario?>(
@@ -29,32 +33,83 @@ class SesionNotifier extends Notifier<SesionEstado> {
   late AuthRepository _auth;
   late UsuarioRepository _usuarios;
 
-  /// Cada cambio de sesión incrementa la versión; las respuestas de un
-  /// cambio anterior que lleguen tarde se descartan.
   int _version = 0;
-
-  /// Aviso que se mostrará cuando llegue el evento de "sin sesión".
   String? _avisoPendiente;
+  bool _correoVerificado = false;
 
   @override
   SesionEstado build() {
     _auth = ref.watch(authRepositoryProvider);
     _usuarios = ref.watch(usuarioRepositoryProvider);
 
-    final suscripcion = _auth.cambiosDeSesion.listen(_alCambiarSesion);
+    final suscripcion = _auth.cambiosDeSesion.listen(
+      _alCambiarSesion,
+      onError: (Object _) => _alFallarEnlace(),
+    );
     ref.onDispose(suscripcion.cancel);
-
+    final recuperacion = _auth.recuperacionIniciada.listen((_) {
+      ++_version;
+      _emitir(const SesionRecuperando());
+    });
+    ref.onDispose(recuperacion.cancel);
     return const SesionVerificando();
   }
 
-  Future<void> cerrarSesion() => _auth.cerrarSesion();
+  Future<void> finalizarRecuperacion() => _alCambiarSesion(_auth.usuarioId);
+
+  Future<void> cancelarRecuperacion() async {
+    ++_version;
+    _emitir(const SinSesion());
+    await _auth.cerrarSesion();
+  }
+
+  Future<void> cerrarSesion() async {
+    // Primero el token push: con la sesión cerrada, RLS ya no deja borrarlo.
+    await ref
+        .read(pushServiceProvider)
+        .olvidar(ref.read(supabaseClientProvider));
+    // También "desconectado" ya (la función necesita la sesión).
+    await ref.read(presenciaRepositoryProvider).salir();
+    await _auth.cerrarSesion();
+  }
+
+  Future<void> recargarUsuario() async {
+    final actual = state;
+    if (actual is! ConSesion) return;
+    final perfil = await _usuarios.obtenerPorId(actual.usuario.id);
+    if (perfil != null) _emitir(ConSesion(perfil));
+  }
+
+  void consumirVerificado() {
+    final actual = state;
+    if (actual is SinSesion && actual.correoVerificado) {
+      _emitir(SinSesion(aviso: actual.aviso));
+    }
+  }
+
+  void _alFallarEnlace() {
+    ++_version;
+    final desdeEnlace = AuthRedirect.vieneDeConfirmacion;
+    AuthRedirect.vieneDeConfirmacion = false;
+    _emitir(SinSesion(correoVerificado: desdeEnlace));
+  }
 
   Future<void> _alCambiarSesion(String? usuarioId) async {
     final version = ++_version;
 
     if (usuarioId == null) {
-      _emitir(SinSesion(aviso: _avisoPendiente));
+      _emitir(
+        SinSesion(aviso: _avisoPendiente, correoVerificado: _correoVerificado),
+      );
       _avisoPendiente = null;
+      _correoVerificado = false;
+      return;
+    }
+
+    if (AuthRedirect.vieneDeConfirmacion) {
+      AuthRedirect.vieneDeConfirmacion = false;
+      _correoVerificado = true;
+      await _auth.cerrarSesion();
       return;
     }
 
@@ -79,7 +134,8 @@ class SesionNotifier extends Notifier<SesionEstado> {
     try {
       await _auth.cerrarSesion();
     } on AppFailure {
-      // Si falla el cierre remoto, el estado local ya es SinSesion.
+      // La sesión ya quedó cerrada en la app (SinSesion con el aviso); si
+      // cerrarla también en Supabase falla, no hay nada más que hacer.
     }
   }
 

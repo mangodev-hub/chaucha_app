@@ -20,9 +20,13 @@ class SupabaseOficioRepository implements OficioRepository {
   @override
   Future<List<Oficio>> listar() {
     return supabaseGuard(() async {
-      final filas =
-          await _client.from('oficios').select('id, nombre').order('nombre');
-      return filas.map((fila) => OficioModel.fromJson(fila).aEntidad()).toList();
+      final filas = await _client
+          .from('oficios')
+          .select('id, nombre')
+          .order('nombre');
+      return filas
+          .map((fila) => OficioModel.fromJson(fila).aEntidad())
+          .toList();
     });
   }
 }

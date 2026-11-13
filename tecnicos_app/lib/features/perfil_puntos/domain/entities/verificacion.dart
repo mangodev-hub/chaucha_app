@@ -19,7 +19,8 @@ class Verificacion {
     final resultado = <TipoDocumento, DocumentoTecnico>{};
     for (final doc in documentos) {
       final actual = resultado[doc.tipo];
-      if (actual == null || prioridad[doc.estado]! > prioridad[actual.estado]!) {
+      if (actual == null ||
+          prioridad[doc.estado]! > prioridad[actual.estado]!) {
         resultado[doc.tipo] = doc;
       }
     }

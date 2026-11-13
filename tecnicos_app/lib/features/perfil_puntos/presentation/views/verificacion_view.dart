@@ -1,60 +1,125 @@
-// Pantalla "Verificar identidad": el técnico sube su cédula y una selfie.
+// "Verifica tu identidad" en tres pasos que se desbloquean en orden:
+// 1) frente de la cédula, 2) reverso y 3) selfie. Se abre como hoja inferior
+// en móvil y como diálogo en escritorio.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/media/selector_fotos.dart';
+import '../../../../core/media/selfie_camara.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/mensajes.dart';
-import '../../../../core/widgets/seccion.dart';
+import '../../../../core/widgets/pildora.dart';
+import '../../../../core/widgets/responsive_layout.dart';
+import '../../../../core/widgets/tarjeta_app.dart';
+import '../../../auth/presentation/providers/selfie_provider.dart';
+import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../domain/entities/documento_tecnico.dart';
 import '../../domain/entities/verificacion.dart';
 import '../providers/verificacion_provider.dart';
 
-extension TipoDocumentoVista on TipoDocumento {
-  String get titulo => switch (this) {
-        TipoDocumento.cedulaFrontal => 'Cédula · anverso',
-        TipoDocumento.cedulaPosterior => 'Cédula · reverso',
-        TipoDocumento.selfie => 'Selfie con tu cédula',
-      };
-
-  String get ayuda => switch (this) {
-        TipoDocumento.cedulaFrontal =>
-          'Parte delantera, con foto y número legibles.',
-        TipoDocumento.cedulaPosterior => 'Parte trasera, completa y sin reflejos.',
-        TipoDocumento.selfie =>
-          'Tu rostro junto a la cédula, para comprobar que eres tú.',
-      };
-
-  IconData get icono => switch (this) {
-        TipoDocumento.cedulaFrontal => Icons.badge_outlined,
-        TipoDocumento.cedulaPosterior => Icons.flip_outlined,
-        TipoDocumento.selfie => Icons.face_retouching_natural,
-      };
+/// Abre la verificación. No arranca nada solo: cada paso se inicia con su botón.
+Future<void> mostrarVerificacion(BuildContext context) async {
+  final Future<bool?> resultado;
+  if (ResponsiveLayout.isDesktop(context)) {
+    resultado = showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: const VerificacionPanel(enDialogo: true),
+        ),
+      ),
+    );
+  } else {
+    resultado = showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => const VerificacionPanel(),
+    );
+  }
+  final confirmado = await resultado;
+  if (confirmado == true && context.mounted) {
+    context.mostrarMensaje(
+      'Perfil en revisión. Tu verificación se realizará pronto.',
+      tipo: TipoMensaje.exito,
+    );
+  }
 }
 
-class VerificacionView extends ConsumerStatefulWidget {
-  const VerificacionView({super.key});
+class VerificacionPanel extends ConsumerStatefulWidget {
+  const VerificacionPanel({super.key, this.enDialogo = false});
+
+  /// En el diálogo no hay asa de arrastre: se deja margen arriba.
+  final bool enDialogo;
 
   @override
-  ConsumerState<VerificacionView> createState() => _VerificacionViewState();
+  ConsumerState<VerificacionPanel> createState() => _VerificacionPanelState();
 }
 
-class _VerificacionViewState extends ConsumerState<VerificacionView> {
-  Future<void> _subir(TipoDocumento tipo) async {
+class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
+  bool _subiendoCedula = false;
+  bool _enviandoSelfie = false;
+
+  Future<void> _subirLado(TipoDocumento tipo) async {
     final camara = kIsWeb ? false : await _elegirOrigen();
-    if (camara == null) return;
+    if (camara == null || !mounted) return;
+    final seguir = await _pedirLado(tipo, camara);
+    if (seguir != true || !mounted) return;
     final Uint8List? bytes = await SelectorFotos.una(camara: camara);
     if (bytes == null || !mounted) return;
-    final subido =
-        await ref.read(subirDocumentoProvider.notifier).subir(tipo, bytes);
+    setState(() => _subiendoCedula = true);
+    await ref.read(subirDocumentoProvider.notifier).subir(tipo, bytes);
+    if (mounted) setState(() => _subiendoCedula = false);
+  }
+
+  Future<void> _tomarSelfie() async {
+    final Uint8List? bytes = kIsWeb
+        ? await Navigator.of(context).push<Uint8List>(
+            MaterialPageRoute(builder: (_) => const SelfieCamara()),
+          )
+        : await SelectorFotos.una(camara: true);
+    if (bytes == null || !mounted) return;
+    setState(() => _enviandoSelfie = true);
+    await ref.read(selfieProvider.notifier).enviar(bytes);
     if (!mounted) return;
-    if (subido) {
-      context.mostrarMensaje('${tipo.titulo}: enviado para revisión.');
-    } else if (ref.read(subirDocumentoProvider) case AsyncError(:final error)) {
-      context.mostrarMensaje(AsyncValueView.mensajeDe(error));
+    // La misma selfie queda como documento para que el admin la compare.
+    final valida = ref.read(usuarioActualProvider)?.fotoVerificada ?? false;
+    if (valida) {
+      await ref
+          .read(subirDocumentoProvider.notifier)
+          .subir(TipoDocumento.selfie, bytes);
     }
+    if (mounted) setState(() => _enviandoSelfie = false);
+  }
+
+  Future<bool?> _pedirLado(TipoDocumento tipo, bool camara) {
+    final frente = tipo == TipoDocumento.cedulaFrontal;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(frente ? 'Frente de la cédula' : 'Reverso de la cédula'),
+        content: Text(
+          frente
+              ? 'Pon la cédula sobre una superficie plana, con buena luz, '
+                    'y que se lea todo.'
+              : 'Ahora el reverso, donde está el código de barras.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(camara ? 'Tomar foto' : 'Elegir foto'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<bool?> _elegirOrigen() {
@@ -82,45 +147,260 @@ class _VerificacionViewState extends ConsumerState<VerificacionView> {
 
   @override
   Widget build(BuildContext context) {
-    final subiendo = ref.watch(subirDocumentoProvider).isLoading;
+    final textos = Theme.of(context).textTheme;
+    final subida = ref.watch(subirDocumentoProvider);
+    final fotoOk = ref.watch(
+      usuarioActualProvider.select((u) => u?.fotoVerificada ?? false),
+    );
+    final foto = ref.watch(selfieProvider);
+    final errorFoto = foto.isLoading || fotoOk
+        ? null
+        : foto.hasError
+        ? AsyncValueView.mensajeDe(foto.error!)
+        : foto.value;
+    final errorSubida = subida.hasError && !_subiendoCedula && !_enviandoSelfie
+        ? AsyncValueView.mensajeDe(subida.error!)
+        : null;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Verificar identidad')),
-      body: AsyncValueView<Verificacion>(
-        value: ref.watch(verificacionProvider),
-        onRetry: () => ref.invalidate(verificacionProvider),
-        onData: (context, verificacion) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            AnchoMaximo(
-              ancho: 720,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    verificacion.todoEnviado
-                        ? 'Tus documentos están en revisión. Te avisaremos '
-                            'cuando tu cuenta quede verificada.'
-                        : 'Para que los clientes confíen en ti, sube estas '
-                            'tres fotos. Solo las verá el equipo de revisión.',
-                  ),
-                  if (subiendo)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 12),
-                      child: LinearProgressIndicator(),
-                    )
-                  else
-                    const SizedBox(height: 12),
-                  for (final tipo in TipoDocumento.values)
-                    _TarjetaDocumento(
-                      tipo: tipo,
-                      documento: verificacion.documentos[tipo],
-                      onSubir: verificacion.puedeSubir(tipo)
-                          ? () => _subir(tipo)
-                          : null,
-                    ),
-                ],
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        Espacios.xl,
+        widget.enDialogo ? Espacios.xl : 0,
+        Espacios.xl,
+        Espacios.xl,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.shield, color: Colores.primario, size: 28),
+              const SizedBox(width: Espacios.s),
+              Expanded(
+                child: Text(
+                  'Verifica tu identidad',
+                  style: textos.headlineSmall,
+                ),
               ),
+              IconButton(
+                tooltip: 'Cerrar',
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: Espacios.xs),
+          Text(
+            'Ayúdanos a conocerte mejor para garantizar la seguridad de toda '
+            'la comunidad de ChauchaApp en Quito.',
+            style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
+          ),
+          const SizedBox(height: Espacios.l),
+          const AvisoBanner(
+            compacto: true,
+            icono: Icons.badge_outlined,
+            mensaje: 'Documento oficial de Ecuador (cédula de ciudadanía)',
+          ),
+          const SizedBox(height: Espacios.l + 4),
+          AsyncValueView<Verificacion>(
+            value: ref.watch(verificacionProvider),
+            onRetry: () => ref.invalidate(verificacionProvider),
+            onData: (context, verificacion) => _contenido(
+              verificacion,
+              fotoOk: fotoOk,
+              errorFoto: errorFoto,
+              errorSubida: errorSubida,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _contenido(
+    Verificacion v, {
+    required bool fotoOk,
+    String? errorFoto,
+    String? errorSubida,
+  }) {
+    final textos = Theme.of(context).textTheme;
+    const cedula = [TipoDocumento.cedulaFrontal, TipoDocumento.cedulaPosterior];
+    final frenteListo = !v.puedeSubir(TipoDocumento.cedulaFrontal);
+    final reversoListo = !v.puedeSubir(TipoDocumento.cedulaPosterior);
+    final frente = v.documentos[TipoDocumento.cedulaFrontal];
+    final reverso = v.documentos[TipoDocumento.cedulaPosterior];
+    final ocupado = _subiendoCedula || _enviandoSelfie;
+    final cedulaRechazada = cedula.any(
+      (t) => v.documentos[t]?.estado == EstadoDocumento.rechazada,
+    );
+    final docSelfie = v.documentos[TipoDocumento.selfie];
+    final selfieRechazada = docSelfie?.estado == EstadoDocumento.rechazada;
+    final todoListo = fotoOk && v.todoEnviado;
+    final verificado =
+        todoListo &&
+        v.documentos.values.every((d) => d.estado == EstadoDocumento.aprobada);
+    final hayRechazo = cedulaRechazada || selfieRechazada;
+    final enRevision = todoListo && !verificado && !hayRechazo;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (verificado)
+          const _Aviso(
+            tipo: TipoAviso.exito,
+            mensaje: 'Tu identidad está verificada.',
+          )
+        else if (enRevision)
+          const _EnRevision()
+        else if (hayRechazo)
+          const _Aviso(
+            tipo: TipoAviso.error,
+            mensaje:
+                'Algo de lo que enviaste fue rechazado. Vuelve a enviarlo.',
+          ),
+        if (errorFoto != null)
+          _Aviso(tipo: TipoAviso.error, mensaje: errorFoto),
+        if (errorSubida != null)
+          _Aviso(tipo: TipoAviso.error, mensaje: errorSubida),
+        _Paso(
+          numero: 1,
+          titulo: 'Frente de la cédula',
+          ayuda: 'Foto del lado donde sale tu rostro.',
+          listo: frenteListo,
+          activo: !frenteListo,
+          cargando: _subiendoCedula && !frenteListo,
+          etiquetaListo: frente?.estado == EstadoDocumento.aprobada
+              ? 'Aprobada'
+              : 'Enviada',
+          textoBoton: frente?.estado == EstadoDocumento.rechazada
+              ? 'Reenviar frente'
+              : 'Tomar frente',
+          icono: Icons.upload_outlined,
+          onPressed: ocupado
+              ? null
+              : () => _subirLado(TipoDocumento.cedulaFrontal),
+        ),
+        _Paso(
+          numero: 2,
+          titulo: 'Reverso de la cédula',
+          ayuda: 'Foto del lado del código de barras.',
+          listo: reversoListo,
+          activo: frenteListo && !reversoListo,
+          cargando: _subiendoCedula && frenteListo && !reversoListo,
+          etiquetaListo: reverso?.estado == EstadoDocumento.aprobada
+              ? 'Aprobada'
+              : 'Enviada',
+          textoBoton: reverso?.estado == EstadoDocumento.rechazada
+              ? 'Reenviar reverso'
+              : 'Tomar reverso',
+          icono: Icons.upload_outlined,
+          onPressed: ocupado || !frenteListo
+              ? null
+              : () => _subirLado(TipoDocumento.cedulaPosterior),
+        ),
+        _Paso(
+          numero: 3,
+          titulo: 'Tómate una selfie',
+          ayuda:
+              'De frente y con el rostro descubierto. Será tu foto pública '
+              'y no podrás cambiarla.',
+          listo: fotoOk,
+          activo: frenteListo && reversoListo && !fotoOk,
+          cargando: _enviandoSelfie,
+          etiquetaListo: docSelfie?.estado == EstadoDocumento.aprobada
+              ? 'Aprobada'
+              : 'Enviada',
+          textoBoton: 'Tomar selfie',
+          icono: Icons.photo_camera_outlined,
+          onPressed: ocupado || !frenteListo || !reversoListo
+              ? null
+              : _tomarSelfie,
+        ),
+        const SizedBox(height: Espacios.s),
+        Row(
+          children: [
+            const CircleAvatar(
+              radius: 14,
+              backgroundColor: Colores.primarioSuave,
+              child: Icon(
+                Icons.lock_outline,
+                size: 15,
+                color: Colores.primario,
+              ),
+            ),
+            const SizedBox(width: Espacios.s),
+            Expanded(
+              child: Text(
+                'Solo tú y el equipo de verificación pueden ver tu cédula.',
+                style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Espacios.xl),
+        if (verificado)
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          )
+        else if (todoListo)
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Entendido'),
+          )
+        else
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hacerlo más tarde'),
+          ),
+      ],
+    );
+  }
+}
+
+class _Aviso extends StatelessWidget {
+  const _Aviso({required this.tipo, required this.mensaje});
+
+  final TipoAviso tipo;
+  final String mensaje;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: Espacios.m),
+    child: AvisoBanner(tipo: tipo, mensaje: mensaje),
+  );
+}
+
+class _EnRevision extends StatelessWidget {
+  const _EnRevision();
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espacios.m),
+      child: TarjetaApp(
+        padding: const EdgeInsets.all(Espacios.l),
+        radio: Radios.medio,
+        conBorde: false,
+        color: Colores.primarioSuave,
+        colorBorde: Colores.primarioClaro,
+        child: Column(
+          children: [
+            const Icon(
+              Icons.hourglass_top_rounded,
+              color: Colores.primario,
+              size: 36,
+            ),
+            const SizedBox(height: Espacios.s),
+            Text('Perfil en revisión', style: textos.titleLarge),
+            const SizedBox(height: Espacios.xs),
+            Text(
+              'Tu verificación se realizará pronto. Te avisaremos cuando '
+              'tu cuenta quede verificada.',
+              textAlign: TextAlign.center,
+              style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
             ),
           ],
         ),
@@ -129,78 +409,108 @@ class _VerificacionViewState extends ConsumerState<VerificacionView> {
   }
 }
 
-class _TarjetaDocumento extends StatelessWidget {
-  const _TarjetaDocumento({
-    required this.tipo,
-    required this.documento,
-    required this.onSubir,
+/// Una línea numerada: círculo con el número (o check si ya está), título,
+/// ayuda y, debajo, el botón o el estado.
+class _Paso extends StatelessWidget {
+  const _Paso({
+    required this.numero,
+    required this.titulo,
+    required this.ayuda,
+    required this.listo,
+    required this.activo,
+    required this.cargando,
+    required this.etiquetaListo,
+    required this.textoBoton,
+    required this.icono,
+    required this.onPressed,
   });
 
-  final TipoDocumento tipo;
-  final DocumentoTecnico? documento;
-  final VoidCallback? onSubir;
+  final int numero;
+  final String titulo;
+  final String ayuda;
+  final bool listo;
+  final bool activo;
+  final bool cargando;
+  final String etiquetaListo;
+  final String textoBoton;
+  final IconData icono;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final doc = documento;
-    final url = doc?.url;
-    return Card(
-      margin: const EdgeInsets.only(top: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: 72,
-                height: 72,
-                child: url == null
-                    ? ColoredBox(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        child: Icon(tipo.icono, size: 32),
-                      )
-                    : Image.network(url, fit: BoxFit.cover),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(tipo.titulo, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(tipo.ayuda, style: Theme.of(context).textTheme.bodySmall),
-                  const SizedBox(height: 8),
-                  _EstadoDocumento(estado: doc?.estado),
-                ],
-              ),
-            ),
-            if (onSubir != null)
-              FilledButton.tonal(
-                onPressed: onSubir,
-                child: Text(doc == null ? 'Subir' : 'Reenviar'),
-              ),
-          ],
+    final textos = Theme.of(context).textTheme;
+    const compacto = Size(0, 38);
+    const relleno = EdgeInsets.symmetric(horizontal: Espacios.m);
+
+    final Widget accion;
+    if (cargando) {
+      accion = const SizedBox.square(
+        dimension: 24,
+        child: CircularProgressIndicator(strokeWidth: 2.5),
+      );
+    } else if (listo) {
+      accion = Pildora(
+        texto: etiquetaListo,
+        icono: Icons.check_circle_outline,
+        color: Colores.acento,
+      );
+    } else if (activo) {
+      accion = FilledButton.icon(
+        style: FilledButton.styleFrom(minimumSize: compacto, padding: relleno),
+        onPressed: onPressed,
+        icon: Icon(icono, size: 18),
+        label: Text(textoBoton),
+      );
+    } else {
+      accion = OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          minimumSize: compacto,
+          padding: relleno,
         ),
+        onPressed: onPressed,
+        icon: Icon(icono, size: 18),
+        label: Text(textoBoton),
+      );
+    }
+
+    return TarjetaApp(
+      margin: const EdgeInsets.only(bottom: Espacios.m),
+      padding: const EdgeInsets.all(Espacios.m),
+      radio: Radios.medio,
+      conBorde: false,
+      color: activo ? Colores.primarioSuave : Colores.tarjeta,
+      colorBorde: activo ? Colores.primarioClaro : Colores.linea,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: listo ? Colores.acento : Colores.primario,
+            child: listo
+                ? const Icon(Icons.check, size: 18, color: Colors.white)
+                : Text(
+                    '$numero',
+                    style: textos.titleSmall?.copyWith(color: Colors.white),
+                  ),
+          ),
+          const SizedBox(width: Espacios.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(titulo, style: textos.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  ayuda,
+                  style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
+                ),
+                const SizedBox(height: Espacios.s),
+                accion,
+              ],
+            ),
+          ),
+        ],
       ),
     );
-  }
-}
-
-class _EstadoDocumento extends StatelessWidget {
-  const _EstadoDocumento({required this.estado});
-
-  final EstadoDocumento? estado;
-
-  @override
-  Widget build(BuildContext context) {
-    final (texto, color) = switch (estado) {
-      null => ('Sin enviar', Theme.of(context).colorScheme.outline),
-      EstadoDocumento.pendiente => ('En revisión', Colores.aviso),
-      EstadoDocumento.aprobada => ('Aprobado', Colores.acento),
-      EstadoDocumento.rechazada => ('Rechazado: vuelve a enviarlo', Colores.error),
-    };
-    return Text(texto, style: TextStyle(color: color, fontWeight: FontWeight.w600));
   }
 }

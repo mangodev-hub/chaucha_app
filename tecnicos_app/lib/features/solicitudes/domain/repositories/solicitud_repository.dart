@@ -1,29 +1,42 @@
-// Contrato de solicitudes. Los métodos lanzan [AppFailure] si fallan.
 import 'dart:typed_data';
 
 import '../entities/foto_solicitud.dart';
 import '../entities/nueva_solicitud.dart';
+import '../entities/servicio_completado.dart';
 import '../entities/solicitud.dart';
 
 abstract interface class SolicitudRepository {
-  /// Solicitudes del cliente conectado, de la más nueva a la más antigua.
   Future<List<Solicitud>> misSolicitudes();
 
-  /// Crea la solicitud, sube sus fotos y devuelve su id.
+  /// Servicios completados del cliente, del más reciente al más antiguo,
+  /// con el técnico, el precio de la visita y la reseña que dejó.
+  Future<List<ServicioCompletado>> historialServicios(
+    String clienteId, {
+    int limite = 50,
+  });
+
   Future<String> crear(NuevaSolicitud nueva);
 
-  /// Solicitudes abiertas o cotizadas de esos oficios.
   Future<List<Solicitud>> abiertasDeOficios(List<int> oficioIds);
 
-  /// Solicitudes en las que el técnico conectado tiene la cotización aceptada.
   Future<List<Solicitud>> misTrabajos();
 
-  /// Sube la evidencia y deja la solicitud por confirmar.
   Future<void> marcarTerminada(String solicitudId, List<Uint8List> evidencias);
 
   Future<Solicitud> obtener(String id);
 
   Future<List<FotoSolicitud>> fotos(String solicitudId);
-
+  Future<List<Solicitud>> porIds(List<String> ids);
   Future<void> cambiarEstado(String solicitudId, EstadoSolicitud estado);
+  Future<void> editar(
+    String id, {
+    required String descripcion,
+    required int oficioId,
+    String? direccion,
+  });
+
+  Future<void> eliminar(String id);
+
+  /// Agrega fotos del problema a una solicitud ya publicada.
+  Future<void> agregarFotos(String solicitudId, List<Uint8List> fotos);
 }

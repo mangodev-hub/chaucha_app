@@ -3,15 +3,10 @@ abstract final class CedulaValidator {
   static const int _longitud = 10;
   static const int _provinciaExtranjeros = 30;
   static const int _ultimaProvincia = 24;
-  static const int _tercerDigitoMaximo = 5; 
+  static const int _tercerDigitoMaximo = 5;
   static const List<int> _coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
 
-
   static bool isValid(String? cedula) => validate(cedula) == null;
-
-
-
-
 
   static String? validate(String? value) {
     final cedula = value?.trim() ?? '';
@@ -27,7 +22,8 @@ abstract final class CedulaValidator {
     final digitos = cedula.split('').map(int.parse).toList();
 
     final provincia = digitos[0] * 10 + digitos[1];
-    final provinciaValida = (provincia >= 1 && provincia <= _ultimaProvincia) ||
+    final provinciaValida =
+        (provincia >= 1 && provincia <= _ultimaProvincia) ||
         provincia == _provinciaExtranjeros;
     if (!provinciaValida) return 'El código de provincia no es válido.';
 
@@ -40,9 +36,6 @@ abstract final class CedulaValidator {
     }
     return null;
   }
-
-
-
 
   static int _digitoVerificador(List<int> digitos) {
     var suma = 0;

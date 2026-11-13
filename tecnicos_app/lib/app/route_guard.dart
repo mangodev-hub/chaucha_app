@@ -3,23 +3,31 @@ import '../core/router/app_routes.dart';
 import '../features/auth/domain/entities/rol.dart';
 import '../features/auth/domain/entities/sesion_estado.dart';
 
-
 String rutaInicioPara(Rol rol) => switch (rol) {
-      Rol.cliente => AppRoutes.clienteInicio,
-      Rol.tecnico => AppRoutes.tecnicoInicio,
-      Rol.admin => AppRoutes.adminInicio,
-    };
+  Rol.cliente => AppRoutes.clienteInicio,
+  Rol.tecnico => AppRoutes.tecnicoInicio,
+  Rol.admin => AppRoutes.adminInicio,
+};
 
 String? resolverRedireccion({
   required SesionEstado sesion,
   required String ubicacion,
 }) {
+  if (AppRoutes.legales.contains(ubicacion) && sesion is! SesionVerificando) {
+    return null;
+  }
   return switch (sesion) {
     SesionVerificando() =>
       ubicacion == AppRoutes.splash ? null : AppRoutes.splash,
     SinSesion() =>
       AppRoutes.publicas.contains(ubicacion) ? null : AppRoutes.login,
+    // El administrador no tiene cédula: nunca pasa por completar el perfil.
+    ConSesion(:final usuario)
+        when !usuario.perfilCompleto && usuario.rol != Rol.admin =>
+      ubicacion == AppRoutes.completarPerfil ? null : AppRoutes.completarPerfil,
     ConSesion(:final usuario) => _redireccionConSesion(usuario.rol, ubicacion),
+    SesionRecuperando() =>
+      ubicacion == AppRoutes.restablecer ? null : AppRoutes.restablecer,
   };
 }
 

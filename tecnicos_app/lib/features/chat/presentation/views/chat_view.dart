@@ -1,31 +1,107 @@
-// Chat en tiempo real entre cliente y técnico.
+// Chat en tiempo real entre cliente y técnico. Solo el cliente inicia la
+// conversación. Cuando acuerdan el precio, el técnico envía el ticket de
+// trabajo ("Empezar trabajo") y el cliente lo confirma o lo rechaza.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/presence/indicador_presencia.dart';
+import '../../../../core/presence/presencia_service.dart';
+import '../../../../core/providers/core_providers.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/estado_vacio.dart';
+import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/pantalla_secundaria.dart';
 import '../../../../core/widgets/seccion.dart';
+import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
+import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
+import '../../../cotizaciones/domain/entities/cotizacion.dart';
+import '../../../cotizaciones/domain/entities/reglas_tarifa.dart';
+import '../../../cotizaciones/presentation/widgets/tarifa_widgets.dart';
+import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../../domain/entities/mensaje.dart';
+import '../../domain/entities/reglas_chat.dart';
 import '../providers/enviar_mensaje_provider.dart';
 import '../providers/mensajes_provider.dart';
+import '../providers/tarifa_chat_provider.dart';
+import '../widgets/mensaje_ticket.dart';
+import '../widgets/ruta_perfil_chat.dart';
 
-class ChatView extends ConsumerStatefulWidget {
+class ChatView extends ConsumerWidget {
   const ChatView({super.key, required this.conversacionId});
 
   final String conversacionId;
 
   @override
-  ConsumerState<ChatView> createState() => _ChatViewState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rol = ref.watch(usuarioActualProvider)?.rol;
+    final contexto = ref.watch(contextoChatProvider(conversacionId)).value;
+    final ruta = rol == Rol.admin
+        ? null
+        : rutaPerfilDelChat(contexto, soyCliente: rol == Rol.cliente);
+    // El cliente ve el nombre del técnico en la barra, como en WhatsApp.
+    final nombre = rol == Rol.cliente ? contexto?.oferta?.tecnicoNombre : null;
+    return PantallaSecundaria(
+      titulo: nombre ?? 'Chat',
+      acciones: [
+        if (ruta != null)
+          IconButton(
+            tooltip: 'Ver perfil',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () => context.push(ruta),
+          ),
+      ],
+      cuerpo: ChatPanel(conversacionId: conversacionId),
+    );
+  }
 }
 
-class _ChatViewState extends ConsumerState<ChatView> {
+class ChatPanel extends ConsumerStatefulWidget {
+  const ChatPanel({super.key, required this.conversacionId});
+
+  final String conversacionId;
+
+  @override
+  ConsumerState<ChatPanel> createState() => _ChatPanelState();
+}
+
+class _ChatPanelState extends ConsumerState<ChatPanel> {
+  static const double _anchoMaximo = 720;
+
   final _texto = TextEditingController();
+  late final ConversacionAbierta _abierta;
+
+  @override
+  void initState() {
+    super.initState();
+    // Chat en pantalla: la presencia lo avisa y no llega el push del mensaje.
+    _abierta = ref.read(conversacionAbiertaProvider.notifier);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _abierta.abrir(widget.conversacionId);
+      final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+      if (uid == null) return;
+      unawaited(
+        ref
+            .read(notificacionesRepoProvider)
+            .marcarLeidas(
+              uid,
+              tipos: const ['mensaje', 'chat'],
+              referenciaId: widget.conversacionId,
+            ),
+      );
+    });
+  }
 
   @override
   void dispose() {
+    final id = widget.conversacionId;
+    // Fuera del dispose: no se cambia un provider mientras se desmonta.
+    Future.microtask(() => _abierta.cerrar(id));
     _texto.dispose();
     super.dispose();
   }
@@ -41,70 +117,356 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
     _texto.text = texto; // Se devuelve el texto para no perderlo.
     if (ref.read(envio) case AsyncError(:final error)) {
-      context.mostrarMensaje(AsyncValueView.mensajeDe(error));
+      context.mostrarMensaje(
+        AsyncValueView.mensajeDe(error),
+        tipo: TipoMensaje.error,
+      );
     }
+  }
+
+  AccionesTarifaNotifier get _tarifa =>
+      ref.read(accionesTarifaProvider(widget.conversacionId).notifier);
+
+  /// Muestra [exito] si salió bien, o el error de la acción si falló.
+  Future<void> _resultado(Future<bool> accion, String exito) async {
+    final ok = await accion;
+    if (!mounted) return;
+    if (ok) {
+      context.mostrarMensaje(exito, tipo: TipoMensaje.exito);
+    } else if (ref.read(accionesTarifaProvider(widget.conversacionId))
+        case AsyncError(:final error)) {
+      context.mostrarMensaje(
+        AsyncValueView.mensajeDe(error),
+        tipo: TipoMensaje.error,
+      );
+    }
+  }
+
+  Future<void> _empezarTrabajo(Cotizacion oferta) async {
+    final tarifa = await mostrarFormularioTarifa(
+      context,
+      precioBase: oferta.precioBase,
+      cargarOcupados: (desde, hasta) => ref
+          .read(cotizacionRepositoryProvider)
+          .horariosOcupados(oferta.id, desde: desde, hasta: hasta),
+    );
+    if (tarifa == null) return;
+    await _resultado(
+      _tarifa.enviar(tarifa),
+      'Ticket enviado. El cliente debe confirmarlo.',
+    );
+  }
+
+  Future<void> _confirmar() => _resultado(
+    _tarifa.confirmar(),
+    'Ticket aceptado. El trabajo está en curso.',
+  );
+
+  Future<void> _rechazar() =>
+      _resultado(_tarifa.rechazar(), 'Ticket rechazado.');
+
+  @override
+  Widget build(BuildContext context) {
+    final id = widget.conversacionId;
+    final usuario = ref.watch(usuarioActualProvider);
+    final miId = usuario?.id;
+    final soyCliente = usuario?.rol == Rol.cliente;
+    final mensajes = ref.watch(mensajesProvider(id));
+    final enviando = ref.watch(enviarMensajeProvider(id)).isLoading;
+    // Mientras cargan los mensajes, el técnico todavía no puede escribir.
+    final puedeEscribir =
+        miId != null &&
+        ReglasChat.puedeEscribir(
+          soyCliente: soyCliente,
+          miId: miId,
+          mensajes: mensajes.value ?? const [],
+        );
+
+    // Cada acción del ticket deja un mensaje: cuando llega uno nuevo se
+    // recarga la oferta, así la otra persona ve el ticket sin recargar.
+    ref.listen(mensajesProvider(id), (anterior, actual) {
+      final antes = anterior?.value?.length;
+      if (antes != null && actual.value?.length != antes) {
+        ref.invalidate(contextoChatProvider(id));
+      }
+    });
+
+    final contexto = ref.watch(contextoChatProvider(id));
+    final oferta = contexto.value?.oferta;
+    final estadoSolicitud = contexto.value?.estadoSolicitud;
+    final procesando = ref.watch(accionesTarifaProvider(id)).isLoading;
+    final puedeEnviarTicket =
+        puedeEscribir &&
+        estadoSolicitud != null &&
+        ReglasTarifa.puedeEnviar(
+          soyCliente: soyCliente,
+          oferta: oferta,
+          estadoSolicitud: estadoSolicitud,
+        );
+    final puedeResponder =
+        estadoSolicitud != null &&
+        ReglasTarifa.puedeResponder(
+          soyCliente: soyCliente,
+          oferta: oferta,
+          estadoSolicitud: estadoSolicitud,
+        );
+
+    final conversacion = contexto.value?.conversacion;
+    final otroId = soyCliente
+        ? conversacion?.tecnicoId
+        : conversacion?.clienteId;
+
+    final panel = Column(
+      children: [
+        if (otroId != null)
+          ColoredBox(
+            color: Colores.tarjeta,
+            child: AnchoMaximo(
+              ancho: _anchoMaximo,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Espacios.l,
+                  vertical: 6,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IndicadorPresencia(usuarioId: otroId),
+                ),
+              ),
+            ),
+          ),
+        FranjaTarifa(
+          soyCliente: soyCliente,
+          oferta: oferta?.tarifa == null ? oferta : null,
+          cargando: procesando,
+          error: contexto.hasError
+              ? AsyncValueView.mensajeDe(contexto.error!)
+              : null,
+          onEmpezar: puedeEnviarTicket ? () => _empezarTrabajo(oferta!) : null,
+        ),
+        Expanded(
+          child: ColoredBox(
+            color: Colores.fondoChat,
+            child: AnchoMaximo(
+              ancho: _anchoMaximo,
+              child: AsyncValueView<List<Mensaje>>(
+                value: mensajes,
+                onRetry: () => ref.invalidate(mensajesProvider(id)),
+                onData: (context, mensajes) => mensajes.isEmpty
+                    ? soyCliente
+                          ? const EstadoMensaje(
+                              icono: Icons.chat_bubble_outline,
+                              titulo: 'Inicia la conversación',
+                              mensaje:
+                                  'Pregunta lo que necesites y acuerden el '
+                                  'precio del trabajo.',
+                            )
+                          : const EstadoMensaje(
+                              icono: Icons.mark_chat_unread_outlined,
+                              titulo: 'Esperando al cliente',
+                              mensaje:
+                                  'Cuando el cliente te escriba, podrás '
+                                  'responderle aquí.',
+                            )
+                    : _Mensajes(
+                        mensajes: mensajes,
+                        miId: miId,
+                        oferta: oferta,
+                        puedeResponder: puedeResponder && !procesando,
+                        onAceptar: _confirmar,
+                        onRechazar: _rechazar,
+                      ),
+              ),
+            ),
+          ),
+        ),
+        _BarraEnvio(
+          controller: _texto,
+          enviando: enviando,
+          habilitada: puedeEscribir,
+          onEnviar: _enviar,
+          anchoMaximo: _anchoMaximo,
+        ),
+      ],
+    );
+
+    return panel;
+  }
+}
+
+class _Mensajes extends StatefulWidget {
+  const _Mensajes({
+    required this.mensajes,
+    required this.miId,
+    required this.oferta,
+    required this.puedeResponder,
+    required this.onAceptar,
+    required this.onRechazar,
+  });
+
+  final List<Mensaje> mensajes;
+  final String? miId;
+  final Cotizacion? oferta;
+  final bool puedeResponder;
+  final VoidCallback onAceptar;
+  final VoidCallback onRechazar;
+
+  @override
+  State<_Mensajes> createState() => _MensajesState();
+}
+
+class _MensajesState extends State<_Mensajes> {
+  /// Ids ya mostrados. Null hasta la primera carga, que no se anima.
+  Set<String>? _vistos;
+  Widget _contenido(Mensaje m, String? idUltimoTicket) {
+    final esMio = m.autorId == widget.miId;
+    if (m.accion == 'tarifa_enviada') {
+      final pendiente =
+          m.id == idUltimoTicket && widget.oferta?.tarifaPendiente == true;
+      return MensajeTicket(
+        mensaje: m,
+        esMio: esMio,
+        pendiente: pendiente,
+        puedeResponder: pendiente && widget.puedeResponder,
+        onAceptar: widget.onAceptar,
+        onRechazar: widget.onRechazar,
+      );
+    }
+    if (m.esSistema) return NotaSistema(m.contenido);
+    return _Burbuja(mensaje: m, esMio: esMio);
   }
 
   @override
   Widget build(BuildContext context) {
-    final miId = ref.watch(usuarioActualProvider)?.id;
-    final mensajes = ref.watch(mensajesProvider(widget.conversacionId));
-    final enviando =
-        ref.watch(enviarMensajeProvider(widget.conversacionId)).isLoading;
+    final vistos = _vistos;
+    // Se arma en orden cronológico y se muestra invertido (reverse: true)
+    // para que el más nuevo quede junto al campo de texto. Cada elemento
+    // lleva su clave para que la lista conserve su estado (y su animación)
+    // cuando llegan mensajes nuevos.
+    final elementos = <Widget>[];
+    String? diaAnterior;
+    String? idUltimoTicket;
+    for (final m in widget.mensajes) {
+      if (m.accion == 'tarifa_enviada') idUltimoTicket = m.id;
+    }
+    for (final m in widget.mensajes) {
+      final dia = Formatos.dia(m.enviadoEn);
+      if (dia != diaAnterior) {
+        elementos.add(_SeparadorDia(dia, key: ValueKey('dia-$dia')));
+        diaAnterior = dia;
+      }
+      elementos.add(
+        _EntradaMensaje(
+          key: ValueKey(m.id),
+          animar: vistos != null && !vistos.contains(m.id),
+          child: _contenido(m, idUltimoTicket),
+        ),
+      );
+    }
+    _vistos = {...?vistos, for (final m in widget.mensajes) m.id};
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
-      body: AnchoMaximo(
-        ancho: 720,
-        child: Column(
-          children: [
-            Expanded(
-              child: AsyncValueView<List<Mensaje>>(
-                value: mensajes,
-                onRetry: () =>
-                    ref.invalidate(mensajesProvider(widget.conversacionId)),
-                onData: (context, mensajes) => mensajes.isEmpty
-                    ? const EstadoVacio(
-                        icono: Icons.chat_bubble_outline,
-                        mensaje: 'Escribe el primer mensaje.',
-                      )
-                    : ListView.builder(
-                        reverse: true, // El más nuevo abajo, junto al campo.
-                        padding: const EdgeInsets.all(12),
-                        itemCount: mensajes.length,
-                        itemBuilder: (context, i) {
-                          final m = mensajes[mensajes.length - 1 - i];
-                          return _Burbuja(mensaje: m, esMio: m.autorId == miId);
-                        },
-                      ),
-              ),
+    final indices = {
+      for (var i = 0; i < elementos.length; i++)
+        elementos[i].key!: elementos.length - 1 - i,
+    };
+    return ListView.builder(
+      reverse: true,
+      padding: const EdgeInsets.all(Espacios.m),
+      itemCount: elementos.length,
+      itemBuilder: (context, i) => elementos[elementos.length - 1 - i],
+      findChildIndexCallback: (clave) => indices[clave],
+    );
+  }
+}
+
+/// Si [animar] al montarse, [child] crece desde abajo con un fundido. Solo
+/// cuenta el valor inicial: no se repite al volver a construirse.
+class _EntradaMensaje extends StatefulWidget {
+  const _EntradaMensaje({super.key, required this.animar, required this.child});
+
+  final bool animar;
+  final Widget child;
+
+  @override
+  State<_EntradaMensaje> createState() => _EntradaMensajeState();
+}
+
+class _EntradaMensajeState extends State<_EntradaMensaje>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controlador = AnimationController(
+    vsync: this,
+    value: widget.animar ? 0 : 1,
+  );
+  late final Animation<double> _curva = CurvedAnimation(
+    parent: _controlador,
+    curve: Movimiento.entrada,
+  );
+  bool _iniciado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_iniciado) {
+      _iniciado = true;
+      if (widget.animar) {
+        _controlador.duration = Movimiento.de(context, Movimiento.normal);
+        unawaited(_controlador.forward());
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controlador.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizeTransition(
+      sizeFactor: _curva,
+      alignment: Alignment.topCenter,
+      child: FadeTransition(
+        opacity: _curva,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.3),
+            end: Offset.zero,
+          ).animate(_curva),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+class _SeparadorDia extends StatelessWidget {
+  const _SeparadorDia(this.dia, {super.key});
+
+  final String dia;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: Espacios.m),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Espacios.m,
+            vertical: Espacios.xs,
+          ),
+          decoration: BoxDecoration(
+            color: Colores.tarjeta,
+            borderRadius: BorderRadius.circular(Radios.pildora),
+            border: Border.all(color: Colores.linea),
+          ),
+          child: Text(
+            dia,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Colores.tintaSuave,
+              fontWeight: FontWeight.w700,
             ),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _texto,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _enviar(),
-                        decoration: const InputDecoration(
-                          hintText: 'Escribe un mensaje...',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filled(
-                      onPressed: enviando ? null : _enviar,
-                      icon: const Icon(Icons.send),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -119,27 +481,135 @@ class _Burbuja extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colores = Theme.of(context).colorScheme;
+    final textos = Theme.of(context).textTheme;
+    const radio = Radius.circular(Radios.grande);
+    const esquina = Radius.circular(Espacios.xs);
+    // Como en WhatsApp: mis mensajes en verde claro, los del otro en blanco,
+    // ambos con texto oscuro. La esquina recortada apunta a quien escribió.
     return Align(
       alignment: esMio ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: Espacios.xs - 1),
+        padding: const EdgeInsets.fromLTRB(
+          Espacios.m + 2,
+          Espacios.s + 2,
+          Espacios.m + 2,
+          Espacios.s,
+        ),
         constraints: const BoxConstraints(maxWidth: 420),
         decoration: BoxDecoration(
-          color: esMio ? colores.primaryContainer : colores.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          color: esMio ? Colores.primarioSuave : Colores.tarjeta,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F0E2A14),
+              blurRadius: 2,
+              offset: Offset(0, 1),
+            ),
+          ],
+          borderRadius: BorderRadius.only(
+            topLeft: radio,
+            topRight: radio,
+            bottomLeft: esMio ? radio : esquina,
+            bottomRight: esMio ? esquina : radio,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(mensaje.contenido),
+            Text(mensaje.contenido, style: textos.bodyMedium),
             const SizedBox(height: 2),
             Text(
               Formatos.hora(mensaje.enviadoEn),
-              style: Theme.of(context).textTheme.labelSmall,
+              style: textos.labelSmall?.copyWith(color: Colores.tintaSuave),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Barra blanca inferior: campo redondeado y botón verde de enviar. Si no
+/// está [habilitada] (técnico antes de que el cliente escriba), muestra un
+/// aviso y desactiva el campo.
+class _BarraEnvio extends StatelessWidget {
+  const _BarraEnvio({
+    required this.controller,
+    required this.enviando,
+    required this.habilitada,
+    required this.onEnviar,
+    required this.anchoMaximo,
+  });
+
+  final TextEditingController controller;
+  final bool enviando;
+  final bool habilitada;
+  final VoidCallback onEnviar;
+  final double anchoMaximo;
+
+  @override
+  Widget build(BuildContext context) {
+    final redondeado = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(Radios.pildora),
+      borderSide: const BorderSide(color: Colores.linea, width: 1.5),
+    );
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Colores.tarjeta,
+        border: Border(top: BorderSide(color: Colores.linea)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(Espacios.s + 2),
+          child: Align(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: anchoMaximo),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      enabled: habilitada,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => onEnviar(),
+                      minLines: 1,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: habilitada
+                            ? 'Escribe un mensaje...'
+                            : 'El cliente iniciará la conversación',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Espacios.l + 4,
+                          vertical: Espacios.m,
+                        ),
+                        fillColor: Colores.superficie,
+                        border: redondeado,
+                        enabledBorder: redondeado,
+                        focusedBorder: redondeado.copyWith(
+                          borderSide: const BorderSide(
+                            color: Colores.primarioVivo,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Espacios.s),
+                  IconButton.filled(
+                    tooltip: 'Enviar',
+                    iconSize: 22,
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size.square(48),
+                    ),
+                    onPressed: enviando || !habilitada ? null : onEnviar,
+                    icon: const Icon(Icons.send_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:tecnicos_app/core/errors/app_failure.dart';
 import 'package:tecnicos_app/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:tecnicos_app/features/auth/data/repositories/supabase_usuario_repository.dart';
@@ -17,6 +18,22 @@ import 'package:tecnicos_app/features/auth/presentation/providers/sesion_provide
 class _AuthFalso implements AuthRepository {
   final cambios = StreamController<String?>.broadcast();
   int cierres = 0;
+  @override
+  Stream<void> get recuperacionIniciada => const Stream.empty();
+
+  @override
+  String? get usuarioId => null;
+
+  @override
+  Future<void> enviarRecuperacion(String email) async {}
+
+  @override
+  Future<void> reenviarConfirmacion(String email) async {}
+
+  @override
+  Future<void> cambiarContrasena(String nueva) async {}
+  @override
+  Future<void> iniciarConGoogle() async {}
 
   @override
   Stream<String?> get cambiosDeSesion => cambios.stream;
@@ -36,10 +53,43 @@ class _AuthFalso implements AuthRepository {
   @override
   Future<RegistroResultado> registrar(RegistroDatos datos) async =>
       RegistroResultado.sesionIniciada;
+
+  @override
+  String? get correoActual => null;
+
+  @override
+  bool get usaContrasena => true;
+
+  @override
+  Future<void> cambiarContrasenaConActual({
+    required String actual,
+    required String nueva,
+  }) async {}
+
+  @override
+  Future<void> cambiarCorreo({
+    required String contrasena,
+    required String nuevo,
+  }) async {}
+
+  @override
+  Future<void> cerrarSesionEnTodos() async {}
 }
 
 class _UsuariosFalso implements UsuarioRepository {
-  /// Respuesta por id: un [Usuario], null (sin perfil) o un [Completer].
+  @override
+  Future<void> actualizarUbicacion(LatLng punto) async {}
+
+  @override
+  Future<String?> miCedula() async => null;
+
+  @override
+  Future<void> completarPerfil({
+    required String cedula,
+    required String codigoDactilar,
+    required Rol rol,
+  }) async {}
+
   final Map<String, Object?> respuestas = {};
   AppFailure? falla;
 
@@ -51,15 +101,18 @@ class _UsuariosFalso implements UsuarioRepository {
     if (respuesta is Completer<Usuario?>) return respuesta.future;
     return respuesta as Usuario?;
   }
+
+  @override
+  Future<String?> registrarSelfie({required String ruta}) async => null;
 }
 
 Usuario _usuario(String id, {Rol rol = Rol.cliente}) => Usuario(
-      id: id,
-      rol: rol,
-      nombres: 'Ana',
-      apellidos: 'Pérez',
-      creadoEn: DateTime(2026),
-    );
+  id: id,
+  rol: rol,
+  nombres: 'Ana',
+  apellidos: 'Pérez',
+  creadoEn: DateTime(2026),
+);
 
 /// Deja correr los eventos del stream y los `await` pendientes.
 Future<void> _esperar() async {
@@ -91,6 +144,18 @@ void main() {
 
   test('arranca verificando', () {
     expect(estado(), isA<SesionVerificando>());
+  });
+
+  test('recargarUsuario actualiza el perfil de la sesión', () async {
+    usuarios.respuestas['u1'] = _usuario('u1');
+    auth.cambios.add('u1');
+    await _esperar();
+    expect(container.read(usuarioActualProvider)?.rol, Rol.cliente);
+
+    usuarios.respuestas['u1'] = _usuario('u1', rol: Rol.tecnico);
+    await container.read(sesionProvider.notifier).recargarUsuario();
+
+    expect(container.read(usuarioActualProvider)?.rol, Rol.tecnico);
   });
 
   test('sin usuario pasa a SinSesion sin aviso', () async {

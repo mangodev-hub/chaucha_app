@@ -1,4 +1,3 @@
-// Solicitud de servicio que publica un cliente.
 import 'package:latlong2/latlong.dart';
 
 enum EstadoSolicitud {
@@ -9,8 +8,8 @@ enum EstadoSolicitud {
   completada,
   cancelada;
 
-  /// Solo se puede cotizar (y aceptar cotizaciones) mientras está abierta.
   bool get recibeCotizaciones => this == abierta || this == cotizada;
+  bool get oficioEditable => this == abierta;
 }
 
 class Solicitud {
@@ -24,6 +23,9 @@ class Solicitud {
     required this.creadoEn,
     this.ubicacion,
     this.direccionReferencia,
+    this.clienteNombre,
+    this.clienteFotoRuta,
+    this.completadaEn,
   });
 
   final String id;
@@ -31,8 +33,22 @@ class Solicitud {
   final int oficioId;
   final String oficioNombre;
   final String descripcion;
+
+  /// Cuándo se completó el servicio: desde aquí corren los 30 días de
+  /// garantía.
+  final DateTime? completadaEn;
   final LatLng? ubicacion;
   final String? direccionReferencia;
   final EstadoSolicitud estado;
   final DateTime creadoEn;
+
+  /// Nombre corto ("Ana P.") y foto del cliente, para las tarjetas del técnico.
+  final String? clienteNombre;
+  final String? clienteFotoRuta;
+
+  String get clienteIniciales {
+    final partes = (clienteNombre ?? '').split(' ').where((p) => p.isNotEmpty);
+    final ini = partes.take(2).map((p) => p[0]).join();
+    return ini.isEmpty ? '?' : ini.toUpperCase();
+  }
 }

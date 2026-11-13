@@ -1,14 +1,9 @@
-// Datos que envía un técnico al cotizar una solicitud.
+// Datos que envía un técnico al ofrecer sus servicios en una solicitud.
 class NuevaCotizacion {
-  const NuevaCotizacion({
-    required this.solicitudId,
-    required this.manoObra,
-    required this.materiales,
-    this.detalle,
-  });
+  const NuevaCotizacion({required this.solicitudId, required this.solucion});
 
   final String solicitudId;
-  final double manoObra;
-  final double materiales;
-  final String? detalle;
+
+  /// Cómo resolvería el problema.
+  final String solucion;
 }

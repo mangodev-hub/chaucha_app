@@ -6,6 +6,7 @@ class RegistroDatos {
     required this.email,
     required this.password,
     required this.nombres,
+    required this.codigoDactilar,
     required this.apellidos,
     required this.cedula,
     required this.rol,
@@ -17,4 +18,5 @@ class RegistroDatos {
   final String apellidos;
   final String cedula;
   final Rol rol;
+  final String codigoDactilar;
 }

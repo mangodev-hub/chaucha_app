@@ -50,3 +50,4 @@ env.json
 
 # Archivos temporales del CLI de Supabase (se generan en cada máquina)
 /supabase/.temp/
+.CLAUDE

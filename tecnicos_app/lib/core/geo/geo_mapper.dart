@@ -4,29 +4,19 @@ import 'dart:typed_data';
 import 'package:latlong2/latlong.dart';
 
 abstract final class GeoMapper {
-
   static const LatLng quito = LatLng(-0.180653, -78.467834);
-
 
   static const int srid = 4326;
 
   static const Distance _distancia = Distance();
-
 
   static String toPostGisPoint(LatLng coord) {
     _assertRango(coord.latitude, coord.longitude);
     return 'SRID=$srid;POINT(${coord.longitude} ${coord.latitude})';
   }
 
-
   static double metrosEntre(LatLng a, LatLng b) =>
       _distancia.as(LengthUnit.Meter, a, b);
-
-
-
-
-
-
 
   static LatLng? fromDb(Object? valor) {
     try {
@@ -38,26 +28,29 @@ abstract final class GeoMapper {
       }
       return null;
     } on ArgumentError {
-      return null; 
+      return null;
     }
   }
 
-
   static LatLng fromGeoJson(Map<String, dynamic> json) {
     final coords = (json['coordinates'] as List).cast<num>();
-    return _crear(latitud: coords[1].toDouble(), longitud: coords[0].toDouble());
+    return _crear(
+      latitud: coords[1].toDouble(),
+      longitud: coords[0].toDouble(),
+    );
   }
 
   static LatLng? _desdeWkt(String wkt) {
-    final match = RegExp(r'POINT\s*\(\s*(\S+)\s+(\S+)\s*\)', caseSensitive: false)
-        .firstMatch(wkt);
+    final match = RegExp(
+      r'POINT\s*\(\s*(\S+)\s+(\S+)\s*\)',
+      caseSensitive: false,
+    ).firstMatch(wkt);
     if (match == null) return null;
     final longitud = double.tryParse(match[1]!);
     final latitud = double.tryParse(match[2]!);
     if (longitud == null || latitud == null) return null;
     return _crear(latitud: latitud, longitud: longitud);
   }
-
 
   static LatLng? _desdeWkbHex(String hex) {
     const tipoPoint = 1;

@@ -1,18 +1,29 @@
-// Pantalla de registro de clientes y técnicos.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/validators/cedula_validator.dart';
+import '../../../../core/validators/codigo_dactilar_validator.dart';
 import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/async_value_view.dart';
+import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
+import '../../../../core/widgets/campos.dart';
+import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/mensajes.dart';
+import '../../../../core/widgets/sacudir.dart';
 import '../../domain/entities/registro_resultado.dart';
 import '../../domain/entities/rol.dart';
+import '../providers/recuperacion_providers.dart';
 import '../providers/registro_provider.dart';
 import '../widgets/auth_layout.dart';
+import '../widgets/enlace_auth.dart';
+import '../widgets/opcion_rol.dart';
 
 class RegistroView extends ConsumerStatefulWidget {
   const RegistroView({super.key});
@@ -23,17 +34,26 @@ class RegistroView extends ConsumerStatefulWidget {
 
 class _RegistroViewState extends ConsumerState<RegistroView> {
   final _formKey = GlobalKey<FormState>();
+
+  /// Intentos de envío fallidos: cada uno sacude el botón.
+  int _fallos = 0;
+
+  void _avisarFallo() => setState(() => _fallos++);
+
   final _nombres = TextEditingController();
   final _apellidos = TextEditingController();
   final _cedula = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirmacion = TextEditingController();
+  final _dactilar = TextEditingController();
   Rol _rol = Rol.cliente;
-  bool _ocultarPassword = true;
+  Timer? _temporizador;
+  int _espera = 0;
 
   @override
   void dispose() {
+    _temporizador?.cancel();
     for (final controller in [
       _nombres,
       _apellidos,
@@ -41,6 +61,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
       _email,
       _password,
       _confirmacion,
+      _dactilar,
     ]) {
       controller.dispose();
     }
@@ -51,165 +72,302 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
       valor == _password.text ? null : 'Las contraseñas no coinciden.';
 
   Future<void> _enviar() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    await ref.read(registroProvider.notifier).registrar(
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _avisarFallo();
+      return;
+    }
+    await ref
+        .read(registroProvider.notifier)
+        .registrar(
           email: _email.text,
           password: _password.text,
           nombres: _nombres.text,
           apellidos: _apellidos.text,
           cedula: _cedula.text,
           rol: _rol,
+          codigoDactilar: _dactilar.text,
         );
+  }
+
+  void _iniciarEspera() {
+    setState(() => _espera = 60);
+    _temporizador?.cancel();
+    _temporizador = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() => _espera--);
+      if (_espera <= 0) t.cancel();
+    });
+  }
+
+  Future<void> _reenviar() async {
+    await ref.read(reenviarConfirmacionProvider.notifier).reenviar(_email.text);
+    if (!mounted) return;
+    final estado = ref.read(reenviarConfirmacionProvider);
+    if (estado.hasError) {
+      context.mostrarMensaje(
+        AsyncValueView.mensajeDe(estado.error!),
+        tipo: TipoMensaje.error,
+      );
+      return;
+    }
+    context.mostrarMensaje(
+      'Te enviamos el correo otra vez.',
+      tipo: TipoMensaje.exito,
+    );
+    _iniciarEspera();
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(registroProvider, (_, estado) {
-      if (estado case AsyncError(:final error)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AsyncValueView.mensajeDe(error))),
-        );
-      }
-    });
     final estado = ref.watch(registroProvider);
+    // Si el servidor responde con error, el botón también se sacude.
+    ref.listen(registroProvider, (_, siguiente) {
+      if (siguiente.hasError && !siguiente.isLoading) _avisarFallo();
+    });
+    final reenvio = ref.watch(reenviarConfirmacionProvider);
+    final error = estado.isLoading || !estado.hasError
+        ? null
+        : AsyncValueView.mensajeDe(estado.error!);
+
+    if (estado case AsyncData(value: RegistroResultado.confirmarCorreo)) {
+      return AuthLayout(
+        titulo: 'Revisa tu correo',
+        tituloCentrado: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            EstadoMensaje(
+              icono: Icons.mark_email_read_outlined,
+              tipo: TipoEstado.exito,
+              mensaje:
+                  'Te enviamos un enlace de confirmación. '
+                  'Ábrelo y luego inicia sesión.',
+              textoAccion: 'Iniciar sesión',
+              onAccion: () => context.go(AppRoutes.login),
+            ),
+            const SizedBox(height: Espacios.l),
+            Text(
+              '¿No recibiste el correo de confirmación? Revisa spam o '
+              'promociones; a veces tarda unos minutos.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: Colores.tintaSuave),
+            ),
+            TextButton(
+              onPressed: (_espera > 0 || reenvio.isLoading) ? null : _reenviar,
+              child: Text(
+                _espera > 0 ? 'Reenviar en ${_espera}s' : 'Reenviar correo',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return AuthLayout(
       titulo: 'Crear cuenta',
-      // Si entra directo (sin confirmar correo), el router redirige solo.
-      child: switch (estado) {
-        AsyncData(value: RegistroResultado.confirmarCorreo) =>
-          const _ConfirmarCorreo(),
-        _ => _formulario(cargando: estado.isLoading),
-      },
+      subtitulo: 'Únete a la comunidad de servicios de Quito.',
+      tituloCentrado: true,
+      anchoEscritorio: 520,
+      esRegistro: true,
+      child: _formulario(cargando: estado.isLoading, error: error),
     );
   }
 
-  Widget _formulario({required bool cargando}) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SegmentedButton<Rol>(
-            segments: const [
-              ButtonSegment(
-                value: Rol.cliente,
-                label: Text('Necesito un técnico'),
-                icon: Icon(Icons.home_outlined),
-              ),
-              ButtonSegment(
-                value: Rol.tecnico,
-                label: Text('Soy técnico'),
-                icon: Icon(Icons.handyman_outlined),
-              ),
-            ],
-            selected: {_rol},
-            onSelectionChanged: (seleccion) =>
-                setState(() => _rol = seleccion.first),
-          ),
-          const SizedBox(height: 24),
-          TextFormField(
-            controller: _nombres,
-            decoration: const InputDecoration(labelText: 'Nombres'),
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.next,
-            validator: (v) => FormValidators.requerido(v, campo: 'Los nombres'),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _apellidos,
-            decoration: const InputDecoration(labelText: 'Apellidos'),
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.next,
-            validator: (v) =>
-                FormValidators.requerido(v, campo: 'Los apellidos'),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _cedula,
-            decoration: const InputDecoration(labelText: 'Cédula'),
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
-            ],
-            textInputAction: TextInputAction.next,
-            validator: CedulaValidator.validate,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _email,
-            decoration: const InputDecoration(labelText: 'Correo'),
-            keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            textInputAction: TextInputAction.next,
-            validator: FormValidators.email,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _password,
-            obscureText: _ocultarPassword,
-            autofillHints: const [AutofillHints.newPassword],
-            textInputAction: TextInputAction.next,
-            validator: FormValidators.password,
-            decoration: InputDecoration(
-              labelText: 'Contraseña',
-              suffixIcon: IconButton(
-                tooltip: _ocultarPassword ? 'Mostrar' : 'Ocultar',
-                icon: Icon(
-                  _ocultarPassword ? Icons.visibility : Icons.visibility_off,
-                ),
-                onPressed: () =>
-                    setState(() => _ocultarPassword = !_ocultarPassword),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _confirmacion,
-            obscureText: _ocultarPassword,
-            onFieldSubmitted: (_) => _enviar(),
-            validator: _validarConfirmacion,
-            decoration:
-                const InputDecoration(labelText: 'Repite la contraseña'),
-          ),
-          const SizedBox(height: 24),
-          BotonCarga(
-            texto: 'Crear cuenta',
-            cargando: cargando,
-            onPressed: _enviar,
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => context.go(AppRoutes.login),
-            child: const Text('¿Ya tienes cuenta? Inicia sesión'),
-          ),
-        ],
+  Widget _formulario({required bool cargando, String? error}) {
+    const separacion = SizedBox(height: Espacios.l);
+    final contrasena = CampoEtiquetado(
+      etiqueta: 'Contraseña',
+      child: CampoContrasena(
+        controller: _password,
+        hintText: 'Mínimo 8 caracteres',
+        autofillHints: const [AutofillHints.newPassword],
+        textInputAction: TextInputAction.next,
+        validator: FormValidators.password,
       ),
     );
-  }
-}
-
-class _ConfirmarCorreo extends StatelessWidget {
-  const _ConfirmarCorreo();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Icon(Icons.mark_email_read_outlined, size: 56),
-        const SizedBox(height: 16),
-        const Text(
-          'Te enviamos un correo de confirmación. Ábrelo y luego inicia sesión.',
-          textAlign: TextAlign.center,
+    final confirmacion = CampoEtiquetado(
+      etiqueta: 'Confirmar contraseña',
+      child: CampoContrasena(
+        controller: _confirmacion,
+        hintText: 'Repite tu contraseña',
+        icono: Icons.lock_reset,
+        onFieldSubmitted: (_) => _enviar(),
+        validator: _validarConfirmacion,
+      ),
+    );
+    return AutofillGroup(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (error != null) ...[
+              AvisoBanner(tipo: TipoAviso.error, mensaje: error),
+              const SizedBox(height: Espacios.l),
+            ],
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: OpcionRol(
+                      icono: Icons.search,
+                      titulo: 'Buscar un servicio',
+                      descripcion: 'Quiero contratar técnicos',
+                      elegida: _rol == Rol.cliente,
+                      onTap: () => setState(() => _rol = Rol.cliente),
+                    ),
+                  ),
+                  const SizedBox(width: Espacios.m),
+                  Expanded(
+                    child: OpcionRol(
+                      icono: Icons.handyman_outlined,
+                      titulo: 'Ofrecer mis servicios',
+                      descripcion: 'Soy técnico profesional',
+                      elegida: _rol == Rol.tecnico,
+                      onTap: () => setState(() => _rol = Rol.tecnico),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: Espacios.xl),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: CampoEtiquetado(
+                    etiqueta: 'Nombres',
+                    child: TextFormField(
+                      controller: _nombres,
+                      decoration: const InputDecoration(
+                        hintText: 'Jorge Luis ',
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      autofillHints: const [AutofillHints.givenName],
+                      textInputAction: TextInputAction.next,
+                      validator: (v) =>
+                          FormValidators.requerido(v, campo: 'Los nombres'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Espacios.m),
+                Expanded(
+                  child: CampoEtiquetado(
+                    etiqueta: 'Apellidos',
+                    child: TextFormField(
+                      controller: _apellidos,
+                      decoration: const InputDecoration(
+                        hintText: 'Zambrano García',
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      autofillHints: const [AutofillHints.familyName],
+                      textInputAction: TextInputAction.next,
+                      validator: (v) =>
+                          FormValidators.requerido(v, campo: 'Los apellidos'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            separacion,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: CampoEtiquetado(
+                    etiqueta: 'Cédula',
+                    ayuda: '10 dígitos',
+                    child: TextFormField(
+                      controller: _cedula,
+                      decoration: const InputDecoration(
+                        hintText: '17xxxxxxxx',
+                        prefixIcon: Icon(Icons.badge_outlined),
+                        errorMaxLines: 2,
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                      textInputAction: TextInputAction.next,
+                      validator: CedulaValidator.validate,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Espacios.m),
+                Expanded(
+                  child: CampoEtiquetado(
+                    etiqueta: 'Código dactilar',
+                    child: TextFormField(
+                      controller: _dactilar,
+                      decoration: const InputDecoration(
+                        hintText: 'V1234V5678',
+                        helperText: 'Está en el reverso de tu cédula',
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                      inputFormatters: CodigoDactilarValidator.formatters,
+                      textInputAction: TextInputAction.next,
+                      validator: CodigoDactilarValidator.validate,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            separacion,
+            CampoEtiquetado(
+              etiqueta: 'Correo electrónico',
+              child: TextFormField(
+                controller: _email,
+                decoration: const InputDecoration(
+                  hintText: 'ejemplo@correo.com',
+                  prefixIcon: Icon(Icons.mail_outline),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                textInputAction: TextInputAction.next,
+                validator: FormValidators.email,
+              ),
+            ),
+            separacion,
+            if (MediaQuery.sizeOf(context).width >= 900)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: contrasena),
+                  const SizedBox(width: Espacios.m),
+                  Expanded(child: confirmacion),
+                ],
+              )
+            else ...[
+              contrasena,
+              separacion,
+              confirmacion,
+            ],
+            const SizedBox(height: Espacios.xl),
+            Sacudir(
+              senal: _fallos,
+              child: BotonCarga(
+                texto: 'Registrarse',
+                icono: Icons.arrow_forward,
+                iconoAlFinal: true,
+                cargando: cargando,
+                onPressed: _enviar,
+              ),
+            ),
+            const SizedBox(height: Espacios.l),
+            EnlaceAuth(
+              pregunta: '¿Ya tienes cuenta?',
+              accion: 'Inicia sesión',
+              onPressed: () => context.go(AppRoutes.login),
+            ),
+          ],
         ),
-        const SizedBox(height: 24),
-        FilledButton(
-          onPressed: () => context.go(AppRoutes.login),
-          child: const Text('Ir a iniciar sesión'),
-        ),
-      ],
+      ),
     );
   }
 }

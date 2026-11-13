@@ -16,7 +16,7 @@ class SplashView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Marca(grande: true),
+              Marca.vertical(grande: true, sobreOscuro: true),
               SizedBox(height: Espacios.xl),
               SizedBox(width: 120, child: LinearProgressIndicator()),
             ],

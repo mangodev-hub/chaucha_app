@@ -1,9 +1,11 @@
-// Dibuja la pantalla según un [AsyncValue] de Riverpod. Equivalente de
-// [ViewStateBuilder] para las features ya migradas.
+// Dibuja la pantalla según un [AsyncValue] de Riverpod: carga, error (con
+// botón de reintentar) o datos. La carga es un spinner, salvo que la pantalla
+// pase su propio [cargando] (por ejemplo un `EsqueletoCarga`).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../errors/app_failure.dart';
+import 'estado_mensaje.dart';
 
 class AsyncValueView<T> extends StatelessWidget {
   const AsyncValueView({
@@ -12,12 +14,16 @@ class AsyncValueView<T> extends StatelessWidget {
     required this.onData,
     this.onError,
     this.onRetry,
+    this.cargando,
   });
 
   final AsyncValue<T> value;
   final Widget Function(BuildContext context, T data) onData;
   final Widget Function(BuildContext context, String message)? onError;
   final VoidCallback? onRetry;
+
+  /// Lo que se ve mientras carga. Si es null, un spinner centrado.
+  final WidgetBuilder? cargando;
 
   /// Mensaje para el usuario: el de [AppFailure] o uno genérico.
   static String mensajeDe(Object error) => error is AppFailure
@@ -31,7 +37,9 @@ class AsyncValueView<T> extends StatelessWidget {
       // que ya se ven, se mantienen en pantalla.
       skipLoadingOnRefresh: !value.hasError,
       data: (data) => onData(context, data),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () =>
+          cargando?.call(context) ??
+          const Center(child: CircularProgressIndicator()),
       error: (error, _) {
         final mensaje = mensajeDe(error);
         return onError?.call(context, mensaje) ??
@@ -49,22 +57,13 @@ class _ErrorPorDefecto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
-            const SizedBox(height: 12),
-            Text(mensaje, textAlign: TextAlign.center),
-            if (onRetry != null) ...[
-              const SizedBox(height: 12),
-              FilledButton(onPressed: onRetry, child: const Text('Reintentar')),
-            ],
-          ],
-        ),
-      ),
+    return EstadoMensaje(
+      icono: Icons.cloud_off_outlined,
+      tipo: TipoEstado.error,
+      titulo: 'Algo salió mal',
+      mensaje: mensaje,
+      textoAccion: onRetry == null ? null : 'Reintentar',
+      onAccion: onRetry,
     );
   }
 }

@@ -2,17 +2,11 @@
 import 'package:flutter/material.dart';
 
 class ResponsiveLayout extends StatelessWidget {
-  const ResponsiveLayout({
-    super.key,
-    required this.mobile,
-    this.desktop,
-  });
-
+  const ResponsiveLayout({super.key, required this.mobile, this.desktop});
 
   static const double desktopBreakpoint = 900;
 
   final Widget mobile;
-
 
   final Widget? desktop;
 
