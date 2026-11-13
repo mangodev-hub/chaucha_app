@@ -8,7 +8,7 @@
 -- por defecto de Postgres), así que también respeta las políticas RLS.
 --
 -- Es una copia de lo que está desplegado en Supabase, extraída de
--- tecnicos_app/supabase/migrations/20261107204355_remote_schema.sql.
+-- supabase/migrations/20261107204355_remote_schema.sql.
 -- La usa SupabaseCotizacionRepository.aceptar en la app.
 
 CREATE OR REPLACE FUNCTION public.aceptar_cotizacion (
