@@ -1,5 +1,6 @@
 // Pantalla de login. Al entrar, el router redirige solo según el rol.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -31,6 +32,22 @@ class _LoginViewState extends ConsumerState<LoginView> {
   int _fallos = 0;
 
   void _avisarFallo() => setState(() => _fallos++);
+
+  /// Veces que el servidor rechazó las credenciales. Es la clave del campo
+  /// de contraseña: tras cada rechazo el campo se arma de nuevo (conserva lo
+  /// escrito). En la web, el administrador de contraseñas del navegador
+  /// reacciona al envío fallido y podía dejar el campo sin aceptar cambios.
+  int _rechazos = 0;
+
+  void _alRechazar() {
+    // Cierra el autocompletado del intento (sin ofrecer guardar una
+    // contraseña que no sirvió) para que el navegador suelte el campo.
+    TextInput.finishAutofillContext(shouldSave: false);
+    setState(() {
+      _fallos++;
+      _rechazos++;
+    });
+  }
 
   /// Tramo de la animación del técnico según el campo con foco: mira el correo
   /// mientras se escribe y se tapa los ojos con la contraseña.
@@ -71,7 +88,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final estadoLogin = ref.watch(loginProvider);
     // Si el servidor responde con error, el botón también se sacude.
     ref.listen(loginProvider, (_, siguiente) {
-      if (siguiente.hasError && !siguiente.isLoading) _avisarFallo();
+      if (siguiente.hasError && !siguiente.isLoading) _alRechazar();
     });
     final cargando = estadoLogin.isLoading;
     final error = cargando || !estadoLogin.hasError
@@ -131,6 +148,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                   onFocusChange: (enfocado) =>
                       _alCambiarFoco('password', enfocado: enfocado),
                   child: CampoContrasena(
+                    key: ValueKey('contrasena-$_rechazos'),
                     controller: _password,
                     hintText: 'Tu contraseña',
                     autofillHints: const [AutofillHints.password],

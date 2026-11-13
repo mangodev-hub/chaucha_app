@@ -40,6 +40,21 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
 
   void _avisarFallo() => setState(() => _fallos++);
 
+  /// Veces que el servidor rechazó el registro. Es la clave de los campos
+  /// de contraseña: tras cada rechazo se arman de nuevo (conservan lo
+  /// escrito). En la web, el administrador de contraseñas del navegador
+  /// reacciona al envío fallido y podía dejarlos sin aceptar cambios.
+  int _rechazos = 0;
+
+  void _alRechazar() {
+    // Cierra el autocompletado del intento sin ofrecer guardar la clave.
+    TextInput.finishAutofillContext(shouldSave: false);
+    setState(() {
+      _fallos++;
+      _rechazos++;
+    });
+  }
+
   final _nombres = TextEditingController();
   final _apellidos = TextEditingController();
   final _cedula = TextEditingController();
@@ -125,7 +140,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
     final estado = ref.watch(registroProvider);
     // Si el servidor responde con error, el botón también se sacude.
     ref.listen(registroProvider, (_, siguiente) {
-      if (siguiente.hasError && !siguiente.isLoading) _avisarFallo();
+      if (siguiente.hasError && !siguiente.isLoading) _alRechazar();
     });
     final reenvio = ref.watch(reenviarConfirmacionProvider);
     final error = estado.isLoading || !estado.hasError
@@ -182,6 +197,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
     final contrasena = CampoEtiquetado(
       etiqueta: 'Contraseña',
       child: CampoContrasena(
+        key: ValueKey('contrasena-$_rechazos'),
         controller: _password,
         hintText: 'Mínimo 8 caracteres',
         autofillHints: const [AutofillHints.newPassword],
@@ -192,6 +208,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
     final confirmacion = CampoEtiquetado(
       etiqueta: 'Confirmar contraseña',
       child: CampoContrasena(
+        key: ValueKey('confirmacion-$_rechazos'),
         controller: _confirmacion,
         hintText: 'Repite tu contraseña',
         icono: Icons.lock_reset,
