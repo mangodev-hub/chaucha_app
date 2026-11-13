@@ -48,7 +48,6 @@ dependencies:
   url_launcher: ^6.3.3
   # Registro de usuarios desde el panel admin sin tocar la sesión actual.
   http: ^1.6.0
-  table_calendar: ^3.3.0
   camera: ^0.12.2
   file_selector: ^1.1.0
   lottie: ^3.8.2

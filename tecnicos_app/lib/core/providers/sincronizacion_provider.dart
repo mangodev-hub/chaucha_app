@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/solicitudes/presentation/providers/agenda_provider.dart';
 import '../../features/solicitudes/presentation/providers/feed_provider.dart';
 import '../../features/solicitudes/presentation/providers/listas_provider.dart';
+import '../../features/solicitudes/presentation/providers/visitas_agenda_provider.dart';
 import 'core_providers.dart';
 
 final sincronizacionProvider = Provider.autoDispose<void>((ref) {
@@ -19,7 +20,9 @@ final sincronizacionProvider = Provider.autoDispose<void>((ref) {
         ..invalidate(misSolicitudesProvider)
         ..invalidate(misTrabajosProvider)
         ..invalidate(feedProvider)
-        ..invalidate(agendaProvider);
+        ..invalidate(agendaProvider)
+        ..invalidate(visitasRangoProvider)
+        ..invalidate(visitasProximasProvider);
     });
   }
 

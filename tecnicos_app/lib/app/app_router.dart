@@ -172,6 +172,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => shellCliente(
               pagina: const PantallaSecundaria(
                 titulo: 'Mi agenda',
+                // La agenda trae su propio encabezado y el menú la marca.
+                conMigas: false,
                 cuerpo: AgendaView(esCliente: true),
               ),
             ),
