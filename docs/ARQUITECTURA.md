@@ -24,7 +24,6 @@ modifique el cliente.
 | **camera / image_picker / file_selector** | Selfie, cédula, fotos del problema, certificados | La selfie se toma **solo con cámara en vivo**, sin galería, para evitar fotos de fotos. |
 | **image** | Detectar fotos borrosas y preparar cada foto antes de subirla (`core/hilos/tareas.dart`) | Varianza del Laplaciano: barato, sin servicios externos y avisa al instante. |
 | **isolate_manager** | Procesar imágenes en otro hilo (`core/hilos`) | Isolates en Android y Web Workers en web: la pantalla no se congela. |
-| **local_auth** | Confirmar la identidad del técnico al postular con Face ID o huella (`core/seguridad/biometria.dart`) | Sin foto ni fricción, y la biometría no sale del celular. |
 | **table_calendar** | Agenda de visitas | Calendario mensual con las citas marcadas. |
 | **firebase_messaging** | Recibir notificaciones push | Ver "Por qué Firebase" más abajo. |
 | **http** | El admin registra usuarios | Crear una cuenta con el SDK cambia la sesión actual; con una llamada HTTP aparte el admin no pierde la suya. |
