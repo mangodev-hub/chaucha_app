@@ -24,6 +24,7 @@ import '../../../../core/widgets/seccion.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../auth/domain/entities/rol.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
+import '../../../auth/presentation/widgets/confirmar_identidad.dart';
 import '../../../chat/presentation/widgets/chat_flotante.dart';
 import '../../../cotizaciones/data/repositories/ofertas_en_vivo.dart';
 import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';
@@ -203,7 +204,9 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
       context,
       tarifaBase: perfil.tarifaBase,
     );
-    if (solucion == null) return;
+    if (solucion == null || !mounted) return;
+    // Cada oferta exige confirmar que es el técnico (biometría o rostro).
+    if (!await confirmarIdentidadParaOfertar(context, ref) || !mounted) return;
     await _resultado(
       _acciones.enviarOferta(solucion: solucion),
       'Oferta enviada. Si al cliente le interesa, te escribirá.',

@@ -11,6 +11,8 @@ export const REGLAS = {
   /** comparar-rostro-cedula: una por envío de documentos o corrección de datos. */
   comparar: { pedidos: 6, ventana: '1 h' as Ventana },
   rostroSesion: { pedidos: 10, ventana: '1 h' as Ventana },
+  /** verificar-rostro-postulacion: una por oferta, con reintentos. */
+  rostroPostulacion: { pedidos: 30, ventana: '1 h' as Ventana },
   /** sector: por usuario. */
   sector: { pedidos: 30, ventana: '1 m' as Ventana },
   /** Nominatim permite 1 consulta por segundo para TODA la app. */
