@@ -1,4 +1,3 @@
-// Tarjeta blanca del inicio del cliente: radio de 18 y sombra suave.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

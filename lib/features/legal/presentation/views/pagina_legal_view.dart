@@ -1,5 +1,3 @@
-// Términos y condiciones y Política de privacidad. Por ahora son borradores:
-// solo títulos de sección con un párrafo marcado para revisión legal.
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 

@@ -1,6 +1,3 @@
-// Encoge un poco a [child] mientras se mantiene presionado, para que botones y
-// tarjetas se sientan "físicos". No compite con los gestos del hijo: solo
-// escucha el puntero. Si el dedo se arrastra (scroll), se suelta.
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 

@@ -1,5 +1,3 @@
-// Datos de "Mi perfil" del cliente: solicitudes en curso e historial de
-// servicios (de ahí salen también los técnicos para volver a contratar).
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';

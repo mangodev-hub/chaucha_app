@@ -1,5 +1,3 @@
-// Accesos a los oficios del catálogo (hoja "Todos los servicios") y el
-// ícono de cada oficio, compartidos por el inicio del cliente.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
@@ -31,9 +29,6 @@ class Categorias extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, restricciones) {
         final ancho = restricciones.maxWidth;
-        // Sin ancho (todavía no hay espacio, o es infinito) no se reparte
-        // nada: un ancho de tarjeta negativo rompe el layout y deja al
-        // rastreador del mouse en estado inválido en web.
         if (!ancho.isFinite || ancho <= 0) return const SizedBox.shrink();
         final columnas = ancho >= 700 ? 4 : (ancho >= 480 ? 3 : 2);
         final anchoTarjeta = ((ancho - Espacios.m * (columnas - 1)) / columnas)

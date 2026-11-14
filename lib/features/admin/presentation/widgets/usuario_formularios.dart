@@ -1,4 +1,3 @@
-// Hojas para crear y editar usuarios desde el panel de administrador.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -54,10 +53,6 @@ Future<bool?> _mostrarHoja(BuildContext context, Widget contenido) {
     ),
   );
 }
-
-// ---------------------------------------------------------------------------
-// Crear
-// ---------------------------------------------------------------------------
 
 class _NuevoUsuario extends ConsumerStatefulWidget {
   const _NuevoUsuario();
@@ -233,10 +228,6 @@ class _NuevoUsuarioState extends ConsumerState<_NuevoUsuario> {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Editar
-// ---------------------------------------------------------------------------
 
 class _EditarUsuario extends ConsumerStatefulWidget {
   const _EditarUsuario({required this.usuario});

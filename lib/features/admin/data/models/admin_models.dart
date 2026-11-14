@@ -1,5 +1,3 @@
-// Lectura de las respuestas del panel de administrador: funciones RPC
-// (`admin_resumen`, `admin_usuarios`) y consultas con joins.
 import '../../../../core/utils/json_utils.dart';
 import '../../../auth/data/models/rol_db.dart';
 import '../../../perfil_puntos/data/models/documento_tecnico_model.dart';
@@ -54,9 +52,7 @@ abstract final class SolicitudAdminModel {
   }
 }
 
-/// `documentos_tecnico` con su dueño (usuario → identidad). La llave
-/// `tecnico_id` apunta a `usuarios` (no a `perfiles_tecnicos`) porque los
-/// clientes también suben documentos para verificarse.
+/// `documentos_tecnico` con su dueño (usuario → identidad).
 abstract final class RevisionTecnicoModel {
   static const String columnas =
       '${DocumentoTecnicoModel.columnas}, tecnico_id, '

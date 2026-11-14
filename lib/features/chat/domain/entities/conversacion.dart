@@ -1,4 +1,3 @@
-// Conversación entre el cliente de una solicitud y un técnico que ofertó.
 class Conversacion {
   const Conversacion({
     required this.id,

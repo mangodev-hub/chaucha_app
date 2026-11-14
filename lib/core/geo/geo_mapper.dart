@@ -1,4 +1,3 @@
-// Único punto de conversión entre el mapa y PostGIS.
 import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';

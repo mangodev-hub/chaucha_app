@@ -1,7 +1,3 @@
-// Selector de visita: día y franjas de 1 hora en una cuadrícula. Las franjas
-// que ya pasaron salen atenuadas y las que se cruzan con otra visita (del
-// técnico o del cliente) salen bloqueadas con un candado: así nadie queda con
-// dos trabajos a la misma hora. Hoja inferior en móvil, diálogo en escritorio.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

@@ -1,5 +1,3 @@
-// Piezas de formulario: etiqueta arriba del campo (como en la referencia) y
-// campo de contraseña con botón (animado) de mostrar u ocultar.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

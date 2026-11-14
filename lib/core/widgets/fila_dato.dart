@@ -1,6 +1,3 @@
-// Fila de datos: una píldora ancha y neutra con la etiqueta a la izquierda y
-// el valor grande a la derecha (precio de la visita, ticket, fecha). El valor
-// va en celeste oscuro: es información, no una acción.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

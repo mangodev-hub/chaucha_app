@@ -1,4 +1,3 @@
-// Acceso a "Mis reclamos" desde Mi perfil (cliente y técnico).
 import 'dart:async';
 
 import 'package:flutter/material.dart';

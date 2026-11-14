@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:tecnicos_app/core/errors/app_failure.dart';
 import 'package:tecnicos_app/features/auth/presentation/providers/sesion_provider.dart';
 import 'package:tecnicos_app/features/perfil_puntos/data/repositories/supabase_perfil_repository.dart';
+import 'package:tecnicos_app/features/perfil_puntos/domain/entities/calificacion_pendiente.dart';
 import 'package:tecnicos_app/features/perfil_puntos/domain/entities/cambios_perfil.dart';
 import 'package:tecnicos_app/features/perfil_puntos/domain/entities/nivel.dart';
 import 'package:tecnicos_app/features/perfil_puntos/domain/entities/nueva_resena.dart';
@@ -19,6 +20,10 @@ class _PerfilFalso implements PerfilRepository {
 
   @override
   Future<List<Nivel>> niveles() async => const [];
+
+  @override
+  Future<List<CalificacionPendiente>> calificacionesPendientes() async =>
+      const [];
 
   int cargas = 0;
   final guardados = <CambiosPerfil>[];

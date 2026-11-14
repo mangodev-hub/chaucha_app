@@ -1,6 +1,3 @@
-// "Mi perfil" del cliente y el perfil del técnico que ve el cliente:
-// sin desbordes a 1440 y 390 px, con y sin reseñas, y sin elementos que el
-// diseño quitó ("Editar perfil", botón de cámara, "[Técnico]").
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -111,8 +108,6 @@ ServicioCompletado _servicio(
   miCalificacion: estrellas,
 );
 
-// 5 servicios: uno sin calificar, uno con la garantía vencida y dos
-// técnicos repetidos.
 final _historial = [
   _servicio(
     1,

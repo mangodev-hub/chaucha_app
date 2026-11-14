@@ -1,9 +1,3 @@
-// Pestaña "Solicitudes cerca" del técnico: resumen de su zona, el mapa con
-// las solicitudes de sus oficios y la lista, de la más cercana a la más
-// lejana.
-//
-// En móvil: una columna con el mapa arriba de la lista. En escritorio: la
-// lista a la izquierda y el mapa a la derecha.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

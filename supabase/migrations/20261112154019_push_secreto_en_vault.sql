@@ -1,5 +1,3 @@
--- La Edge Function `enviar-push` valida el header x-push-secreto contra Vault;
--- el secreto nunca sale de la base. Solo la puede llamar el service_role.
 create or replace function public.push_secreto_valido(p_secreto text)
   returns boolean
   language sql

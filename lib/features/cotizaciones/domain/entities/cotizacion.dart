@@ -1,6 +1,3 @@
-// Oferta de un técnico para una solicitud: su precio de la visita y cómo resolvería
-// el problema, con su nombre y calificación. El precio final se acuerda
-// después por chat y queda en el ticket de trabajo ([tarifa]).
 import 'package:latlong2/latlong.dart';
 
 import 'tarifa.dart';

@@ -1,5 +1,3 @@
-// Fila de chips para elegir un filtro. La usan el panel admin y las listas
-// del técnico.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

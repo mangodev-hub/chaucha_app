@@ -1,4 +1,3 @@
-// Fila de `perfiles_tecnicos` + nivel de gamificación + sus oficios (joins).
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/geo/geo_mapper.dart';

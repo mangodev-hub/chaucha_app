@@ -1,4 +1,3 @@
-// Piezas comunes de las pantallas del panel de administrador.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';

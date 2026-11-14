@@ -1,12 +1,3 @@
-// Capa de círculos del mapa (radio de búsqueda, zona de trabajo), pintada
-// por la app en lugar de con el `CircleLayer` de flutter_map.
-//
-// En Flutter web (desde 3.47), las capas de figuras de flutter_map 8.x
-// fallan al repetir el dibujo en las copias del mundo: lanzan "Infinite loop
-// going beyond 30 for world width ..." y el mapa deja de dibujarse
-// (https://github.com/fleaflet/flutter_map/issues/2234, abierto). Aquí cada
-// círculo se pinta una sola vez, en su posición, con la cámara del mapa: es
-// lo único que necesitan estos mapas (zonas de unos pocos km en Quito).
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -20,8 +11,6 @@ class CapaCirculos extends StatelessWidget {
   Widget build(BuildContext context) {
     final camara = MapCamera.of(context);
     final tamano = camara.nonRotatedSize;
-    // Antes de recibir sus medidas, la cámara usa un tamaño "imposible"
-    // (−∞ × −∞): no hay nada que pintar todavía.
     final medida =
         tamano.width.isFinite &&
         tamano.height.isFinite &&

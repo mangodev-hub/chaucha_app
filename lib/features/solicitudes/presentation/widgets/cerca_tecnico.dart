@@ -1,8 +1,3 @@
-// "Solicitudes cerca de ti" del técnico: las solicitudes abiertas de sus
-// oficios dentro de su radio (`solicitudes_en_mapa`), en el mapa y en la
-// lista. Al soltar el slider se guarda el radio (`actualizar_mi_radio`).
-// Sin verificar, sin zona o sin estar disponible, el mapa sale atenuado
-// con lo que falta y su botón.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

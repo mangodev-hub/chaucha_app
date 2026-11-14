@@ -1,6 +1,3 @@
-// Piezas del ticket de trabajo (tarifa) en el chat: la franja bajo la barra
-// superior, el detalle del ticket y el formulario con el que el técnico lo
-// envía ("Empezar trabajo").
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
@@ -491,5 +488,5 @@ class _FormularioTarifaState extends State<_FormularioTarifa> {
         ),
       ],
     );
- }
+  }
 }

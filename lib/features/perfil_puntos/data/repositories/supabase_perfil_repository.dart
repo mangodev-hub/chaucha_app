@@ -1,4 +1,3 @@
-// Implementación de [PerfilRepository] con Supabase.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,6 +7,7 @@ import '../../../../core/providers/core_providers.dart';
 import '../../../../core/supabase/supabase_extensions.dart';
 import '../../../../core/supabase/supabase_guard.dart';
 import '../../../../core/utils/json_utils.dart';
+import '../../domain/entities/calificacion_pendiente.dart';
 import '../../domain/entities/cambios_perfil.dart';
 import '../../domain/entities/nivel.dart';
 import '../../domain/entities/nueva_resena.dart';
@@ -45,8 +45,7 @@ class SupabasePerfilRepository implements PerfilRepository {
 
   /// Actualiza el perfil y sincroniza `tecnico_oficios`: borra los que ya no
   /// están e inserta los nuevos.
-  // OJO: varias escrituras separadas, no una transacción. Si una falla a
-  // medias, volver a guardar lo corrige. Candidato a RPC en Supabase.
+  // OJO: varias escrituras separadas, no una transacción.
   @override
   Future<void> guardar(CambiosPerfil cambios) {
     return supabaseGuard(() async {
@@ -96,6 +95,28 @@ class SupabasePerfilRepository implements PerfilRepository {
         'comentario': resena.comentario?.trim(),
         'etiquetas': resena.etiquetas,
       });
+    });
+  }
+
+  @override
+  Future<List<CalificacionPendiente>> calificacionesPendientes() {
+    return supabaseGuard(() async {
+      final filas = await _client.rpc<List<dynamic>>(
+        'mis_calificaciones_pendientes',
+      );
+      return [
+        for (final f in filas.cast<Map<String, dynamic>>())
+          CalificacionPendiente(
+            solicitudId: f['solicitud_id'] as String,
+            destinatarioId: f['destinatario_id'] as String,
+            nombre: (f['nombre'] as String?)?.trim().isNotEmpty ?? false
+                ? (f['nombre'] as String).trim()
+                : (f['para_tecnico'] == true ? 'el técnico' : 'el cliente'),
+            paraTecnico: f['para_tecnico'] == true,
+            completadaEn: aFecha(f['completada_en']).toLocal(),
+            oficio: f['oficio'] as String?,
+          ),
+      ];
     });
   }
 

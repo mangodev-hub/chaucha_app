@@ -1,11 +1,8 @@
-// Reglas de negocio del ticket de trabajo (tarifa) de una oferta.
 import '../../../solicitudes/domain/entities/solicitud.dart';
 import 'cotizacion.dart';
 
 abstract final class ReglasTarifa {
-  /// Por qué el técnico no puede enviar el ticket, o null si puede. Solo lo
-  /// envía el técnico, sobre su oferta pendiente, mientras la solicitud sigue
-  /// abierta y si no hay otro ticket esperando respuesta.
+  /// Por qué el técnico no puede enviar el ticket, o null si puede.
   static String? motivoParaNoEnviar({
     required bool soyCliente,
     required Cotizacion? oferta,

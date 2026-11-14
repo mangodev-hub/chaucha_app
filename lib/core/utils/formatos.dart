@@ -1,4 +1,3 @@
-// Formatos de presentación reutilizables (sin paquetes extra).
 abstract final class Formatos {
   static String dinero(double valor) => '\$${valor.toStringAsFixed(2)}';
 

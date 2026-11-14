@@ -1,5 +1,3 @@
-// Perfil de un técnico tal como lo ve un cliente: reputación, oficios y
-// reseñas recientes.
 class PerfilPublico {
   const PerfilPublico({
     required this.tecnicoId,

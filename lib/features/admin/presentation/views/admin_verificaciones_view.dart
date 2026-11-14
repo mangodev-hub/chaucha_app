@@ -1,6 +1,3 @@
-// Pestaña "Verificaciones" del panel: técnicos con cédula o selfie por
-// revisar. Al aprobar sus 3 documentos, la base lo marca como verificado
-// (trigger `fn_verificar_tecnico`) y empieza a recibir solicitudes.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

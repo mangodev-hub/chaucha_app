@@ -1,6 +1,3 @@
-// Tras un rechazo del servidor, el campo de contraseña se arma de nuevo:
-// conserva lo escrito y sigue aceptando cambios (en la web, el navegador
-// podía dejarlo bloqueado después del envío fallido).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

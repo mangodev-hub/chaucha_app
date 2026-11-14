@@ -1,4 +1,3 @@
-// Datos y acciones del panel de administrador.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,10 +10,6 @@ import '../../domain/entities/resumen_admin.dart';
 import '../../domain/entities/revision_tecnico.dart';
 import '../../domain/entities/solicitud_admin.dart';
 import '../../domain/entities/usuario_admin.dart';
-
-// ---------------------------------------------------------------------------
-// Lecturas (se recargan si cambia la cuenta conectada)
-// ---------------------------------------------------------------------------
 
 final resumenAdminProvider = FutureProvider.autoDispose<ResumenAdmin>((ref) {
   ref.watch(usuarioActualProvider.select((u) => u?.id));
@@ -40,10 +35,6 @@ final revisionesProvider = FutureProvider.autoDispose<List<RevisionTecnico>>((
   ref.watch(usuarioActualProvider.select((u) => u?.id));
   return ref.watch(adminRepositoryProvider).revisionesPendientes();
 });
-
-// ---------------------------------------------------------------------------
-// Acciones sobre un usuario (editar, suspender, eliminar)
-// ---------------------------------------------------------------------------
 
 final accionesUsuarioProvider = AsyncNotifierProvider.autoDispose
     .family<AccionesUsuarioNotifier, void, String>(AccionesUsuarioNotifier.new);
@@ -85,10 +76,6 @@ class AccionesUsuarioNotifier extends AsyncNotifier<void> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Crear usuario
-// ---------------------------------------------------------------------------
-
 final crearUsuarioProvider =
     AsyncNotifierProvider.autoDispose<CrearUsuarioNotifier, void>(
       CrearUsuarioNotifier.new,
@@ -113,10 +100,6 @@ class CrearUsuarioNotifier extends AsyncNotifier<void> {
     return true;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Revisión de documentos (por técnico)
-// ---------------------------------------------------------------------------
 
 final revisionTecnicoProvider = AsyncNotifierProvider.autoDispose
     .family<RevisionTecnicoNotifier, void, String>(RevisionTecnicoNotifier.new);

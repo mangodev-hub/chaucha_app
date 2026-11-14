@@ -1,4 +1,3 @@
-// Cifras del inicio del panel.
 class ResumenAdmin {
   const ResumenAdmin({
     required this.clientes,

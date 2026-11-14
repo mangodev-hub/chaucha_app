@@ -1,7 +1,3 @@
-// Agenda del cliente y del técnico: calendario (Mes, Semana o Lista) con las
-// visitas agendadas y, al lado, la tarjeta "Hoy" y los próximos trabajos.
-// En el móvil va todo en una columna. Los datos salen de una consulta por
-// rango (`visitasRangoProvider`) y otra desde hoy (`visitasProximasProvider`).
 import 'dart:async';
 
 import 'package:flutter/material.dart';

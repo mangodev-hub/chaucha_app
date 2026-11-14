@@ -1,7 +1,3 @@
-// Implementación de [AdminRepository] con Supabase. Lo que toca a otros
-// usuarios pasa por funciones RPC que exigen el rol admin
-// (`supabase/migrations/20261109150000_panel_admin.sql`); las lecturas de
-// solicitudes y documentos usan las políticas RLS de admin ya existentes.
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

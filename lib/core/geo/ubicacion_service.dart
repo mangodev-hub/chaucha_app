@@ -1,4 +1,3 @@
-// Acceso al GPS detrás de una interfaz (para poder simularlo en tests).
 import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';

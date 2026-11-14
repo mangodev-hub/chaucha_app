@@ -1,4 +1,3 @@
-// Rutas de la app en un solo lugar
 abstract final class AppRoutes {
   static const String splash = '/';
 
@@ -7,6 +6,9 @@ abstract final class AppRoutes {
 
   static const String completarPerfil = '/completar-perfil';
   static const String selfie = '/selfie';
+
+  /// Selfie en vivo tras cada inicio de sesión, contra la foto de perfil.
+  static const String verificarRostro = '/verificar-rostro';
   static const String clienteInicio = '/cliente';
   static const String tecnicoInicio = '/tecnico';
   static const String adminInicio = '/admin';

@@ -1,10 +1,3 @@
-// Disponibilidad del técnico: la píldora "Disponible" de la barra superior.
-// Apagada, el técnico no quiere solicitudes nuevas: el mapa de "Solicitudes
-// cerca de ti" se atenúa y lo dice.
-//
-// Por ahora vive solo en la sesión (vuelve a "Disponible" al abrir la app).
-// Para que el servidor deje de enviarle solicitudes hace falta guardarla en
-// `perfiles_tecnicos` (ver PENDIENTE_BACKEND.md).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -70,8 +63,6 @@ class PildoraDisponible extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Interruptor: riel con la perilla a la derecha si está
-                    // activo.
                     AnimatedContainer(
                       duration: duracion,
                       width: 34,

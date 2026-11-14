@@ -1,4 +1,3 @@
-// Hoja de calificación: 5 estrellas, etiquetas según la nota y comentario opcional.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
@@ -57,20 +56,32 @@ Future<DatosResena?> mostrarDialogoResena(
   BuildContext context, {
   required String nombre,
   required bool paraTecnico,
+  String? contexto,
 }) {
   return showModalBottomSheet<DatosResena>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => _HojaResena(nombre: nombre, paraTecnico: paraTecnico),
+    builder: (_) => _HojaResena(
+      nombre: nombre,
+      paraTecnico: paraTecnico,
+      contexto: contexto,
+    ),
   );
 }
 
 class _HojaResena extends StatefulWidget {
-  const _HojaResena({required this.nombre, required this.paraTecnico});
+  const _HojaResena({
+    required this.nombre,
+    required this.paraTecnico,
+    this.contexto,
+  });
 
   final String nombre;
   final bool paraTecnico;
+
+  /// De qué servicio se trata, cuando la hoja aparece sola.
+  final String? contexto;
 
   @override
   State<_HojaResena> createState() => _HojaResenaState();
@@ -139,6 +150,14 @@ class _HojaResenaState extends State<_HojaResena> {
                 textAlign: TextAlign.center,
                 style: textos.headlineSmall,
               ),
+              if (widget.contexto case final contexto?) ...[
+                const SizedBox(height: Espacios.xs),
+                Text(
+                  contexto,
+                  textAlign: TextAlign.center,
+                  style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
+                ),
+              ],
               const SizedBox(height: Espacios.m),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

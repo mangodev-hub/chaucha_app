@@ -1,4 +1,3 @@
-// "Mis reclamos": los reclamos que hizo el usuario, el más nuevo primero.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

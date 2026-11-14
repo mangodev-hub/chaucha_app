@@ -1,6 +1,3 @@
-// Pestaña "Mis trabajos" del técnico: solicitudes con su cotización aceptada.
-// Se filtran por estado y, si trabaja en más de un oficio, por oficio. Con el
-// filtro "Todos" se separan en "En curso" y "Finalizados".
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

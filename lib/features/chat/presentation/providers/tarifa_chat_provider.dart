@@ -1,7 +1,3 @@
-// Contexto del chat (solicitud y oferta del técnico, con su ticket) y las
-// acciones del ticket de trabajo: el técnico lo envía; el cliente lo
-// confirma o lo rechaza. Los mensajes del chat sobre el ticket los deja la
-// base de datos; la app no escribe ninguno.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,9 +60,6 @@ class AccionesTarifaNotifier extends AsyncNotifier<void> {
     });
   }
 
-  /// El cliente confirma: se acepta la oferta con el ticket (la solicitud
-  /// pasa a "En curso" y las demás ofertas no se eligen), en una sola
-  /// transacción (RPC `aceptar_cotizacion`). La base avisa en el chat.
   Future<bool> confirmar() {
     return _ejecutar(() async {
       final contexto = await _contexto();

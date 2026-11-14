@@ -1,8 +1,3 @@
-// Tarjeta de portada del inicio: título grande, subtítulo, un dato en una
-// píldora verde oscuro y una ilustración a la derecha, sobre una tarjeta
-// bento con onda. Dos variantes para que los roles se distingan de un
-// vistazo: verde claro con mancha celeste (cliente y admin) y celeste claro
-// con ola verde (técnico). Las dos llevan texto oscuro.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
@@ -104,8 +99,6 @@ class TarjetaPortada extends StatelessWidget {
                       ],
                     ],
                   ),
-                  // La píldora va debajo: así no compite con la ilustración
-                  // y nunca se corta.
                   if (dato != null) ...[
                     const SizedBox(height: Espacios.l),
                     _PildoraDato(texto: dato, icono: iconoDato),
@@ -170,8 +163,6 @@ class _PildoraDato extends StatelessWidget {
           color: Colores.primario,
           borderRadius: BorderRadius.circular(Radios.pildora),
         ),
-        // El dato suele llegar después (cuando cargan los datos): el cambio
-        // se anima.
         child: AnimatedSize(
           duration: duracion,
           curve: Movimiento.entrada,

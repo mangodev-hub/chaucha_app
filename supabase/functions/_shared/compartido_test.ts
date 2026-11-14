@@ -1,4 +1,3 @@
-// deno test supabase/functions/_shared
 import { assertEquals } from 'jsr:@std/assert@1';
 import { puntoDeEwkb } from './geo.ts';
 import { limitar, limitarTodas, respuesta429 } from './limite.ts';

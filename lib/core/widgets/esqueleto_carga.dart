@@ -1,7 +1,3 @@
-// Esqueleto de carga: bloques celestes con la forma de la pantalla que va a
-// aparecer, latiendo suavemente mientras llegan los datos. Se ve mejor que un
-// spinner suelto porque anticipa el contenido. Con "reducir animaciones"
-// los bloques quedan quietos.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

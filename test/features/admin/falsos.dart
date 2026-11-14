@@ -1,4 +1,3 @@
-// Repositorio falso y datos de prueba del panel de administrador.
 import 'package:tecnicos_app/core/errors/app_failure.dart';
 import 'package:tecnicos_app/features/admin/domain/entities/resumen_admin.dart';
 import 'package:tecnicos_app/features/admin/domain/entities/revision_tecnico.dart';

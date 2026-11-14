@@ -1,4 +1,3 @@
-// Nombres de buckets. Deben existir en Supabase > Storage como PRIVADOS.
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -1,6 +1,3 @@
-// Detalle de un reclamo: estado, pasos, el servicio, la conversación con el
-// asesor y, según quién lo abre, la caja para responder (usuario) o las
-// acciones del asesor (admin).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -33,8 +30,6 @@ class ReclamoDetalleView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reclamo = ref.watch(reclamoProvider(reclamoId));
-    // Un mensaje nuevo suele traer un cambio de estado: se recarga el
-    // reclamo para mostrarlo.
     ref.listen(mensajesReclamoProvider(reclamoId), (antes, ahora) {
       final previos = antes?.value?.length;
       final nuevos = ahora.value?.length;

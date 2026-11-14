@@ -1,5 +1,3 @@
-// Tarjeta de la oferta de un técnico (precio de la visita y solución) con sus
-// acciones, y el formulario con el que el técnico ofrece sus servicios.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';

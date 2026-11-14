@@ -1,4 +1,3 @@
-// Junta la solicitud, sus fotos y sus cotizaciones para la pantalla de detalle.
 import '../../../auth/domain/entities/usuario.dart';
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/domain/repositories/cotizacion_repository.dart';
@@ -17,8 +16,6 @@ class ObtenerDetalleSolicitud {
   final CotizacionRepository _cotizaciones;
 
   Future<DetalleSolicitud> call(String solicitudId, Usuario usuario) async {
-    // Future.wait (no `.wait` de records) para que el AppFailure original
-    // llegue intacto en vez de envuelto en un ParallelWaitError.
     final resultados = await Future.wait<Object>([
       _solicitudes.obtener(solicitudId),
       _solicitudes.fotos(solicitudId),

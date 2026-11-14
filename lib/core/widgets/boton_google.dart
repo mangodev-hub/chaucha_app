@@ -26,8 +26,6 @@ class BotonGoogle extends StatelessWidget {
         side: const BorderSide(color: Colores.primarioClaro),
         minimumSize: const Size.fromHeight(48),
       ),
-      // El texto cede si el botón recibe menos ancho del que necesita (por
-      // ejemplo, en el primer cuadro mientras la tarjeta del login se mide).
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

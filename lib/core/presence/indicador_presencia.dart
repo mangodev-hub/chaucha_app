@@ -1,5 +1,3 @@
-// "En línea" (punto verde) o "Activo hace X" de una persona. No muestra nada
-// si no se sabe (sin Redis, sin red, o nunca se conectó).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

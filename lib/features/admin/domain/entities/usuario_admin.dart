@@ -1,5 +1,3 @@
-// Usuario tal como lo ve el administrador: con correo, cédula y estado de
-// acceso.
 import '../../../auth/domain/entities/rol.dart';
 
 class UsuarioAdmin {

@@ -1,5 +1,3 @@
-// Envío de mensajes de una conversación. El mensaje nuevo aparece solo en
-// `mensajesProvider` (tiempo real), aquí únicamente se envía.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

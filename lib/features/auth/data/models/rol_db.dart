@@ -1,4 +1,3 @@
-// Mapeo de [Rol] al texto de `usuarios.rol`. Refleja el CHECK de la base.
 import '../../domain/entities/rol.dart';
 
 extension RolDb on Rol {

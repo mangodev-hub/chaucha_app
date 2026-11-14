@@ -1,4 +1,3 @@
-// Widgets compartidos de solicitudes: chip de estado, tarjeta y galería.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
 import '../../../../core/widgets/foto_perfil_caja.dart';
+import '../../../../core/widgets/insignia_verificado.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../domain/entities/solicitud.dart';
@@ -85,12 +85,16 @@ class SolicitudCard extends StatelessWidget {
           Row(
             children: [
               if (mostrarCliente)
-                FotoPerfilCaja(
-                  tamano: 44,
-                  rutaFoto: solicitud.clienteFotoRuta,
-                  iniciales: solicitud.clienteIniciales,
-                  estiloTexto: textos.titleSmall?.copyWith(
-                    color: Colores.primarioOscuro,
+                ConIconoVerificado(
+                  verificado: solicitud.clienteVerificado,
+                  tamano: 16,
+                  hijo: FotoPerfilCaja(
+                    tamano: 44,
+                    rutaFoto: solicitud.clienteFotoRuta,
+                    iniciales: solicitud.clienteIniciales,
+                    estiloTexto: textos.titleSmall?.copyWith(
+                      color: Colores.primarioOscuro,
+                    ),
                   ),
                 )
               else

@@ -1,4 +1,3 @@
-// Foto adjunta a una solicitud: del problema (cliente) o evidencia (técnico).
 enum TipoArchivo { problema, evidencia }
 
 class FotoSolicitud {

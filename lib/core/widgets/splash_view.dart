@@ -1,4 +1,3 @@
-// Se muestra mientras se verifica la sesión y se carga el perfil.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

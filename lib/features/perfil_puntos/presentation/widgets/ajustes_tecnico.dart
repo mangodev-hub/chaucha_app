@@ -1,7 +1,3 @@
-// Ajustes rápidos del técnico desde el inicio ("Para empezar a trabajar"):
-// elegir sus oficios y marcar su zona de trabajo sin ir a "Mi perfil". Cada
-// uno abre un diálogo (escritorio) o una hoja inferior (teléfono) y guarda
-// con el mismo `guardarPerfilProvider` del perfil, conservando lo demás.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

@@ -1,4 +1,3 @@
-// Implementación de [CotizacionRepository] con Supabase.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -110,9 +109,6 @@ class SupabaseCotizacionRepository implements CotizacionRepository {
     });
   }
 
-  /// Acepta la cotización, rechaza las demás pendientes y marca la solicitud
-  /// como aceptada, todo en una transacción (función RPC en Supabase, ver
-  /// `base_de_datos/aceptar_cotizacion.sql`).
   @override
   Future<void> aceptar(Cotizacion cotizacion) {
     return supabaseGuard(() async {

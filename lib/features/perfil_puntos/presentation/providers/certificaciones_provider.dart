@@ -1,5 +1,3 @@
-// Certificados del técnico: los suyos (todos los estados), los aprobados de
-// cualquier técnico (perfil público) y las acciones de agregar y eliminar.
 import 'dart:async';
 import 'dart:typed_data';
 

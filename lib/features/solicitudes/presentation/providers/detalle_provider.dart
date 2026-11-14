@@ -1,4 +1,3 @@
-// Detalle de una solicitud y las acciones que se pueden hacer sobre ella.
 import 'dart:async';
 import 'dart:typed_data';
 

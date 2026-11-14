@@ -1,4 +1,3 @@
-// Envío del formulario "Nueva solicitud". El estado guarda el id creado.
 import 'dart:async';
 import 'dart:typed_data';
 

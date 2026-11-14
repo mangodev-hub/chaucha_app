@@ -1,4 +1,3 @@
-// Niveles de gamificación y el progreso del técnico hacia el siguiente.
 class Nivel {
   const Nivel({required this.nombre, required this.puntosMinimos});
 

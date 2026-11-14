@@ -1,7 +1,3 @@
-// "Mi perfil" del técnico, con el mismo armado que el del cliente: cabecera
-// con su foto y métricas; a la izquierda su nivel, sus datos de trabajo
-// (tarifa y oficios), lo que dicen los clientes y sus certificados; a la
-// derecha su zona de trabajo, el menú de la cuenta, reclamos y publicidad.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -18,9 +14,9 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/boton_carga.dart';
 import '../../../../core/widgets/cabecera_perfil.dart';
 import '../../../../core/widgets/etiqueta_sector.dart';
+import '../../../../core/widgets/insignia_verificado.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
-import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/tarjeta_app.dart';
 import '../../../../core/widgets/tarjeta_inicio.dart';
@@ -73,8 +69,6 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
   @override
   void initState() {
     super.initState();
-    // El callback corre antes del build que muestra el formulario, así que
-    // basta con asignar los campos (sin setState).
     ref.listenManual(perfilTecnicoProvider, (_, estado) {
       if (estado case AsyncData(:final value)) _inicializar(value);
     }, fireImmediately: true);
@@ -107,8 +101,6 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
     final base = _base;
     _base = perfil;
     if (_inicializado) {
-      // Los oficios cambiaron fuera del formulario (desde el inicio): se
-      // toman los nuevos si aquí no se editaron.
       if (base == null || !mounted) return;
       if (_seleccionados.length == base.oficioIds.length &&
           _seleccionados.containsAll(base.oficioIds)) {
@@ -173,6 +165,7 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
           nombre: usuario.nombreCompleto,
           iniciales: _iniciales(usuario),
           fotoRuta: usuario.fotoPerfilRuta,
+          verificado: perfil.verificado,
           datos: Wrap(
             spacing: Espacios.m,
             runSpacing: Espacios.s,
@@ -198,12 +191,7 @@ class _PerfilTecnicoViewState extends ConsumerState<PerfilTecnicoView> {
                 ],
               ),
               const _ChipRol('Técnico'),
-              if (perfil.verificado)
-                const Pildora(
-                  texto: 'Verificado',
-                  icono: Icons.verified,
-                  color: Colores.acento,
-                ),
+              if (perfil.verificado) const InsigniaVerificado(),
               InsigniaSiCertificado(tecnicoId: perfil.usuarioId),
             ],
           ),
@@ -648,8 +636,6 @@ class _TarjetaNivel extends ConsumerWidget {
             subtitulo: 'Sube de nivel con buenas reseñas y certificados.',
           ),
           const SizedBox(height: Espacios.l),
-          // Cada insignia toma una parte igual del ancho: caben en cualquier
-          // teléfono.
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

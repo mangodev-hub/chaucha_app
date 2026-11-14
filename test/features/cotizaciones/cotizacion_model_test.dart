@@ -80,8 +80,6 @@ void main() {
 
       expect(c.precioBase, 25);
       expect(c.tarifa?.precioAcordado, 45.5);
-      // El total del ticket es el precio acordado: los materiales ya no
-      // forman parte del ticket.
       expect(c.tarifa?.total, 45.5);
       expect(c.tarifa?.fechaServicio, isNotNull);
       expect(c.tarifaPendiente, isTrue);

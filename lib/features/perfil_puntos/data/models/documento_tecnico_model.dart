@@ -1,4 +1,3 @@
-// Fila de `documentos_tecnico`.
 import '../../domain/entities/documento_tecnico.dart';
 import 'documento_db.dart';
 
@@ -8,6 +7,7 @@ class DocumentoTecnicoModel {
     required this.tipo,
     required this.estado,
     required this.ruta,
+    this.observacion,
   });
 
   factory DocumentoTecnicoModel.fromJson(Map<String, dynamic> json) {
@@ -16,16 +16,23 @@ class DocumentoTecnicoModel {
       tipo: TipoDocumentoDb.desdeDb(json['tipo'] as String),
       estado: EstadoDocumentoDb.desdeDb(json['estado'] as String),
       ruta: json['ruta_archivo'] as String,
+      observacion: json['observacion'] as String?,
     );
   }
 
-  static const String columnas = 'id, tipo, ruta_archivo, estado';
+  static const String columnas = 'id, tipo, ruta_archivo, estado, observacion';
 
   final String id;
   final TipoDocumento tipo;
   final EstadoDocumento estado;
   final String ruta;
+  final String? observacion;
 
-  DocumentoTecnico aEntidad() =>
-      DocumentoTecnico(id: id, tipo: tipo, estado: estado, ruta: ruta);
+  DocumentoTecnico aEntidad() => DocumentoTecnico(
+    id: id,
+    tipo: tipo,
+    estado: estado,
+    ruta: ruta,
+    observacion: observacion,
+  );
 }

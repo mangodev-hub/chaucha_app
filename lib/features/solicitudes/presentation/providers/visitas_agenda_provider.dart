@@ -1,6 +1,3 @@
-// Datos de la agenda: las visitas de un rango (lo que se ve en el calendario)
-// y las próximas desde hoy (tarjeta "Hoy" y "Próximos trabajos"). Cada uno es
-// una sola consulta (`AgendaRepository.visitas`).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

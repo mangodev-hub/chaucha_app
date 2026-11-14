@@ -1,9 +1,3 @@
-// Upstash Redis (REST) para caché, presencia y límites de uso.
-//
-// Regla: Redis acelera y protege, pero nunca es la fuente de verdad. Si faltan
-// los secretos o Upstash falla, cada función sigue como antes (fail-open).
-//
-// Secretos: UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN.
 import { Redis } from 'npm:@upstash/redis@1.34.3';
 
 export const PREFIJO = 'chaucha:';
@@ -46,10 +40,6 @@ export async function conRedis<T>(fn: (r: Redis) => Promise<T>, porDefecto: T): 
   }
 }
 
-/**
- * Comando crudo por la API REST (para lo que la librería no expone con
- * comodidad, como GEOSEARCH). Lanza si falla: usarlo dentro de `conRedis`.
- */
 export async function comando(args: (string | number)[]): Promise<unknown> {
   const url = Deno.env.get('UPSTASH_REDIS_REST_URL');
   const token = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');

@@ -1,19 +1,7 @@
 -- Panel de administrador.
---
 -- Todo lo que el admin hace sobre otros usuarios pasa por funciones
--- `security definer` que primero comprueban `mi_rol() = 'admin'`. Ninguna
--- puede tocar a otro administrador. Los errores se lanzan con `raise
--- exception` (P0001) y la app muestra su mensaje tal cual.
---
--- Ya existían (esquema inicial): el admin lee todas las solicitudes, revisa
--- documentos (`documentos_revision_admin`) y lee las cédulas del bucket
--- privado. `fn_verificar_tecnico` marca al técnico como verificado cuando
--- sus 3 documentos quedan aprobados.
+-- `security definer` que primero comprueban `mi_rol() = 'admin'`.
 
--- 1. Registro: una cuenta creada por SQL con `raw_app_meta_data.rol = admin`
---    queda como administrador y sin cédula. `raw_app_meta_data` no se puede
---    escribir desde la app (signUp solo escribe `raw_user_meta_data`), así
---    que nadie puede registrarse como admin.
 create or replace function public.fn_nuevo_usuario()
 returns trigger language plpgsql security definer set search_path to 'public' as $function$
 declare
@@ -90,8 +78,6 @@ begin
   );
 end $$;
 
--- 4. Usuarios con su correo y estado de acceso (están en auth.users, que la
---    app no puede leer directamente).
 create or replace function public.admin_usuarios()
 returns table (
   id uuid,
@@ -136,8 +122,6 @@ begin
   where id = p_id;
 end $$;
 
--- 6. Suspender o reactivar el acceso (Supabase rechaza el login de una
---    cuenta con `banned_until` en el futuro).
 create or replace function public.admin_suspender_usuario(p_id uuid, p_suspendido boolean)
 returns void language plpgsql security definer set search_path to 'public' as $$
 begin
@@ -148,8 +132,6 @@ begin
   where id = p_id;
 end $$;
 
--- 7. Eliminar: solo cuentas sin historial. Las que tienen solicitudes,
---    ofertas, chats o reseñas se suspenden (borrarlas rompería ese historial).
 create or replace function public.admin_eliminar_usuario(p_id uuid)
 returns void language plpgsql security definer set search_path to 'public' as $$
 begin

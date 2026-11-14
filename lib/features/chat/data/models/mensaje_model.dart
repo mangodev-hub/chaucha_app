@@ -1,4 +1,3 @@
-// Fila de la tabla `mensajes` tal como llega de Supabase.
 import '../../../../core/utils/json_utils.dart';
 import '../../domain/entities/mensaje.dart';
 

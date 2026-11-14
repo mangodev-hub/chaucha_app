@@ -1,6 +1,4 @@
--- Certificaciones opcionales del técnico. Las aprueba el admin; con una
--- aprobada el perfil muestra la insignia "Técnico certificado".
--- El archivo va al bucket privado `cedulas`, en la carpeta del técnico.
+-- Certificaciones opcionales del técnico.
 CREATE TABLE "public"."certificaciones_tecnico" (
   "id"           uuid                     NOT NULL DEFAULT gen_random_uuid(),
   "tecnico_id"   uuid                     NOT NULL,

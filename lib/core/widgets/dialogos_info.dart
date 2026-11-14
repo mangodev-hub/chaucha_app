@@ -1,6 +1,3 @@
-// Diálogos cortos que explican la app: cómo funciona, la garantía, ayuda,
-// reclamos, contacto y los resúmenes de Términos y Privacidad. Los abren el
-// pie de página, el final de "Mi perfil" y el inicio.
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 

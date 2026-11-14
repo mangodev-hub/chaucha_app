@@ -1,5 +1,3 @@
-// Control del radio de un mapa (slider de 1 a 20 km). Lo usa el mapa de la
-// zona de trabajo del técnico en su perfil.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';

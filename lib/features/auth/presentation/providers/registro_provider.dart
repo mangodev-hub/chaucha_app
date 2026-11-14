@@ -1,4 +1,3 @@
-// Envío del formulario de registro. El estado es null hasta que se registra.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

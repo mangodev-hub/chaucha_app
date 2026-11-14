@@ -1,4 +1,3 @@
-// Perfil público de un técnico, por id (lo abre el cliente desde una oferta).
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/app_failure.dart';

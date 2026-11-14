@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/validators/cedula_validator.dart';
 import '../../../../core/validators/codigo_dactilar_validator.dart';
+import '../../../../core/validators/form_validators.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/aviso_banner.dart';
 import '../../../../core/widgets/boton_carga.dart';
@@ -33,14 +34,17 @@ class _CompletarPerfilViewState extends ConsumerState<CompletarPerfilView> {
 
   void _avisarFallo() => setState(() => _fallos++);
 
+  final _nombres = TextEditingController();
+  final _apellidos = TextEditingController();
   final _cedula = TextEditingController();
   final _dactilar = TextEditingController();
   Rol _rol = Rol.cliente;
 
   @override
   void dispose() {
-    _cedula.dispose();
-    _dactilar.dispose();
+    for (final c in [_nombres, _apellidos, _cedula, _dactilar]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -52,6 +56,8 @@ class _CompletarPerfilViewState extends ConsumerState<CompletarPerfilView> {
     await ref
         .read(completarPerfilProvider.notifier)
         .completar(
+          nombres: _nombres.text,
+          apellidos: _apellidos.text,
           cedula: _cedula.text,
           codigoDactilar: _dactilar.text,
           rol: _rol,
@@ -112,6 +118,34 @@ class _CompletarPerfilViewState extends ConsumerState<CompletarPerfilView> {
               ),
             ),
             const SizedBox(height: Espacios.xl),
+            CampoEtiquetado(
+              etiqueta: 'Nombres',
+              ayuda: 'Como en tu cédula',
+              child: TextFormField(
+                controller: _nombres,
+                decoration: const InputDecoration(hintText: 'Jorge Luis'),
+                textCapitalization: TextCapitalization.words,
+                autofillHints: const [AutofillHints.givenName],
+                textInputAction: TextInputAction.next,
+                validator: (v) =>
+                    FormValidators.requerido(v, campo: 'Los nombres'),
+              ),
+            ),
+            const SizedBox(height: Espacios.l),
+            CampoEtiquetado(
+              etiqueta: 'Apellidos',
+              ayuda: 'Como en tu cédula',
+              child: TextFormField(
+                controller: _apellidos,
+                decoration: const InputDecoration(hintText: 'Zambrano García'),
+                textCapitalization: TextCapitalization.words,
+                autofillHints: const [AutofillHints.familyName],
+                textInputAction: TextInputAction.next,
+                validator: (v) =>
+                    FormValidators.requerido(v, campo: 'Los apellidos'),
+              ),
+            ),
+            const SizedBox(height: Espacios.l),
             CampoEtiquetado(
               etiqueta: 'Cédula',
               ayuda: '10 dígitos',

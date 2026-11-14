@@ -1,4 +1,3 @@
-// Fila de `solicitudes_servicio` + nombre del oficio (join).
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/geo/geo_mapper.dart';
@@ -19,6 +18,7 @@ class SolicitudModel {
     this.direccionReferencia,
     this.clienteNombre,
     this.clienteFotoRuta,
+    this.clienteVerificado = false,
     this.completadaEn,
   });
 
@@ -42,6 +42,7 @@ class SolicitudModel {
       creadoEn: aFecha(json['creado_en']),
       clienteNombre: nombreCorto.isEmpty ? null : nombreCorto,
       clienteFotoRuta: cliente?['foto_perfil_ruta'] as String?,
+      clienteVerificado: cliente?['verificado'] == true,
       completadaEn: json['completada_en'] is String
           ? aFecha(json['completada_en']).toLocal()
           : null,
@@ -53,7 +54,7 @@ class SolicitudModel {
       'id, cliente_id, oficio_id, descripcion, '
       'ubicacion, direccion_referencia, estado, creado_en, completada_en, '
       'oficios(nombre), '
-      'cliente:usuarios!fk_solicitudes_cliente(nombres, apellidos, foto_perfil_ruta)';
+      'cliente:usuarios!fk_solicitudes_cliente(nombres, apellidos, foto_perfil_ruta, verificado)';
 
   final String id;
   final String clienteId;
@@ -66,6 +67,7 @@ class SolicitudModel {
   final DateTime creadoEn;
   final String? clienteNombre;
   final String? clienteFotoRuta;
+  final bool clienteVerificado;
   final DateTime? completadaEn;
 
   Solicitud aEntidad() => Solicitud(
@@ -80,6 +82,7 @@ class SolicitudModel {
     creadoEn: creadoEn,
     clienteNombre: clienteNombre,
     clienteFotoRuta: clienteFotoRuta,
+    clienteVerificado: clienteVerificado,
     completadaEn: completadaEn,
   );
 }

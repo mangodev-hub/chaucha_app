@@ -1,14 +1,3 @@
-// Pestaña "Inicio" del técnico: su portada con la línea del día, un resumen
-// de su mes, qué le falta para trabajar, sus propuestas, las solicitudes
-// cerca, sus chats y su próxima visita. Cada sección carga por separado; si
-// una falla, las demás se siguen viendo.
-//
-// Mismo armado que el inicio del cliente: tarjetas blancas (radio 18 y
-// sombra suave) sobre el fondo claro. Desde 1280 px, lo principal va a la
-// izquierda y los chats, la próxima visita y la publicidad en una columna de
-// 340 px a la derecha. En la web la página va dentro del
-// scroll único del shell (que pone el pie); en el teléfono, en la hoja
-// clara con su propio scroll.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -82,8 +71,6 @@ class InicioTecnicoView extends ConsumerWidget {
     );
     const espacioPanel = SizedBox(height: Espacios.l);
 
-    // Mismo armado que el inicio del cliente: lo principal a la izquierda y
-    // chats, próxima visita y publicidad en una columna de 340 px.
     final Widget contenido = ancho >= anchoDosColumnas
         ? const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,10 +160,6 @@ class InicioTecnicoView extends ConsumerWidget {
 
 // Portada
 
-/// "Hola, {nombre}." sobre el degradado celeste, con la línea del día, la
-/// calificación y los puntos en una píldora blanca y la ilustración del
-/// técnico a la derecha. En el teléfono, sin barra superior, lleva también
-/// la píldora "Disponible".
 class _Portada extends ConsumerWidget {
   const _Portada();
 

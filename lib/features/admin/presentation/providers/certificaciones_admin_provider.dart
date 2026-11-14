@@ -1,4 +1,3 @@
-// Certificados de técnicos por revisar (pestaña "Verificaciones").
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

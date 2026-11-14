@@ -55,8 +55,6 @@ void main() {
             fechaServicio: DateTime(2026, 11, 5),
           ),
         ),
-        // Completado, sin ticket: cuenta el precio base (25), por la fecha
-        // de la oferta (7 de noviembre).
         cotizacionDePrueba(
           id: 'b',
           solicitudId: 's2',

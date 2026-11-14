@@ -1,4 +1,3 @@
-// Etiqueta "Sector: ..." para poner sobre los mapas.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -12,12 +11,9 @@ final sectorServiceProvider = Provider<SectorService>(
 );
 
 /// Sector de un punto (clave = coordenadas redondeadas, ver
-/// [SectorService.clave]). Si la consulta falla devuelve null y la etiqueta
-/// simplemente no se muestra.
+/// [SectorService.clave]).
 final sectorProvider = FutureProvider.autoDispose
     .family<String?, (double, double)>((ref, clave) async {
-      // Pausa corta: si el punto cambia enseguida (toques seguidos en el
-      // mapa), esta consulta se descarta antes de llegar a la red.
       await Future<void>.delayed(const Duration(milliseconds: 350));
       if (!ref.mounted) return null;
       try {

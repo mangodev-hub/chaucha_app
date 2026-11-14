@@ -337,8 +337,6 @@ class InicioView extends ConsumerWidget {
           espacio,
           cerca,
           espacio,
-          // En el teléfono la próxima visita va antes que los chats; la
-          // publicidad siempre al final.
           if (movil) ...[
             visita,
             espacio,
@@ -367,8 +365,6 @@ class InicioView extends ConsumerWidget {
       // Un solo scroll para toda la página, sin alturas fijas.
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        // En web, 12 px a los lados para que no se corten las sombras de
-        // las tarjetas (el shell descuenta ese margen).
         padding: movil
             ? const EdgeInsets.all(Espacios.l)
             : const EdgeInsets.fromLTRB(12, 0, 12, 24),
@@ -382,8 +378,6 @@ class InicioView extends ConsumerWidget {
         ),
       ),
     );
-    // En web va directo sobre el fondo claro; en el teléfono, dentro de la
-    // hoja clara del marco oscuro.
     return movil ? HojaClara(child: pagina) : pagina;
   }
 }

@@ -1,5 +1,3 @@
-// Certificados del técnico: sección opcional del perfil propio, insignia
-// "Técnico certificado" y lista pública de los aprobados.
 import 'dart:async';
 import 'dart:typed_data';
 

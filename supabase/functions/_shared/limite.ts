@@ -1,7 +1,3 @@
-// Límites de uso con ventana deslizante (@upstash/ratelimit).
-//
-// Protegen lo que cuesta dinero o tiene cuota externa: las llamadas a Gemini
-// y a Nominatim, y los latidos de presencia. Sin Redis, todo se permite.
 import { Ratelimit } from 'npm:@upstash/ratelimit@2.0.5';
 import { responder } from './cors.ts';
 import { obtenerRedis, PREFIJO } from './redis.ts';
@@ -12,8 +8,9 @@ export const REGLAS = {
   /** validar-foto-rostro: reintentos razonables de una selfie. */
   selfie: { pedidos: 5, ventana: '10 m' as Ventana },
   selfieDia: { pedidos: 20, ventana: '1 d' as Ventana },
-  /** comparar-rostro-cedula: una por selfie válida. */
-  comparar: { pedidos: 3, ventana: '1 h' as Ventana },
+  /** comparar-rostro-cedula: una por envío de documentos o corrección de datos. */
+  comparar: { pedidos: 6, ventana: '1 h' as Ventana },
+  rostroSesion: { pedidos: 10, ventana: '1 h' as Ventana },
   /** sector: por usuario. */
   sector: { pedidos: 30, ventana: '1 m' as Ventana },
   /** Nominatim permite 1 consulta por segundo para TODA la app. */

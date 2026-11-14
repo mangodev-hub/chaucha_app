@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,7 @@ import 'package:tecnicos_app/features/auth/data/repositories/supabase_auth_repos
 import 'package:tecnicos_app/features/auth/data/repositories/supabase_usuario_repository.dart';
 import 'package:tecnicos_app/features/auth/domain/entities/registro_datos.dart';
 import 'package:tecnicos_app/features/auth/domain/entities/registro_resultado.dart';
+import 'package:tecnicos_app/features/auth/domain/entities/resultado_rostro.dart';
 import 'package:tecnicos_app/features/auth/domain/entities/rol.dart';
 import 'package:tecnicos_app/features/auth/domain/entities/sesion_estado.dart';
 import 'package:tecnicos_app/features/auth/domain/entities/usuario.dart';
@@ -84,7 +86,17 @@ class _UsuariosFalso implements UsuarioRepository {
   Future<String?> miCedula() async => null;
 
   @override
+  Future<void> marcarVerificacionVista() async {}
+
+  int bajas = 0;
+
+  @override
+  Future<void> darseDeBaja() async => bajas++;
+
+  @override
   Future<void> completarPerfil({
+    required String nombres,
+    required String apellidos,
     required String cedula,
     required String codigoDactilar,
     required Rol rol,
@@ -104,14 +116,37 @@ class _UsuariosFalso implements UsuarioRepository {
 
   @override
   Future<String?> registrarSelfie({required String ruta}) async => null;
+
+  bool rostroVerificado = true;
+  AppFailure? fallaRostro;
+  int consultasRostro = 0;
+
+  @override
+  Future<bool> rostroSesionVerificado() async {
+    consultasRostro++;
+    final falla = fallaRostro;
+    if (falla != null) throw falla;
+    return rostroVerificado;
+  }
+
+  @override
+  Future<ResultadoRostro> verificarRostroSesion(Uint8List selfie) async =>
+      const ResultadoRostro(verificado: true);
 }
 
-Usuario _usuario(String id, {Rol rol = Rol.cliente}) => Usuario(
+Usuario _usuario(
+  String id, {
+  Rol rol = Rol.cliente,
+  bool verificado = true,
+  bool dadoDeBaja = false,
+}) => Usuario(
   id: id,
   rol: rol,
   nombres: 'Ana',
   apellidos: 'Pérez',
   creadoEn: DateTime(2026),
+  verificado: verificado,
+  dadoDeBaja: dadoDeBaja,
 );
 
 /// Deja correr los eventos del stream y los `await` pendientes.
@@ -156,6 +191,28 @@ void main() {
     await container.read(sesionProvider.notifier).recargarUsuario();
 
     expect(container.read(usuarioActualProvider)?.rol, Rol.tecnico);
+  });
+
+  test('una cuenta dada de baja no puede entrar', () async {
+    usuarios.respuestas['u1'] = _usuario('u1', dadoDeBaja: true);
+    auth.cambios.add('u1');
+    await _esperar();
+
+    expect((estado() as SinSesion).aviso, contains('se dio de baja'));
+    expect(auth.cierres, 1);
+  });
+
+  test('darseDeBaja desactiva la cuenta y cierra la sesión', () async {
+    usuarios.respuestas['u1'] = _usuario('u1');
+    auth.cambios.add('u1');
+    await _esperar();
+
+    await container.read(sesionProvider.notifier).darseDeBaja();
+    await _esperar();
+
+    expect(usuarios.bajas, 1);
+    expect(estado(), isA<SinSesion>());
+    expect((estado() as SinSesion).aviso, contains('se dio de baja'));
   });
 
   test('sin usuario pasa a SinSesion sin aviso', () async {
@@ -220,5 +277,115 @@ void main() {
     await _esperar();
 
     expect((estado() as SinSesion).aviso, isNull);
+  });
+
+  group('rostro del login', () {
+    bool? rostro() => switch (estado()) {
+      ConSesion(:final rostroVerificado) => rostroVerificado,
+      _ => null,
+    };
+
+    test('sesión sin rostro confirmado queda pendiente', () async {
+      usuarios
+        ..respuestas['u1'] = _usuario('u1')
+        ..rostroVerificado = false;
+      auth.cambios.add('u1');
+      await _esperar();
+
+      expect(rostro(), isFalse);
+      // El usuario igual queda expuesto (la pantalla de rostro lo usa).
+      expect(container.read(usuarioActualProvider)?.id, 'u1');
+    });
+
+    test('sesión ya confirmada entra directo', () async {
+      usuarios.respuestas['u1'] = _usuario('u1', rol: Rol.tecnico);
+      auth.cambios.add('u1');
+      await _esperar();
+
+      expect(rostro(), isTrue);
+    });
+
+    test('el admin no pasa por el control de rostro', () async {
+      usuarios
+        ..respuestas['a1'] = _usuario('a1', rol: Rol.admin)
+        ..rostroVerificado = false;
+      auth.cambios.add('a1');
+      await _esperar();
+
+      expect(rostro(), isTrue);
+      expect(usuarios.consultasRostro, 0);
+    });
+
+    test('sin identidad verificada no se pide el rostro', () async {
+      usuarios
+        ..respuestas['u1'] = _usuario('u1', verificado: false)
+        ..rostroVerificado = false;
+      auth.cambios.add('u1');
+      await _esperar();
+
+      expect(rostro(), isTrue);
+      expect(usuarios.consultasRostro, 0);
+    });
+
+    test('si la consulta falla, no deja pasar', () async {
+      usuarios
+        ..respuestas['u1'] = _usuario('u1')
+        ..fallaRostro = const AppFailure('Sin conexión.');
+      auth.cambios.add('u1');
+      await _esperar();
+
+      expect(rostro(), isFalse);
+      expect(auth.cierres, 0);
+    });
+
+    test('marcarRostroVerificado deja entrar', () async {
+      usuarios
+        ..respuestas['u1'] = _usuario('u1')
+        ..rostroVerificado = false;
+      auth.cambios.add('u1');
+      await _esperar();
+
+      container.read(sesionProvider.notifier).marcarRostroVerificado();
+      expect(rostro(), isTrue);
+    });
+
+    test('recargarUsuario no pierde la verificación', () async {
+      usuarios.respuestas['u1'] = _usuario('u1');
+      auth.cambios.add('u1');
+      await _esperar();
+      final consultas = usuarios.consultasRostro;
+
+      await container.read(sesionProvider.notifier).recargarUsuario();
+      expect(rostro(), isTrue);
+      expect(usuarios.consultasRostro, consultas);
+    });
+
+    test('recargarUsuario vuelve a consultar si estaba pendiente', () async {
+      usuarios
+        ..respuestas['u1'] = _usuario('u1')
+        ..rostroVerificado = false;
+      auth.cambios.add('u1');
+      await _esperar();
+
+      // La selfie de perfil recién validada marca la sesión.
+      usuarios.rostroVerificado = true;
+      await container.read(sesionProvider.notifier).recargarUsuario();
+      expect(rostro(), isTrue);
+    });
+
+    test('cerrarSesionConAviso deja el aviso en el login', () async {
+      usuarios
+        ..respuestas['u1'] = _usuario('u1')
+        ..rostroVerificado = false;
+      auth.cambios.add('u1');
+      await _esperar();
+
+      await container
+          .read(sesionProvider.notifier)
+          .cerrarSesionConAviso('Agotaste los intentos.');
+      await _esperar();
+
+      expect((estado() as SinSesion).aviso, 'Agotaste los intentos.');
+    });
   });
 }

@@ -1,15 +1,6 @@
 -- Notificaciones push (FCM).
---
 -- Todos los eventos de la app (mensaje, cotización, tarifa, cierre...) ya
--- terminan en un INSERT sobre `notificaciones`. Por eso hay UN solo webhook:
--- cada fila nueva llama a la Edge Function `enviar-push`, que la despacha por
--- FCM a los dispositivos del destinatario. Así el aviso llega aunque la app
--- esté cerrada o el navegador minimizado (Realtime solo sirve con la app abierta).
---
--- Además, guardar en Vault (una sola vez, desde el SQL editor):
---   select vault.create_secret('https://<proyecto>.supabase.co/functions/v1/enviar-push', 'push_url');
---   select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'push_secreto');
--- La función valida el header con `push_secreto_valido` (20261112154019_push_secreto_en_vault).
+-- terminan en un INSERT sobre `notificaciones`.
 
 create extension if not exists pg_net with schema extensions;
 
@@ -37,8 +28,7 @@ create policy dispositivos_push_propios on public.dispositivos_push
   using (usuario_id = auth.uid())
   with check (usuario_id = auth.uid());
 
--- Registrar el token. Si el mismo dispositivo cambia de cuenta, el token pasa
--- al usuario nuevo (la política de UPDATE no lo permitiría desde el cliente).
+-- Registrar el token.
 create or replace function public.registrar_dispositivo_push(p_token text, p_plataforma text)
   returns void
   language plpgsql
@@ -60,8 +50,7 @@ end $$;
 revoke all on function public.registrar_dispositivo_push(text, text) from public, anon;
 grant execute on function public.registrar_dispositivo_push(text, text) to authenticated;
 
--- Webhook: manda la notificación nueva a la Edge Function (asíncrono, pg_net
--- no bloquea el INSERT). Si faltan los secretos, no hace nada.
+-- Webhook: manda la notificación nueva a la Edge Function (asíncrono, pg_net no bloquea el INSERT).
 create or replace function public.fn_notificacion_push()
   returns trigger
   language plpgsql

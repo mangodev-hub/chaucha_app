@@ -1,5 +1,3 @@
-// Piezas del reclamo: píldora y pasos del estado, burbujas de la
-// conversación y miniaturas de las evidencias.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

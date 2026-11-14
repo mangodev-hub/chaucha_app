@@ -1,13 +1,3 @@
-// Pantalla que se abre encima de las pestañas (detalle, chat, perfil de otra
-// persona, agenda, reclamos...).
-//
-// - En la web del cliente la ruta se dibuja dentro de la estructura web (la
-//   barra superior blanca, el menú lateral y el pie; ver `InicioShell`), que
-//   la marca con [EstructuraWeb]. Aquí solo va la ruta de navegación
-//   "‹ Volver / Título" y el contenido, sobre el mismo fondo claro.
-// - En un teléfono: una AppBar clara, sin sombra, con la flecha atrás.
-// - En pantallas anchas sin estructura (técnico, asesor): fondo claro y la
-//   ruta de navegación arriba.
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,9 +6,6 @@ import '../theme/tokens.dart';
 import 'scroll_pagina.dart';
 
 /// Marca que la pantalla secundaria va dentro de la estructura web.
-/// [llena]: la pantalla ocupa el alto visible y maneja su propio scroll
-/// (chat, reclamo con su campo de respuesta). Si no, va en el scroll único
-/// de la página ([ScrollDePagina]).
 class EstructuraWeb extends InheritedWidget {
   const EstructuraWeb({super.key, required this.llena, required super.child});
 

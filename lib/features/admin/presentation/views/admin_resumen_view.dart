@@ -1,4 +1,3 @@
-// Pestaña "Resumen" del panel: portada y cifras de la plataforma.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

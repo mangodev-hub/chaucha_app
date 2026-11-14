@@ -1,6 +1,4 @@
 -- Garantía de 30 días y reclamos por ticket.
--- La garantía corre desde `completada_en`. Reportan el cliente o el técnico
--- del servicio; la otra parte no ve el reclamo. Todo se escribe por RPC.
 
 alter table solicitudes_servicio add column if not exists completada_en timestamptz;
 

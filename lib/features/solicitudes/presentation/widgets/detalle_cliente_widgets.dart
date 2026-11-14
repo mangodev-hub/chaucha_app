@@ -1,5 +1,3 @@
-// Piezas del detalle de una solicitud para el cliente: ruta, cabecera con el
-// progreso, ofertas recibidas, detalles del problema y ubicación.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

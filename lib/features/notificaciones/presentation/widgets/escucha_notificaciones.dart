@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/widgets/mensajes.dart';
 import '../../../auth/presentation/providers/sesion_provider.dart';
+import '../../../perfil_puntos/presentation/providers/verificacion_provider.dart';
 import '../providers/notificaciones_provider.dart';
 
 /// Muestra un aviso cuando llega una notificación nueva con la app abierta.
@@ -30,9 +31,11 @@ class _EstadoEscucha extends ConsumerState<EscuchaNotificaciones> {
           return;
         }
         if (nuevas.isEmpty || !mounted) return;
-        // Sanción nueva o terminada: recarga el usuario para mostrar/quitar
-        // el banner sin cerrar sesión.
-        if (nuevas.any((n) => n.tipo == 'sancion' || n.tipo == 'sancion_fin')) {
+        const recargan = {'sancion', 'sancion_fin', 'verificacion'};
+        if (nuevas.any((n) => n.tipo == 'verificacion')) {
+          ref.invalidate(verificacionProvider);
+        }
+        if (nuevas.any((n) => recargan.contains(n.tipo))) {
           ref.read(sesionProvider.notifier).recargarUsuario();
         }
         context.mostrarMensaje(nuevas.first.contenido, titulo: 'Novedad');

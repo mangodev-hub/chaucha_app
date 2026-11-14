@@ -13,6 +13,8 @@ class Usuario {
     this.fotoRostroValidada = false,
     this.perfilCompleto = true,
     this.verificado = false,
+    this.verificacionVista = true,
+    this.dadoDeBaja = false,
     this.suspendidoHasta,
     this.ciudad,
     this.ubicacionRegistro,
@@ -24,6 +26,12 @@ class Usuario {
   final String apellidos;
   final bool perfilCompleto;
   final bool verificado;
+
+  /// false: quedó verificado y aún no vio la celebración.
+  final bool verificacionVista;
+
+  /// Se dio de baja: la cuenta está desactivada y no puede entrar.
+  final bool dadoDeBaja;
   final String? fotoPerfilRuta;
   final bool fotoRostroValidada;
   final DateTime creadoEn;

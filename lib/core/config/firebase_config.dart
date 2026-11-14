@@ -1,6 +1,3 @@
-// Configuración de Firebase (solo para notificaciones push), leída de
-// --dart-define-from-file=env.json. Es opcional: si faltan las claves de la
-// plataforma actual, la app arranca igual y simplemente no recibe push.
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 

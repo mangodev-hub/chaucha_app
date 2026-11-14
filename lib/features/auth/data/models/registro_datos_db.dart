@@ -1,5 +1,3 @@
-// Metadatos que recibe `signUp`. Un trigger de la base crea la fila en
-// `usuarios` a partir de ellos.
 import '../../domain/entities/registro_datos.dart';
 import 'rol_db.dart';
 

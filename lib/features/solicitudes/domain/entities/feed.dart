@@ -1,4 +1,3 @@
-// Feed del técnico: solicitudes de sus oficios dentro de su radio.
 import '../../../perfil_puntos/domain/entities/perfil_tecnico.dart';
 import 'solicitud.dart';
 

@@ -1,5 +1,3 @@
-// Piezas de la agenda: colores por estado, vistas Mes / Semana / Lista,
-// tarjeta "Hoy" y tarjeta de un trabajo próximo.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
@@ -887,9 +885,6 @@ class _Tarjeta extends StatelessWidget {
 
 // ----------------------------------------------------- tarjeta de trabajo
 
-/// Un trabajo agendado: fecha, franja y oficio, la otra persona con el precio
-/// de la visita y dos acciones (Reagendar / Escribir, o Confirmar / Otra hora
-/// si al usuario le toca responder una reagenda).
 class TarjetaTrabajo extends StatelessWidget {
   const TarjetaTrabajo({
     super.key,

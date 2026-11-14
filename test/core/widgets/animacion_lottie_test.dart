@@ -47,9 +47,6 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  // tecnico_login.json (30 fps, 300 cuadros): idle 0–120, email_in 120–150,
-  // email 150–210, password_in 210–240, password 240–300. En progreso (0–1):
-  // idle 0–0.4, email_in 0.4–0.5, email 0.5–0.7, password 0.8–1.
   group('por tramos', () {
     Widget appTramo(String tramo, {bool reducir = false}) => MaterialApp(
       home: MediaQuery(
@@ -71,8 +68,6 @@ void main() {
       bool reducir = false,
     }) async {
       await tester.pumpWidget(appTramo(tramo, reducir: reducir));
-      // Espera a que el archivo cargue de verdad (el widget interno recibe la
-      // composición); onLoaded corre en el pump siguiente.
       for (var i = 0; i < 50; i++) {
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 100)),

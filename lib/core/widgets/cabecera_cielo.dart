@@ -1,7 +1,3 @@
-// Cabecera celeste de las pantallas de detalle y de perfil: tarjeta bento
-// celeste claro con una ola verde abajo, título y subtítulo en tinta oscura, una píldora opcional a la
-// derecha y, si hay lugar, una animación Lottie (el técnico) abajo a la
-// derecha. Regla v2: celeste = contexto, verde = acción.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

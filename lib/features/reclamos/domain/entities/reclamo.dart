@@ -1,7 +1,3 @@
-// Reclamo dentro de la garantía de 30 días de un servicio. Solo lo ven
-// quien lo hizo y los asesores (admin).
-
-/// Días de garantía desde que se completa un servicio.
 const int diasGarantia = 30;
 
 enum CategoriaReclamo {

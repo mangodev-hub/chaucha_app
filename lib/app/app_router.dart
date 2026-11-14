@@ -1,4 +1,3 @@
-// Router de la app. Se crea una sola vez y se refresca cuando cambia la sesión.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +20,7 @@ import '../features/auth/presentation/views/recuperar_view.dart';
 import '../features/auth/presentation/views/registro_view.dart';
 import '../features/auth/presentation/views/restablecer_view.dart';
 import '../features/auth/presentation/views/selfie_view.dart';
+import '../features/auth/presentation/views/verificar_rostro_view.dart';
 import '../features/chat/presentation/views/chat_view.dart';
 import '../features/chat/presentation/views/chats_view.dart';
 import '../features/legal/presentation/views/pagina_legal_view.dart';
@@ -57,8 +57,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   Widget chat(GoRouterState state) =>
       ChatView(conversacionId: state.pathParameters['id']!);
 
-  // Shell del cliente. Con [pagina], la ruta secundaria se dibuja dentro de
-  // la estructura web (barra, menú lateral y pie).
+  // Shell del cliente.
   InicioShell shellCliente({Widget? pagina, bool llena = false}) => InicioShell(
     pagina: pagina,
     paginaLlena: llena,
@@ -108,6 +107,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         PerfilClienteView(),
         iconoActivo: Icons.person_rounded,
         corto: 'Perfil',
+        tiposNotificacion: ['verificacion'],
       ),
     ],
   );
@@ -163,6 +163,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         PerfilTecnicoView(),
         iconoActivo: Icons.person_rounded,
         corto: 'Perfil',
+        tiposNotificacion: ['verificacion'],
       ),
     ],
   );
@@ -261,9 +262,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => SelfieView(onCerrarSesion: cerrarSesion),
       ),
       GoRoute(
+        path: AppRoutes.verificarRostro,
+        builder: (context, state) =>
+            VerificarRostroView(onCerrarSesion: cerrarSesion),
+      ),
+      GoRoute(
         path: AppRoutes.clienteInicio,
         // Cinco destinos abajo: Inicio · Solicitudes · Pedir · Chats · Perfil.
-        // La agenda del cliente se abre desde el menú y desde Mis solicitudes.
         builder: (context, state) => shellCliente(),
         routes: [
           GoRoute(

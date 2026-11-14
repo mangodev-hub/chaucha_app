@@ -1,6 +1,3 @@
-// Bloque de reseñas de un perfil: resumen (promedio, barras de 5 a 1 y las
-// etiquetas más repetidas), las 3 más recientes y "Ver las n reseñas" con
-// la lista completa filtrable por fecha.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -223,8 +220,6 @@ class ResumenResenas extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Muy angosto (teléfonos de 320 px): la cifra va arriba
-                  // de las barras; si no, al lado.
                   if (r.maxWidth < 300) ...[
                     Align(alignment: Alignment.centerLeft, child: cifra),
                     const SizedBox(height: Espacios.m),
@@ -323,9 +318,7 @@ class FilaResena extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Nombre con estrellas a la izquierda y la fecha a la
-                // derecha. Si no caben (teléfonos de 320 px), lo que no
-                // entra baja a la línea siguiente en vez de desbordar.
+                // Nombre con estrellas a la izquierda y la fecha a la derecha.
                 Wrap(
                   alignment: WrapAlignment.spaceBetween,
                   crossAxisAlignment: WrapCrossAlignment.center,

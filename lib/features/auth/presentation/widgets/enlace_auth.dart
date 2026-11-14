@@ -1,4 +1,3 @@
-// "¿No tienes cuenta? Regístrate": pregunta en gris y enlace azul en negrita.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';

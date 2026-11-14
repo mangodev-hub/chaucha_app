@@ -1,4 +1,3 @@
-// Datos del formulario de registro, ya validados por la vista.
 import 'rol.dart';
 
 class RegistroDatos {

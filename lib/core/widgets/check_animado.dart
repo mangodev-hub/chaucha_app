@@ -1,7 +1,3 @@
-// Check de verificación animado: un círculo verde que aparece con rebote y
-// un tilde que se dibuja encima. Se reproduce una sola vez al mostrarse.
-// Para momentos de éxito (solicitud creada, correo enviado, código
-// verificado); respeta "reducir animaciones" (aparece ya dibujado).
 import 'dart:async';
 
 import 'package:flutter/material.dart';

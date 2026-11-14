@@ -1,6 +1,3 @@
-// Bloques del inicio del técnico, con las mismas piezas que el inicio del
-// cliente: tarjetas de resumen, sus propuestas en espera, los chats
-// recientes y la próxima visita.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

@@ -1,4 +1,3 @@
-// Título y subtítulo de una pantalla o de una hoja, con ícono opcional.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

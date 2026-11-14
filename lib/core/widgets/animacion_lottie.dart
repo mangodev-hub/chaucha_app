@@ -1,16 +1,3 @@
-// Animación Lottie decorativa (archivo .json en assets/lottie/).
-//
-// - Reserva su espacio desde el primer cuadro: la pantalla no salta mientras
-//   el archivo carga (en web llega después del primer dibujo).
-// - Si el archivo falla, deja el hueco vacío en vez de romper la pantalla.
-// - Respeta "reducir animaciones": queda quieta (en la pose del tramo, si hay).
-// - Va dentro de un RepaintBoundary para que cada cuadro no redibuje lo que la
-//   rodea (formularios, tarjetas).
-// - [proporcion] define la caja visible (ancho / alto). Con BoxFit.cover recorta
-//   el margen vacío del lienzo cuando el dibujo ocupa solo una parte.
-// - [tramo]: nombre de un marcador del archivo. Sin tramo se repite completa;
-//   con tramo, al cambiarlo reproduce una vez la transición "<tramo>_in" (si el
-//   archivo la tiene) y después repite el tramo en bucle.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

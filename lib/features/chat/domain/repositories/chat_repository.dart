@@ -1,4 +1,3 @@
-// Contrato del chat. Los errores llegan como [AppFailure].
 import '../entities/conversacion.dart';
 import '../entities/conversacion_pendiente.dart';
 import '../entities/mensaje.dart';

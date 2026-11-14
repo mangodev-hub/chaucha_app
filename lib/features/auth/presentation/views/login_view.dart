@@ -1,4 +1,3 @@
-// Pantalla de login. Al entrar, el router redirige solo según el rol.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,15 +32,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   void _avisarFallo() => setState(() => _fallos++);
 
-  /// Veces que el servidor rechazó las credenciales. Es la clave del campo
-  /// de contraseña: tras cada rechazo el campo se arma de nuevo (conserva lo
-  /// escrito). En la web, el administrador de contraseñas del navegador
-  /// reacciona al envío fallido y podía dejar el campo sin aceptar cambios.
+  /// Veces que el servidor rechazó las credenciales.
   int _rechazos = 0;
 
   void _alRechazar() {
-    // Cierra el autocompletado del intento (sin ofrecer guardar una
-    // contraseña que no sirvió) para que el navegador suelte el campo.
     TextInput.finishAutofillContext(shouldSave: false);
     setState(() {
       _fallos++;

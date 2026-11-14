@@ -1,9 +1,3 @@
-// Notificaciones push con Firebase Cloud Messaging.
-//
-// La app solo registra el token del dispositivo en `dispositivos_push`; el
-// envío lo hace la Edge Function `enviar-push` cuando se inserta una fila en
-// `notificaciones`. Con la app abierta, el aviso en pantalla sigue saliendo
-// de Realtime (EscuchaNotificaciones), así que aquí no se muestra nada.
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -66,9 +60,6 @@ class PushService {
       final permiso = await fcm.requestPermission();
       if (permiso.authorizationStatus == AuthorizationStatus.denied) return;
 
-      // getToken/onTokenRefresh están deprecados en firebase_messaging 17
-      // a favor de register()/onRegistered (que entrega el FID, no el token).
-      // La Edge Function usa el token clásico de HTTP v1, así que se mantienen.
       // ignore: deprecated_member_use
       final token = await fcm.getToken(
         vapidKey: kIsWeb ? FirebaseConfig.vapidKey : null,
@@ -80,8 +71,6 @@ class PushService {
       // ignore: deprecated_member_use
       _refresco = fcm.onTokenRefresh.listen((nuevo) => _guardar(db, nuevo));
     } catch (e) {
-      // El push es un extra: si falla (permiso, navegador sin soporte...),
-      // la app sigue funcionando con Realtime.
       debugPrint('No se pudo registrar el push: $e');
     }
   }

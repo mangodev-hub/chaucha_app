@@ -1,6 +1,3 @@
-// Progreso por pasos: barras horizontales, con encabezado ("Paso 2 de 3")
-// y etiquetas bajo cada paso, ambos opcionales. Al avanzar, la barra se
-// llena con una animación y la etiqueta del paso actual pasa a negrita.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
@@ -89,8 +86,6 @@ class IndicadorPasos extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Fondo claro con el relleno encima, que crece de
-                        // izquierda a derecha al completar el paso.
                         Container(
                           height: 5,
                           decoration: BoxDecoration(

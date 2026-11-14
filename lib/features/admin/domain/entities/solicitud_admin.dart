@@ -1,4 +1,3 @@
-// Solicitud con el nombre de quien la publicó (el admin ve las de todos).
 import '../../../solicitudes/domain/entities/solicitud.dart';
 
 class SolicitudAdmin {

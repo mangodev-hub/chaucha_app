@@ -1,6 +1,3 @@
-// Implementación de [DocumentoRepository] con Supabase (tabla + Storage).
-// Ruta en Storage: `{id_del_tecnico}/{tipo}_{marcaDeTiempo}.jpg`.
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +7,7 @@ import '../../../../core/providers/core_providers.dart';
 import '../../../../core/storage/storage_service.dart';
 import '../../../../core/supabase/supabase_extensions.dart';
 import '../../../../core/supabase/supabase_guard.dart';
+import '../../domain/entities/datos_identidad.dart';
 import '../../domain/entities/documento_tecnico.dart';
 import '../../domain/entities/verificacion.dart';
 import '../../domain/repositories/documento_repository.dart';
@@ -55,7 +53,79 @@ class SupabaseDocumentoRepository implements DocumentoRepository {
           ),
         ),
       );
-      return Verificacion({for (final doc in conUrl) doc.tipo: doc});
+      return Verificacion({
+        for (final doc in conUrl) doc.tipo: doc,
+      }, camposNoCoinciden: await _camposNoCoinciden(vigentes));
+    });
+  }
+
+  /// Campos que no coincidieron en la última validación, si fue de estas mismas
+  /// fotos y siguen pendientes.
+  Future<Set<CampoIdentidad>> _camposNoCoinciden(
+    Map<TipoDocumento, DocumentoTecnico> vigentes,
+  ) async {
+    final frente = vigentes[TipoDocumento.cedulaFrontal];
+    final reverso = vigentes[TipoDocumento.cedulaPosterior];
+    if (frente?.estado != EstadoDocumento.pendiente ||
+        reverso?.estado != EstadoDocumento.pendiente) {
+      return const {};
+    }
+    final ultima = await _client
+        .from('comparaciones_rostro')
+        .select('decision, datos')
+        .eq('usuario_id', _client.uidActual)
+        .order('creado_en', ascending: false)
+        .limit(1)
+        .maybeSingle();
+    final datos = ultima?['datos'] as Map<String, dynamic>?;
+    if (ultima?['decision'] != 'datos' ||
+        datos?['frente'] != frente!.ruta ||
+        datos?['reverso'] != reverso!.ruta) {
+      return const {};
+    }
+    return {
+      for (final c in (datos!['campos'] as List? ?? const []))
+        ?CampoIdentidad.desdeDb(c as String),
+    };
+  }
+
+  @override
+  Future<DatosIdentidad> misDatos() {
+    return supabaseGuard(() async {
+      final uid = _client.uidActual;
+      final (usuario, identidad) = (
+        await _client
+            .from('usuarios')
+            .select('nombres, apellidos')
+            .eq('id', uid)
+            .single(),
+        await _client
+            .from('identidades')
+            .select('cedula, codigo_dactilar')
+            .eq('usuario_id', uid)
+            .maybeSingle(),
+      );
+      return DatosIdentidad(
+        nombres: usuario['nombres'] as String? ?? '',
+        apellidos: usuario['apellidos'] as String? ?? '',
+        cedula: identidad?['cedula'] as String? ?? '',
+        codigoDactilar: identidad?['codigo_dactilar'] as String?,
+      );
+    });
+  }
+
+  @override
+  Future<void> corregirDatos(DatosIdentidad datos) {
+    return supabaseGuard(() async {
+      await _client.rpc<void>(
+        'corregir_datos_identidad',
+        params: {
+          'p_nombres': datos.nombres.trim(),
+          'p_apellidos': datos.apellidos.trim(),
+          'p_cedula': datos.cedula.trim(),
+          'p_codigo_dactilar': datos.codigoDactilar?.trim(),
+        },
+      );
     });
   }
 
@@ -94,17 +164,15 @@ class SupabaseDocumentoRepository implements DocumentoRepository {
             .eq('tecnico_id', uid)
             .eq('tipo', tipo.valorDb);
       }
-      if (tipo == TipoDocumento.cedulaFrontal) _compararRostro();
     });
   }
 
-  // Apoyo a la revisión: guarda el resultado en `comparaciones_rostro`.
-  // No bloquea ni afecta la subida si falla.
-  void _compararRostro() {
-    unawaited(
-      _client.functions
+  @override
+  Future<void> validarIdentidad() {
+    return supabaseGuard(() async {
+      await _client.functions
           .invoke('comparar-rostro-cedula')
-          .then((_) {}, onError: (_) {}),
-    );
+          .timeout(const Duration(seconds: 90));
+    });
   }
 }

@@ -1,6 +1,3 @@
-// Perfil de un técnico visto por el cliente: cabecera con nivel y métricas,
-// oficios, certificaciones y reseñas, y a un lado su verificación y lo que
-// garantiza ChauchaApp. No muestra puntos, faltas, sanciones ni contacto.
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -18,6 +15,7 @@ import '../../../../core/utils/formatos.dart';
 import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/cabecera_perfil.dart';
+import '../../../../core/widgets/insignia_verificado.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/pantalla_secundaria.dart';
 import '../../../../core/widgets/scroll_pagina.dart';
@@ -82,8 +80,6 @@ class PerfilTecnicoPublico extends ConsumerWidget {
               padding: EdgeInsets.zero,
               children: [
                 Padding(
-                  // En la web la ruta de navegación ya va arriba, alineada
-                  // con el borde de la cabecera.
                   padding: EstructuraWeb.de(context) != null
                       ? EdgeInsets.zero
                       : const EdgeInsets.all(20),
@@ -188,18 +184,13 @@ class _Contenido extends StatelessWidget {
       nombre: p.nombre,
       iniciales: _iniciales(p.nombre),
       fotoRuta: p.fotoRuta,
+      verificado: p.verificado,
       datos: Wrap(
         spacing: Espacios.s,
         runSpacing: Espacios.s,
         alignment: WrapAlignment.center,
         children: [
-          if (p.verificado)
-            pildora(
-              'Verificado',
-              Colores.primarioSuave,
-              Colores.primario,
-              icono: Icons.check_rounded,
-            ),
+          if (p.verificado) const InsigniaVerificado(),
           if (p.nivelNombre.isNotEmpty)
             pildora('Nivel ${p.nivelNombre}', fondoNivel, colorNivel),
           if (p.esNuevo)

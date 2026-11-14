@@ -1,11 +1,3 @@
-// Barrio (sector) de un punto, con la geocodificación inversa de Nominatim y
-// una caché compartida en Redis.
-//
-// Antes cada teléfono consultaba Nominatim por su cuenta. Nominatim permite
-// 1 consulta por segundo para toda la app: aquí se respeta ese límite global,
-// y un punto ya consultado por cualquier usuario sale de la caché (30 días).
-//
-// POST {lat, lng} -> {sector: string | null, cache: boolean}
 import { preflight, responder } from '../_shared/cors.ts';
 import { usuarioDe } from '../_shared/auth.ts';
 import { limitar, respuesta429 } from '../_shared/limite.ts';

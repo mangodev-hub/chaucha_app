@@ -1,4 +1,3 @@
-// Cambia entre vista de teléfono y vista de escritorio.
 import 'package:flutter/material.dart';
 
 class ResponsiveLayout extends StatelessWidget {

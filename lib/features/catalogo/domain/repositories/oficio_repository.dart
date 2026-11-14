@@ -1,4 +1,3 @@
-// Contrato de acceso al catálogo de oficios.
 import '../entities/oficio.dart';
 
 abstract interface class OficioRepository {

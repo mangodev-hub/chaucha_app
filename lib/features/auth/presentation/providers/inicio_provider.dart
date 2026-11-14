@@ -49,8 +49,7 @@ final tecnicosCercanosProvider =
     });
 
 /// La solicitud activa más reciente del cliente y cuántos técnicos la
-/// cotizaron, para la tarjeta "Tu solicitud activa" del inicio. Null si no
-/// tiene ninguna en curso.
+/// cotizaron, para la tarjeta "Tu solicitud activa" del inicio.
 final solicitudActivaProvider =
     FutureProvider.autoDispose<({Solicitud solicitud, int ofertas})?>((
       ref,

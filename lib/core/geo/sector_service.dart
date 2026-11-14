@@ -1,9 +1,3 @@
-// Nombre del sector (barrio) de un punto, con la geocodificación inversa de
-// Nominatim (OpenStreetMap). Se pide a la Edge Function `sector`, que guarda
-// el resultado en Redis para todos los usuarios y respeta el límite global de
-// Nominatim (1 consulta por segundo para toda la app). Si la función falla, se
-// consulta Nominatim directo como antes. Además guarda los resultados en
-// memoria y espacia las consultas.
 import 'dart:async';
 import 'dart:convert';
 

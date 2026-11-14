@@ -1,6 +1,3 @@
-// Cambios en vivo de las ofertas de una solicitud (Realtime de
-// `cotizaciones` filtrado por `solicitud_id`). Emite una huella por oferta
-// (id, estado y ticket) para saber cuándo hay que recargar el detalle.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/core_providers.dart';

@@ -1,12 +1,3 @@
-// Tarjeta bento de color con una "onda" de otro tono pintada dentro: la
-// pieza que organiza cada inicio (pedir un técnico, elegir un servicio,
-// próxima visita) y la base de la portada y de las cabeceras. El color va en
-// la tarjeta, no en el fondo de la pantalla, y nunca lleva sombra.
-//
-// Dúos de la paleta: verde claro con onda celeste
-// (`Colores.cieloClaro.withValues(alpha: 0.55)`) o celeste con ola verde
-// (`Colores.primarioClaro.withValues(alpha: 0.45)`). Los dos llevan texto
-// oscuro (`Colores.tinta`).
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
@@ -144,7 +135,6 @@ class TarjetaOnda extends StatelessWidget {
 
 /// Pinta una onda orgánica de [color]: una mancha por la esquina superior
 /// derecha ([FormaOnda.esquina]) o una ola abajo ([FormaOnda.inferior]).
-/// Se usa como `painter` de un `CustomPaint` dentro de un recorte redondeado.
 class PintorOnda extends CustomPainter {
   const PintorOnda({required this.color, this.forma = FormaOnda.esquina});
 
@@ -159,8 +149,6 @@ class PintorOnda extends CustomPainter {
     final ruta = Path();
     switch (forma) {
       case FormaOnda.esquina:
-        // Mancha que entra por arriba, se curva hacia abajo y sale por el
-        // lado derecho a media altura.
         ruta
           ..moveTo(w * 0.42, 0)
           ..cubicTo(w * 0.40, h * 0.28, w * 0.58, h * 0.40, w * 0.72, h * 0.36)

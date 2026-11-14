@@ -1,17 +1,4 @@
 -- Tareas programadas (pg_cron): reputación reciente.
---
--- La reputación total y el nivel ya se actualizan al instante con triggers
--- (fn_reputacion, fn_resena_puntos). Lo que necesita un job es lo que
--- depende de una VENTANA DE TIEMPO: decae solo, sin que llegue ninguna fila nueva.
---
--- 1. Rango dinámico del técnico: bono sobre el rango que él eligió.
---    +500 m por cada reseña "excelente" de los últimos 90 días, máx. +5 km.
---    Rango efectivo = least(rango_cobertura_m + rango_bonus_m, 50 km).
--- 2. Cliente VIP: ≥ 5 servicios cerrados en 90 días y ninguna reseña "malo"
---    recibida en ese periodo. Solo es una insignia, sin beneficios.
---
--- Ninguna de las dos columnas se puede editar desde la app: los UPDATE de
--- `authenticated` sobre usuarios y perfiles_tecnicos están limitados por columna.
 
 alter table public.perfiles_tecnicos
   add column rango_bonus_m integer not null default 0,
@@ -53,8 +40,7 @@ as $$
   order by n.prioridad desc, 6;
 $$;
 
--- Recalcula ambos indicadores. Solo toca las filas que cambian (la auditoría
--- no se llena de ruido). Devuelve cuántas filas cambió de cada tipo.
+-- Recalcula ambos indicadores.
 create or replace function public.recalcular_reputacion_reciente()
   returns jsonb
   language plpgsql

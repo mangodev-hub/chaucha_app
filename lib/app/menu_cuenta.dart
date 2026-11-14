@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,8 +12,10 @@ import '../core/widgets/avatar_usuario.dart';
 import '../core/widgets/campos.dart';
 import '../core/widgets/mensajes.dart';
 import '../features/auth/data/repositories/supabase_auth_repository.dart';
+import '../features/auth/domain/entities/rol.dart';
 import '../features/auth/presentation/providers/cuenta_provider.dart';
 import '../features/auth/presentation/providers/sesion_provider.dart';
+import '../features/auth/presentation/widgets/baja_cuenta.dart';
 
 enum _Op { perfil, agenda, configuracion, acerca, salir }
 
@@ -181,9 +185,8 @@ class MenuCuenta extends ConsumerWidget {
   }
 }
 
-/// "Configuración de la cuenta": agrupa acceso (correo y contraseña),
-/// seguridad e información de la cuenta. Sin datos personales.
-/// Configuración de la cuenta: correo, contraseña y sesiones.
+/// "Configuración de la cuenta": agrupa acceso (correo y contraseña), seguridad
+/// e información de la cuenta.
 Future<void> mostrarConfiguracionCuenta(BuildContext context) =>
     showDialog<void>(
       context: context,
@@ -302,6 +305,20 @@ class _DialogoConfiguracion extends ConsumerWidget {
                   icono: Icons.calendar_month_outlined,
                   texto: 'Cuenta creada',
                   detalle: Formatos.fecha(usuario.creadoEn),
+                ),
+              ],
+              if (usuario != null && usuario.rol != Rol.admin) ...[
+                titulo('Cuenta'),
+                fila(
+                  icono: Icons.person_remove_outlined,
+                  texto: 'Darse de baja',
+                  detalle: 'Desactiva tu cuenta de ChauchaApp.',
+                  color: Colores.error,
+                  onTap: () {
+                    final navegador = Navigator.of(context);
+                    navegador.pop();
+                    unawaited(confirmarBaja(navegador.context, ref));
+                  },
                 ),
               ],
             ],

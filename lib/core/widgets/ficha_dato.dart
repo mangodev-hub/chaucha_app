@@ -1,5 +1,3 @@
-// Ficha oscura con un dato corto (día, mes, hora): verde bosque con texto
-// blanco. Varias en fila arman una fecha: [jue] [12] [nov]  [10:00].
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
