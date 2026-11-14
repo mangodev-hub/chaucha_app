@@ -120,10 +120,7 @@ class SupabaseUsuarioRepository implements UsuarioRepository {
   @override
   Future<void> marcarVerificacionVista() {
     return supabaseGuard(() async {
-      await _client
-          .from(_tabla)
-          .update({'verificacion_vista': true})
-          .eq('id', _client.uidActual);
+      await _client.rpc<void>('marcar_verificacion_vista');
     });
   }
 
