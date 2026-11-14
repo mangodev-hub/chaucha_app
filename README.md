@@ -45,7 +45,8 @@ La app es una sola base de código en **Flutter** (web y Android). El backend es
 | Tiempo real | Supabase Realtime (chat, ofertas, estados y notificaciones) |
 | Tareas programadas | `pg_cron` (caducidad, reputación, fin de sanciones) y `pg_net` (webhooks) |
 | Serverless | Supabase Edge Functions (Deno) |
-| IA | Google Gemini (visión): validación de la selfie y comparación con la cédula |
+| IA y biometría | Google Gemini (visión): validación de la selfie y lectura de la cédula. AWS Rekognition: comparación de rostros. `local_auth`: Face ID o huella al postular |
+| Multihilo | `isolate_manager`: procesamiento de imágenes en isolates (Android) y Web Workers (web) |
 | Notificaciones | Firebase Cloud Messaging (push en Android y web) |
 | Caché, límites y presencia | Upstash Redis (REST) desde las Edge Functions |
 | CI | GitHub Actions |
@@ -132,13 +133,24 @@ supabase functions deploy enviar-push anuncios --no-verify-jwt
 | Función | Qué hace |
 |---|---|
 | `validar-foto-rostro` | Revisa con Gemini que la selfie sea de una persona real, de frente y nítida. Guarda el veredicto en caché por huella de la imagen y tiene límite de intentos |
-| `comparar-rostro-cedula` | Compara la selfie con la foto de la cédula (apoyo para la revisión del equipo) |
+| `comparar-rostro-cedula` | Valida la identidad: compara el rostro de la selfie con la cédula (Rekognition), lee la cédula (Gemini) y coteja los datos del registro. Aprueba, pide corregir datos, rechaza la foto o deja el caso al admin |
+| `verificar-rostro-sesion` | Selfie en vivo al iniciar sesión contra la foto de perfil, para cuentas verificadas |
+| `verificar-rostro-postulacion` | Confirma con el rostro la identidad del técnico al postular cuando su celular no tiene biometría |
 | `enviar-push` | Envía por FCM cada notificación nueva. La llama un trigger de la base. No avisa un mensaje si ese chat ya está abierto |
 | `sector` | Barrio de un punto (Nominatim) con caché compartida y respetando el límite global de 1 consulta por segundo |
 | `anuncios` | Anuncios vigentes con caché de 5 minutos, que se invalida cuando cambia la tabla |
 | `presencia` | Latidos de "en línea", estado por usuario y técnicos en línea cerca (solo el conteo, sin coordenadas) |
 
 Todas las que usan Redis siguen funcionando si Upstash no responde (*fail-open*): Redis acelera y protege, pero los datos viven en Postgres.
+
+---
+
+## Documentación
+
+- [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md): tecnologías y decisiones, con su motivo.
+- [`docs/ARQUITECTURA_DIAGRAMA.md`](docs/ARQUITECTURA_DIAGRAMA.md): diagrama de componentes.
+- [`docs/ARQUITECTURA_TECNICA.md`](docs/ARQUITECTURA_TECNICA.md): cómo está implementada cada pieza, con sus archivos, tablas y funciones.
+- [`docs/DISENO.md`](docs/DISENO.md): sistema de diseño.
 
 ---
 
