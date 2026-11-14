@@ -1,7 +1,6 @@
-// Confirmación de identidad del técnico al enviar una oferta, cuando su
-// celular no tiene biometría (o en web): su rostro en vivo contra la foto de
-// perfil validada. Si coincide, deja registrada la confirmación que exige el
-// trigger de cotizaciones.
+// Confirmación de identidad del técnico al enviar una oferta: su rostro en
+// vivo contra la foto de perfil validada. Si coincide, deja registrada la
+// confirmación que exige el trigger de cotizaciones.
 //
 // Cuerpo: los bytes de la foto (JPEG o PNG). Respuesta: { verificado, motivo? }
 import { clienteAdmin, usuarioDe } from '../_shared/auth.ts';

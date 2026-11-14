@@ -89,9 +89,6 @@ class _UsuariosFalso implements UsuarioRepository {
   Future<void> marcarVerificacionVista() async {}
 
   @override
-  Future<void> registrarVerificacionPostulacion() async {}
-
-  @override
   Future<ResultadoRostro> verificarRostroPostulacion(Uint8List foto) async =>
       const ResultadoRostro(verificado: true);
 

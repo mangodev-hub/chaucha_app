@@ -205,7 +205,7 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
       tarifaBase: perfil.tarifaBase,
     );
     if (solucion == null || !mounted) return;
-    // Cada oferta exige confirmar que es el técnico (biometría o rostro).
+    // Cada oferta exige confirmar con el rostro que es el técnico.
     if (!await confirmarIdentidadParaOfertar(context, ref) || !mounted) return;
     await _resultado(
       _acciones.enviarOferta(solucion: solucion),

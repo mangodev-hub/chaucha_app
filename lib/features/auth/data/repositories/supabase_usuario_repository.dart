@@ -101,13 +101,6 @@ class SupabaseUsuarioRepository implements UsuarioRepository {
   }
 
   @override
-  Future<void> registrarVerificacionPostulacion() {
-    return supabaseGuard(() async {
-      await _client.rpc<void>('registrar_verificacion_postulacion');
-    });
-  }
-
-  @override
   Future<ResultadoRostro> verificarRostroPostulacion(Uint8List foto) {
     return supabaseGuard(() async {
       final r = await _client.functions.invoke(

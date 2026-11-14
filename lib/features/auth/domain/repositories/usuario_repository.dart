@@ -28,12 +28,8 @@ abstract interface class UsuarioRepository {
   /// Compara una selfie en vivo con la foto de perfil (no se guarda).
   Future<ResultadoRostro> verificarRostroSesion(Uint8List selfie);
 
-  /// El técnico confirmó su identidad con la biometría del celular para
-  /// enviar una oferta.
-  Future<void> registrarVerificacionPostulacion();
-
   /// Confirma la identidad para ofertar con una foto en vivo contra la foto
-  /// de perfil (cuando no hay biometría).
+  /// de perfil.
   Future<ResultadoRostro> verificarRostroPostulacion(Uint8List foto);
 
   /// Guarda la ubicación con la que el cliente busca técnicos.
