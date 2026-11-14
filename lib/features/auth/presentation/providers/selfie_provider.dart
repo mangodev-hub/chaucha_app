@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/async_guard.dart';
-import '../../../../core/media/nitidez.dart';
+import '../../../../core/hilos/hilos.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/storage/storage_service.dart';
 import '../../data/repositories/supabase_usuario_repository.dart';
@@ -24,7 +24,7 @@ class SelfieNotifier extends AsyncNotifier<String?> {
     if (state.isLoading) return;
     state = const AsyncLoading();
     final resultado = await asyncGuard<String?>(() async {
-      if (!await compute(esNitida, bytes)) {
+      if (!await Hilos.esNitida(bytes)) {
         return 'La foto salió borrosa, inténtalo de nuevo.';
       }
       final uid = ref.read(supabaseClientProvider).auth.currentUser!.id;

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../hilos/hilos.dart';
 import '../supabase/supabase_guard.dart';
 
 abstract final class Buckets {
@@ -40,11 +41,13 @@ class SupabaseStorageService implements StorageService {
     required Uint8List bytes,
   }) {
     return supabaseGuard(() async {
+      // Se reduce y pasa a JPEG en otro hilo antes de subirla.
+      final foto = await Hilos.prepararFoto(bytes);
       await _client.storage
           .from(bucket)
           .uploadBinary(
             ruta,
-            bytes,
+            foto,
             fileOptions: const FileOptions(contentType: 'image/jpeg'),
           );
     });

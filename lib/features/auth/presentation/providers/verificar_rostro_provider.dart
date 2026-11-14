@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/async_guard.dart';
-import '../../../../core/media/nitidez.dart';
+import '../../../../core/hilos/hilos.dart';
 import '../../data/repositories/supabase_usuario_repository.dart';
 import 'sesion_provider.dart';
 
@@ -27,12 +27,12 @@ class VerificarRostroNotifier extends AsyncNotifier<String?> {
     state = const AsyncLoading();
     final resultado = await asyncGuard<String?>(() async {
       // Una foto borrosa no gasta intento: se rechaza antes de enviarla.
-      if (!await compute(esNitida, bytes)) {
+      if (!await Hilos.esNitida(bytes)) {
         return 'La foto salió borrosa, inténtalo de nuevo.';
       }
       final r = await ref
           .read(usuarioRepositoryProvider)
-          .verificarRostroSesion(bytes);
+          .verificarRostroSesion(await Hilos.prepararFoto(bytes));
       final sesion = ref.read(sesionProvider.notifier);
       if (r.verificado) {
         sesion.marcarRostroVerificado();
