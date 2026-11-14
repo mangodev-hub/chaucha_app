@@ -1,7 +1,3 @@
-// Marco común de login y registro: fondo verde bosque con una onda celeste
-// suave y una tarjeta clara con la marca, el título y el formulario. En
-// escritorio agrega a la izquierda un panel verde con la marca, que termina
-// en un borde ondulado (dos curvas que ondulan despacio) sobre el formulario.
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -32,21 +28,14 @@ class AuthLayout extends StatelessWidget {
 
   static const double _anchoMaximoTarjeta = 460;
 
-  /// Caja visible (ancho / alto) de `tecnico.json`, el técnico que saluda en
-  /// el panel de escritorio: recorta el margen vacío de su lienzo (1200 × 896),
-  /// donde el personaje ocupa el centro.
   static const double _proporcionEscritorio = 0.7;
 
   /// Medidas de `tecnico_login.json`, el técnico de móvil (lienzo de 800 × 594,
-  /// con los antebrazos cruzados en el borde inferior). Si se cambia el
-  /// dibujo, se ajustan aquí.
-  ///
-  /// Caja visible: el dibujo ocupa todo el ancho del lienzo.
+  /// con los antebrazos cruzados en el borde inferior).
   static const double _proporcionMovil = 800 / 594;
 
   /// Alto del personaje en móvil y la fracción de ese alto donde se apoyan sus
-  /// antebrazos. La tarjeta empieza ahí, así el personaje queda acodado sobre
-  /// su borde superior.
+  /// antebrazos.
   static const double _altoPersonajeMovil = 150;
   static const double _apoyoPersonaje = 0.96;
 
@@ -118,11 +107,6 @@ const _degradadoPanel = LinearGradient(
   colors: [Colores.fondo, Colores.primarioVivo],
 );
 
-/// Escritorio: las dos mitades de siempre (panel de la marca y formulario),
-/// pero el panel no termina en una línea recta: lo prolonga una franja con
-/// dos curvas que entra sobre el formulario, con una onda celeste
-/// translúcida detrás. Las dos ondulan despacio y desfasadas; con "reducir
-/// animaciones" quedan quietas.
 class _EscritorioOndulado extends StatefulWidget {
   const _EscritorioOndulado({required this.panel, required this.formulario});
 
@@ -176,8 +160,6 @@ class _EscritorioOnduladoState extends State<_EscritorioOndulado>
         final mitad = restricciones.maxWidth / 2;
         return Stack(
           children: [
-            // El formulario, con margen a la izquierda para que la onda no
-            // tape los campos.
             Positioned(
               top: 0,
               bottom: 0,
@@ -209,8 +191,7 @@ class _EscritorioOnduladoState extends State<_EscritorioOndulado>
                 ),
               ),
             ),
-            // El panel verde con su borde ondulado. El panel conserva su
-            // ancho (la mitad); la franja que entra repite su degradado.
+            // El panel verde con su borde ondulado.
             Positioned(
               top: 0,
               bottom: 0,
@@ -234,9 +215,8 @@ class _EscritorioOnduladoState extends State<_EscritorioOndulado>
   }
 }
 
-/// Recorta el borde derecho como una onda: una curva que sale y otra que
-/// vuelve a lo alto de la pantalla (un período de seno), desplazándose con
-/// [ondula]. El borde se mueve entre `ancho - entrada` y `ancho`.
+/// Recorta el borde derecho como una onda: una curva que sale y otra que vuelve
+/// a lo alto de la pantalla (un período de seno), desplazándose con [ondula].
 class _RecorteOndulado extends CustomClipper<Path> {
   _RecorteOndulado({required this.ondula, required this.entrada, this.fase = 0})
     : super(reclip: ondula);
@@ -359,9 +339,7 @@ class _PanelMarca extends StatelessWidget {
     style: estilo?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
   );
 
-  /// Animación grande al centro del panel con el titular debajo. El tamaño se
-  /// adapta al panel (deja lugar para el titular, no se sale por los lados) y
-  /// no pasa de 440 de alto.
+  /// Animación grande al centro del panel con el titular debajo.
   Widget _contenidoAnimado(TextTheme textos, String ruta) {
     return LayoutBuilder(
       builder: (context, c) {
@@ -573,9 +551,6 @@ class _Tarjeta extends StatelessWidget {
       );
     }
 
-    // Con animación: logo arriba, el personaje apoyado sobre el borde superior
-    // de la tarjeta (superpuesto con un Stack) y el formulario dentro. Si no
-    // alcanza el alto (pantalla baja o teclado abierto), se baja con scroll.
     const alto = AuthLayout._altoPersonajeMovil;
     const bordeTarjeta = alto * AuthLayout._apoyoPersonaje;
     return Center(
@@ -603,8 +578,6 @@ class _Tarjeta extends StatelessWidget {
                       radio: Radios.bento,
                       color: Colores.lienzo,
                       conBorde: false,
-                      // Arriba suma lo que el personaje entra en la tarjeta,
-                      // para que el título no quede pegado a sus pies.
                       padding: const EdgeInsets.fromLTRB(
                         Espacios.l,
                         Espacios.l + (alto - bordeTarjeta),

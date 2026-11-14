@@ -1,13 +1,3 @@
-// Detalle de una solicitud. La misma pantalla sirve al cliente y al técnico;
-// lo que ve y puede hacer cada uno lo decide `DetalleSolicitud`.
-//
-// Flujo: el técnico ofrece sus servicios (precio de la visita y solución); el
-// cliente revisa las ofertas, le escribe al que le guste y acuerdan el precio
-// por chat.
-//
-// En móvil: una columna y la acción principal fija abajo. En escritorio: dos
-// columnas (la solicitud a la izquierda; guía, acción y ofertas a la
-// derecha).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -42,6 +32,7 @@ import '../../../cotizaciones/presentation/widgets/cotizacion_widgets.dart';
 import '../../../cotizaciones/presentation/widgets/selector_franja.dart';
 import '../../../notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../../../perfil_puntos/presentation/providers/perfil_tecnico_provider.dart';
+import '../../../perfil_puntos/presentation/widgets/escucha_calificaciones.dart';
 import '../../../perfil_puntos/presentation/widgets/resena_dialog.dart';
 import '../../../reclamos/presentation/widgets/tarjeta_garantia.dart';
 import '../../domain/entities/detalle_solicitud.dart';
@@ -73,14 +64,15 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
 
   /// Muestra [exito] si la acción salió bien, o el error si falló.
   /// Si se ignoró porque otra acción seguía en curso, no muestra nada.
-  Future<void> _resultado(Future<bool> accion, String exito) async {
+  Future<bool> _resultado(Future<bool> accion, String exito) async {
     final ok = await accion;
-    if (!mounted) return;
+    if (!mounted) return ok;
     if (ok) {
       context.mostrarMensaje(exito, tipo: TipoMensaje.exito);
     } else {
       _mostrarErrorDeAccion();
     }
+    return ok;
   }
 
   void _mostrarErrorDeAccion() {
@@ -101,8 +93,14 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
       icono: Icons.verified_outlined,
       textoCancelar: 'Todavía no',
     );
-    if (ok) {
-      await _resultado(_acciones.confirmarTerminado(), 'Trabajo completado.');
+    if (!ok) return;
+    final listo = await _resultado(
+      _acciones.confirmarTerminado(),
+      'Trabajo completado.',
+    );
+    // Como al terminar un viaje: la calificación aparece sola.
+    if (listo && mounted) {
+      ref.read(revisarCalificacionesProvider.notifier).ahora();
     }
   }
 
@@ -150,8 +148,7 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
             ],
           );
     } on Object {
-      // Marcar las notificaciones como leídas es secundario: si falla, el
-      // detalle se muestra igual y no se avisa.
+      // Es secundario: el detalle se muestra igual.
     }
   }
 
@@ -332,8 +329,6 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
         .watch(accionesSolicitudProvider(widget.solicitudId))
         .isLoading;
     final escritorio = ResponsiveLayout.isDesktop(context);
-    // Ofertas en vivo: una oferta nueva o un cambio de estado recarga el
-    // detalle (sin contar la primera lectura).
     ref.listen(ofertasEnVivoProvider(widget.solicitudId), (antes, ahora) {
       final previas = antes?.value;
       final nuevas = ahora.value;
@@ -462,9 +457,6 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     context.go(AppRoutes.clienteInicio);
   }
 
-  /// Detalle para el cliente: cabecera con el progreso, ofertas a la
-  /// izquierda y detalles, ubicación y garantía a la derecha (desde 1000 px);
-  /// en el teléfono, los detalles van antes de las ofertas.
   Widget _vistaCliente(
     DetalleSolicitud d, {
     required bool procesando,
@@ -669,8 +661,6 @@ class _SolicitudDetalleViewState extends ConsumerState<SolicitudDetalleView> {
     if (!d.soyCliente) {
       final mia = d.miCotizacion;
       if (mia == null) return const [];
-      // El técnico abre el chat para leer o responder; solo el cliente
-      // puede escribir primero (lo controla la pantalla del chat).
       return [
         Seccion(
           titulo: 'Tu oferta',

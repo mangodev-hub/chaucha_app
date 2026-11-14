@@ -1,6 +1,3 @@
-// Sacude [child] de lado a lado cada vez que cambia [senal]. Para avisar que
-// un envío falló (validación del formulario o respuesta del servidor), junto
-// con el mensaje de error. Con "reducir animaciones" no se mueve.
 import 'dart:async';
 import 'dart:math' as math;
 

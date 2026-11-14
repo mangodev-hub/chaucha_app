@@ -1,13 +1,3 @@
-// Despacha por FCM cada fila nueva de `notificaciones`.
-//
-// La llama el trigger `trg_notificacion_push` (pg_net), no la app. No lleva
-// JWT de usuario: se protege con el header `x-push-secreto`, que se compara
-// contra el secreto `push_secreto` de Vault (nunca sale de la base).
-// Desplegar con:  supabase functions deploy enviar-push --no-verify-jwt
-//
-// Secretos:
-//   FIREBASE_SERVICE_ACCOUNT  JSON completo de la cuenta de servicio de Firebase
-//   APP_URL (opcional)        URL https de la app web; se abre al tocar el aviso
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { importPKCS8, SignJWT } from 'npm:jose@5';
 import { clave, conRedis } from '../_shared/redis.ts';
@@ -91,8 +81,6 @@ Deno.serve(async (req) => {
     const { record } = (await req.json()) as { record?: Notificacion };
     if (!record?.usuario_id) return responder({ error: 'Falta record' }, 400);
 
-    // Si el destinatario tiene ese chat abierto (presencia en Redis), ya ve el
-    // mensaje en vivo: no se manda el push. Sin Redis, se envía igual.
     if (record.tipo === 'mensaje' && record.referencia_id) {
       const abierta = await conRedis(
         (r) => r.hget<string>(clave('pres', record.usuario_id), 'conversacion'),

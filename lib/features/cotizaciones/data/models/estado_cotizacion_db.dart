@@ -1,4 +1,3 @@
-// Mapeo de [EstadoCotizacion] al texto de `cotizaciones.estado`.
 import '../../domain/entities/cotizacion.dart';
 
 extension EstadoCotizacionDb on EstadoCotizacion {

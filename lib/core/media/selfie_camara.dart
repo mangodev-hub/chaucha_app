@@ -5,9 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../widgets/hoja_clara.dart';
 
-/// Cámara en vivo para la selfie. Devuelve los bytes de la foto o null si el
-/// usuario cancela. Se usa en web, donde no hay forma de forzar la cámara
-/// con image_picker.
+/// Cámara en vivo para la selfie.
 class SelfieCamara extends StatefulWidget {
   const SelfieCamara({super.key});
 

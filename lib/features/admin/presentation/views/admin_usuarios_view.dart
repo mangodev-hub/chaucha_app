@@ -1,5 +1,3 @@
-// Pestaña "Usuarios" del panel: listar, buscar, crear, editar, suspender y
-// eliminar clientes y técnicos. Los administradores se ven pero no se tocan.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

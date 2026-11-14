@@ -1,4 +1,3 @@
-// Falsos y datos de prueba para los tests del chat y del ticket de trabajo.
 import 'package:tecnicos_app/core/errors/app_failure.dart';
 import 'package:tecnicos_app/features/chat/domain/entities/contexto_chat.dart';
 import 'package:tecnicos_app/features/chat/domain/entities/conversacion.dart';

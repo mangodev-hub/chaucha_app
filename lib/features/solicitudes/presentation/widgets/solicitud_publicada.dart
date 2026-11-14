@@ -1,6 +1,3 @@
-// Pantalla de éxito tras publicar una solicitud: check animado, mensaje y
-// dos caminos (ver la solicitud o volver). Entra con un fundido y un leve
-// deslizamiento hacia arriba.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';

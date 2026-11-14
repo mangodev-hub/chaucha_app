@@ -1,5 +1,3 @@
-// Datos de la pantalla de inicio del técnico. Cada sección tiene su propio
-// provider para que, si una falla, las demás se sigan viendo.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/presentation/providers/sesion_provider.dart';

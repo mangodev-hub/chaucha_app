@@ -1,4 +1,3 @@
-// Reseña que deja un usuario sobre otro al terminar un servicio.
 class NuevaResena {
   const NuevaResena({
     required this.solicitudId,

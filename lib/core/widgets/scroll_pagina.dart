@@ -1,6 +1,3 @@
-// Scroll único de la página web del cliente. El shell pone toda la página
-// (barra, menú, pestaña y pie) en un solo scroll y marca la pestaña con
-// [ScrollDePagina]: ahí las vistas no crean su propio scroll ni su pie.
 import 'package:flutter/material.dart';
 
 class ScrollDePagina extends InheritedWidget {

@@ -1,5 +1,3 @@
-// Junta la conversación, el estado de su solicitud y la oferta del técnico,
-// para que el chat sepa qué se puede hacer con los tickets.
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import '../../../cotizaciones/domain/repositories/cotizacion_repository.dart';
 import '../../../solicitudes/domain/entities/solicitud.dart';

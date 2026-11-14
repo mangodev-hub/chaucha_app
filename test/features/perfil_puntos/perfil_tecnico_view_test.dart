@@ -1,5 +1,3 @@
-// El perfil del técnico se arma sin errores de layout en un teléfono angosto
-// y en escritorio, con datos completos (reseñas, niveles, certificaciones).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -1,7 +1,6 @@
-// Contrato de los documentos de verificación (cédula y selfie).
-// Los métodos lanzan [AppFailure] si fallan.
 import 'dart:typed_data';
 
+import '../entities/datos_identidad.dart';
 import '../entities/documento_tecnico.dart';
 import '../entities/verificacion.dart';
 
@@ -11,4 +10,12 @@ abstract interface class DocumentoRepository {
 
   /// Sube la imagen y la registra como pendiente de revisión.
   Future<void> subir(TipoDocumento tipo, Uint8List bytes);
+
+  Future<void> validarIdentidad();
+
+  /// Datos del registro que se cotejan con la cédula.
+  Future<DatosIdentidad> misDatos();
+
+  /// Corrige los datos que no coincidieron con la cédula.
+  Future<void> corregirDatos(DatosIdentidad datos);
 }

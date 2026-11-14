@@ -181,4 +181,74 @@ void main() {
       );
     });
   });
+
+  group('rostro del login pendiente', () {
+    ConSesion pendiente(
+      Rol rol, {
+      bool fotoValidada = true,
+      bool verificado = true,
+    }) => ConSesion(
+      Usuario(
+        id: 'u1',
+        rol: rol,
+        nombres: 'Ana',
+        apellidos: 'Pérez',
+        creadoEn: DateTime(2026),
+        fotoPerfilRuta: fotoValidada ? 'u1/selfie.jpg' : null,
+        fotoRostroValidada: fotoValidada,
+        verificado: verificado,
+      ),
+      rostroVerificado: false,
+    );
+
+    test('con el perfil verificado solo puede estar en verificar rostro', () {
+      final sesion = pendiente(Rol.tecnico);
+      expect(
+        _redirigir(sesion, AppRoutes.tecnicoInicio),
+        AppRoutes.verificarRostro,
+      );
+      expect(_redirigir(sesion, AppRoutes.splash), AppRoutes.verificarRostro);
+      expect(_redirigir(sesion, AppRoutes.verificarRostro), isNull);
+    });
+
+    test('sin verificar el perfil no se pide el rostro', () {
+      final sesion = pendiente(Rol.cliente, verificado: false);
+      expect(_redirigir(sesion, AppRoutes.clienteInicio), isNull);
+      final sinFoto = pendiente(
+        Rol.cliente,
+        verificado: false,
+        fotoValidada: false,
+      );
+      expect(_redirigir(sinFoto, AppRoutes.clienteInicio), isNull);
+    });
+
+    test('las páginas legales siguen abiertas', () {
+      expect(_redirigir(pendiente(Rol.cliente), AppRoutes.privacidad), isNull);
+    });
+
+    test('el perfil incompleto va antes que el rostro', () {
+      final sesion = ConSesion(
+        Usuario(
+          id: 'u1',
+          rol: Rol.cliente,
+          nombres: 'Ana',
+          apellidos: '',
+          creadoEn: DateTime(2026),
+          perfilCompleto: false,
+        ),
+        rostroVerificado: false,
+      );
+      expect(
+        _redirigir(sesion, AppRoutes.clienteInicio),
+        AppRoutes.completarPerfil,
+      );
+    });
+
+    test('ya verificado, verificar rostro manda al inicio', () {
+      expect(
+        _redirigir(_con(Rol.cliente), AppRoutes.verificarRostro),
+        AppRoutes.clienteInicio,
+      );
+    });
+  });
 }

@@ -1,4 +1,3 @@
--- 1. Candados contra auto-verificación y cambio de rol
 create or replace function public.fn_proteger_perfil_tecnico()
 returns trigger language plpgsql as $$
 begin

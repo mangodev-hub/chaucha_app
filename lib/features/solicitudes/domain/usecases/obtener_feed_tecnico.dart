@@ -1,5 +1,3 @@
-// Arma el feed del técnico: solicitudes de sus oficios dentro de su radio,
-// de la más cercana a la más lejana, marcando las que ya cotizó.
 import '../../../../core/geo/geo_mapper.dart';
 import '../../../cotizaciones/domain/repositories/cotizacion_repository.dart';
 import '../../../perfil_puntos/domain/entities/perfil_tecnico.dart';

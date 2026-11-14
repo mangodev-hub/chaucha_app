@@ -1,5 +1,3 @@
-// Implementación del chat sobre Supabase (tablas `conversaciones` y
-// `mensajes`).
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,8 +60,6 @@ class SupabaseChatRepository implements ChatRepository {
           .order('enviado_en', ascending: false)
           .limit(_limiteMensajesRecientes);
 
-      // El primero de cada conversación es el último mensaje (vienen del
-      // más nuevo al más viejo).
       final ultimo = <String, Map<String, dynamic>>{};
       for (final m in mensajes) {
         ultimo.putIfAbsent(m['conversacion_id'] as String, () => m);
@@ -122,14 +118,16 @@ class SupabaseChatRepository implements ChatRepository {
 
       final otros = {for (final c in conversaciones) otroId(c)}..remove('');
       final nombres = <String, String>{};
+      final verificados = <String>{};
       if (otros.isNotEmpty) {
         final usuarios = await _client
             .from('usuarios')
-            .select('id, nombres, apellidos')
+            .select('id, nombres, apellidos, verificado')
             .inFilter('id', otros.toList());
         for (final u in usuarios) {
           nombres[u['id'] as String] =
               '${u['nombres'] ?? ''} ${u['apellidos'] ?? ''}'.trim();
+          if (u['verificado'] == true) verificados.add(u['id'] as String);
         }
       }
 
@@ -145,6 +143,7 @@ class SupabaseChatRepository implements ChatRepository {
             conversacionId: c['id'] as String,
             otroNombre: nombre.isEmpty ? 'Usuario' : nombre,
             otroId: otroId(c),
+            otroVerificado: verificados.contains(otroId(c)),
             oficio: oficio is String ? oficio : null,
             ultimoMensaje: m?['contenido'] as String?,
             enviadoEn: m == null ? null : aFecha(m['enviado_en']),
@@ -182,8 +181,6 @@ class SupabaseChatRepository implements ChatRepository {
   }
 
   /// `.stream()` hace la consulta inicial y luego escucha los INSERT.
-  /// Sus errores (de red o del canal en tiempo real) se traducen a
-  /// [AppFailure], como hace `supabaseGuard` con las llamadas normales.
   @override
   Stream<List<Mensaje>> mensajes(String conversacionId) {
     return _client

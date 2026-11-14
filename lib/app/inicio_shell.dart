@@ -1,7 +1,3 @@
-// Shell del inicio: pestañas fijas abajo en móvil (como Facebook: siempre
-// visibles, con insignias y una acción principal al centro) y pestañas en
-// la barra superior en escritorio. Las vistas se mantienen montadas en un
-// IndexedStack.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -28,6 +24,8 @@ import '../features/auth/presentation/providers/sesion_provider.dart';
 import '../features/notificaciones/presentation/providers/notificaciones_provider.dart';
 import '../features/notificaciones/presentation/widgets/escucha_notificaciones.dart';
 import '../features/notificaciones/presentation/widgets/punto_no_leidas.dart';
+import '../features/perfil_puntos/presentation/widgets/celebracion_verificado.dart';
+import '../features/perfil_puntos/presentation/widgets/escucha_calificaciones.dart';
 import 'encabezado_saludo.dart';
 import 'menu_cuenta.dart';
 import 'pestana_solicitada.dart';
@@ -49,9 +47,7 @@ class Destino {
   /// Título completo: barra superior y pestañas de escritorio.
   final String titulo;
 
-  /// Línea bajo "Hola, Nombre". Si no es null, en móvil la pestaña lleva el
-  /// saludo (`EncabezadoSaludo`, con el menú de la cuenta en el avatar) en
-  /// lugar de la barra superior.
+  /// Línea bajo "Hola, Nombre".
   final String? saludo;
   final IconData icono;
 
@@ -71,9 +67,6 @@ class Destino {
   String get etiqueta => corto ?? titulo;
 }
 
-/// Acción principal del shell ("Pedir un técnico"): en móvil es el botón
-/// redondo al centro de la barra inferior; en escritorio, un botón en la
-/// barra superior. Abre [ruta].
 class AccionCentral {
   const AccionCentral({
     required this.etiqueta,
@@ -135,10 +128,8 @@ class InicioShell extends ConsumerStatefulWidget {
   final void Function(BuildContext context, WidgetRef ref, String texto)?
   onBuscar;
 
-  /// Pantalla secundaria (detalle, chat, perfil...) que se dibuja dentro de
-  /// la estructura web del modo claro en lugar de una pestaña. El menú
-  /// marca la pestaña desde donde se llegó y, al tocar otra, vuelve a
-  /// [rutaInicio] con esa pestaña. En el teléfono se muestra sola.
+  /// Pantalla secundaria (detalle, chat, perfil...) que se dibuja dentro de la
+  /// estructura web del modo claro en lugar de una pestaña.
   final Widget? pagina;
 
   /// La [pagina] ocupa el alto visible y tiene su propio scroll (chat).
@@ -146,8 +137,7 @@ class InicioShell extends ConsumerStatefulWidget {
   final String? rutaInicio;
 
   /// Lo propio del rol en la barra superior clara, antes de la campana (la
-  /// píldora "Disponible" y el sector del técnico). Sin buscador ni
-  /// [barraExtra] (admin), la barra solo lleva la marca y la cuenta.
+  /// píldora "Disponible" y el sector del técnico).
   final Widget? barraExtra;
 
   @override
@@ -237,9 +227,7 @@ class _InicioShellState extends ConsumerState<InicioShell> {
     return GoRouterState.of(context).matchedLocation == ruta;
   }
 
-  /// Abre la agenda. Si ya está abierta no hace nada: volver a apilar la
-  /// misma ruta duplica la página y go_router deja la pantalla en blanco.
-  /// Con `go` (y no `push`) tampoco se apila sobre otra pantalla secundaria.
+  /// Abre la agenda.
   VoidCallback? get _aLaAgenda {
     final ruta = widget.rutaAgenda;
     if (ruta == null) return null;
@@ -270,15 +258,17 @@ class _InicioShellState extends ConsumerState<InicioShell> {
       if (i >= 0) _cambiar(i);
       ref.read(pestanaSolicitadaProvider.notifier).limpiar();
     });
-    return EscuchaNotificaciones(child: _contenido(context));
+    return EscuchaNotificaciones(
+      child: EscuchaVerificacion(
+        child: EscuchaCalificaciones(child: _contenido(context)),
+      ),
+    );
   }
 
   Widget _contenido(BuildContext context) {
     final destinos = widget.destinos;
     final ancho = MediaQuery.sizeOf(context).width;
     final escritorio = ancho >= InicioShell.anchoMenuLateral;
-    // Sobre el fondo oscuro nada va suelto: cada pestaña vive en la gran
-    // hoja clara.
     final pestanas = IndexedStack(
       index: _indice,
       children: [
@@ -315,8 +305,6 @@ class _InicioShellState extends ConsumerState<InicioShell> {
                     maxWidth: InicioShell.anchoMaximo,
                   ),
                   child: Padding(
-                    // En el modo claro, la pestaña deja 12 px a los lados
-                    // para las sombras de sus tarjetas: se descuentan aquí.
                     padding: EdgeInsets.fromLTRB(
                       InicioShell.margen,
                       claro ? 20 : Espacios.s,
@@ -387,9 +375,8 @@ class _InicioShellState extends ConsumerState<InicioShell> {
     );
   }
 
-  /// Web del cliente: toda la página en un solo scroll (barra, menú y
-  /// pestaña, y el pie a todo el ancho). La pestaña sabe que va dentro de
-  /// este scroll ([ScrollDePagina]) y no crea el suyo.
+  /// Web del cliente: toda la página en un solo scroll (barra, menú y pestaña,
+  /// y el pie a todo el ancho).
   Widget _paginaClara(
     BuildContext context,
     double ancho, {
@@ -978,9 +965,8 @@ class _ItemMenu extends ConsumerWidget {
   }
 }
 
-/// Barra de pestañas del móvil: superficie clara con las esquinas de arriba
-/// muy redondeadas y una onda celeste suave. Si hay [accion], va como botón
-/// redondo verde al centro, un poco por encima de la barra.
+/// Barra de pestañas del móvil: superficie clara con las esquinas de arriba muy
+/// redondeadas y una onda celeste suave.
 class _BarraInferior extends StatelessWidget {
   const _BarraInferior({
     required this.destinos,
@@ -1014,13 +1000,9 @@ class _BarraInferior extends StatelessWidget {
       ],
     ];
 
-    // Con textos muy grandes la barra crecería demasiado: se limita la
-    // escala, como hace la barra de Material.
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
       child: CustomPaint(
-        // La forma se pinta (no se recorta) para que el botón central pueda
-        // sobresalir por arriba.
         painter: const _FondoBarra(),
         child: SafeArea(
           top: false,
@@ -1185,8 +1167,6 @@ class _BotonCentral extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // El InkWell aporta las acciones (tocar, foco) al nodo semántico; el
-    // texto de adentro se excluye porque la etiqueta ya lo dice.
     return Semantics(
       container: true,
       button: true,
@@ -1205,8 +1185,6 @@ class _BotonCentral extends StatelessWidget {
                   child: Container(
                     width: _lado,
                     height: _lado,
-                    // Aro claro para separarlo del fondo oscuro cuando
-                    // sobresale de la barra.
                     decoration: BoxDecoration(
                       color: Colores.primario,
                       shape: BoxShape.circle,
@@ -1259,9 +1237,7 @@ class _IconoActivo extends StatelessWidget {
   }
 }
 
-/// Una pestaña del shell. Las pestañas comunes van en la hoja clara. Las
-/// que tienen [Destino.saludo] (los inicios) se arman con tarjetas bento
-/// directo sobre el fondo oscuro, y en móvil llevan el saludo arriba.
+/// Una pestaña del shell.
 class _Pagina extends StatelessWidget {
   const _Pagina({
     required this.destino,

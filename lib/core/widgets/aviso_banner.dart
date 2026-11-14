@@ -1,4 +1,3 @@
-// Aviso dentro de la pantalla: información, éxito, advertencia o error.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

@@ -1,4 +1,3 @@
-// Abre la galería (o el selector de archivos en Web) y devuelve las fotos
 import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';

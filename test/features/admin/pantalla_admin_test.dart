@@ -1,5 +1,3 @@
-// La pantalla del panel se arma sola (teléfono, con su scroll) y dentro del
-// scroll único de la web clara (sin el suyo).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tecnicos_app/core/widgets/scroll_pagina.dart';

@@ -1,4 +1,3 @@
-// Perfil de trabajo del técnico + su nivel de gamificación y sus oficios.
 import 'package:latlong2/latlong.dart';
 
 class PerfilTecnico {

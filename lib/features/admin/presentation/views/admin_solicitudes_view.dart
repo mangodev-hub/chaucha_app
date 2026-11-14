@@ -1,5 +1,3 @@
-// Pestaña "Solicitudes" del panel: todas las solicitudes, con búsqueda y
-// filtro por estado. Al tocar una se ve su ficha (solo lectura).
 import 'dart:async';
 
 import 'package:flutter/material.dart';

@@ -1,6 +1,3 @@
-// Agenda: vistas Mes, Semana y Lista a 1440 y 390 px, como cliente y como
-// técnico, con un mes con visitas (un día con 3 y una por confirmar) y un mes
-// vacío. Sin desbordes y sin textos de relleno entre corchetes.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

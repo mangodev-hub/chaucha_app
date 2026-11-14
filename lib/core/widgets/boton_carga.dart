@@ -1,6 +1,3 @@
-// Botón principal que se desactiva y muestra un indicador mientras [cargando].
-// El cambio entre el texto y el indicador se anima (fundido, escala y tamaño),
-// y el botón se encoge un poco mientras se presiona.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

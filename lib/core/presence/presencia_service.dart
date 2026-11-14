@@ -1,10 +1,3 @@
-// Presencia en línea (Edge Function `presencia`, guardada en Redis).
-//
-// Mientras la app está en primer plano manda un latido cada 30 s con la
-// conversación abierta (si hay una). Con eso el servidor sabe quién está en
-// línea: el chat muestra "En línea" o "Activo hace X", el perfil del técnico
-// lleva la píldora "En línea", el inicio cuenta los técnicos en línea cerca y
-// `enviar-push` no manda el aviso de un mensaje si ese chat ya está abierto.
 // Todo es "mejor esfuerzo": si la función falla, no se muestra nada.
 import 'dart:async';
 

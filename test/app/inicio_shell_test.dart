@@ -85,8 +85,6 @@ Future<void> _montarEnMovil(
       overrides: [
         usuarioActualProvider.overrideWithValue(null),
         authRepositoryProvider.overrideWithValue(_AuthSinSesion()),
-        // El shell sincroniza datos y escucha notificaciones por Supabase;
-        // en el test no hay cliente.
         sincronizacionProvider.overrideWith((ref) {}),
         presenciaProvider.overrideWith((ref) {}),
         ubicacionInicioProvider.overrideWith(

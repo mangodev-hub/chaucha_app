@@ -1,6 +1,3 @@
-// "Garantía ChauchaApp" en el detalle de un servicio completado: días que
-// quedan, el botón para reportar o el reclamo abierto, y la garantía
-// vencida en gris.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

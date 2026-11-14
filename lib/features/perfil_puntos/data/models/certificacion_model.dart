@@ -1,4 +1,3 @@
-// Fila de `certificaciones_tecnico` tal como llega de Supabase.
 import '../../../../core/utils/json_utils.dart';
 import '../../domain/entities/certificacion.dart';
 

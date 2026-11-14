@@ -1,4 +1,3 @@
-// Conversación en la que el otro escribió último: hay que responderle.
 class ConversacionPendiente {
   const ConversacionPendiente({
     required this.conversacionId,

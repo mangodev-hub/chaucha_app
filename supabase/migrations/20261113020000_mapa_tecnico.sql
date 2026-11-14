@@ -1,8 +1,6 @@
--- Mapa del inicio del técnico. Estas funciones se crearon directo en la base
--- (2026-11-13); este archivo las deja registradas en el repo tal como están.
+-- Mapa del inicio del técnico.
 
--- Solicitudes abiertas de mis oficios dentro de mi radio (más el bonus del
--- nivel, tope 50 km). Vacía si no estoy verificado.
+-- Solicitudes abiertas de mis oficios dentro de mi radio (más el bonus del nivel, tope 50 km).
 create or replace function public.solicitudes_en_mapa()
 returns table (
   solicitud_id uuid, descripcion text, oficio_id integer, metros integer,

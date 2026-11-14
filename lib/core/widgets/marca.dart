@@ -1,8 +1,3 @@
-// Marca de la app: el logo (una C que es una llave, con una tuerca celeste en
-// la boca), el nombre y el lema.
-//
-// El logo se dibuja con un `CustomPainter`, sin assets, así se ve nítido a
-// cualquier tamaño y toma los colores de los tokens.
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -10,8 +5,7 @@ import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 
 /// Logo de ChauchaApp: una C verde con el brazo abierto, como una llave de
-/// boca, y una tuerca celeste en la boca. Con [sobreOscuro], la C es blanca y
-/// la tuerca celeste clara (fondo verde bosque de la app).
+/// boca, y una tuerca celeste en la boca.
 class LogoChaucha extends StatelessWidget {
   const LogoChaucha({
     super.key,
@@ -27,9 +21,7 @@ class LogoChaucha extends StatelessWidget {
   /// logo. Por defecto, blanco o el fondo de la app si va sobre oscuro.
   final Color? fondo;
 
-  /// Pinta el logo en [canvas] ocupando [size] (cuadrado). Lo usa el widget
-  /// y la herramienta que exporta el ícono de la app y el splash
-  /// (`tool/generar_marca.dart`).
+  /// Pinta el logo en [canvas] ocupando [size] (cuadrado).
   static void pintar(
     Canvas canvas,
     Size size, {

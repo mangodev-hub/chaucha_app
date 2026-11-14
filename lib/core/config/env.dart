@@ -1,4 +1,3 @@
-// Configuración del entorno, leída en tiempo de compilación.
 class Env {
   const Env._({required this.supabaseUrl, required this.supabaseAnonKey});
 

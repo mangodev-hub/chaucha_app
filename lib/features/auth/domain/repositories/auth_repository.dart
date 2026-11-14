@@ -1,4 +1,3 @@
-// Contrato de autenticación. Los métodos lanzan [AppFailure] si fallan.
 import '../entities/registro_datos.dart';
 import '../entities/registro_resultado.dart';
 

@@ -1,5 +1,3 @@
-// Opción ilustrada: arriba un área de color con el ícono grande, abajo una
-// franja blanca con el nombre y una flecha. Para elegir un servicio.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

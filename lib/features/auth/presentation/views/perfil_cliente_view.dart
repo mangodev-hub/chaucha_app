@@ -1,6 +1,3 @@
-// "Mi perfil" del cliente: cabecera con sus métricas, lo que dicen los
-// técnicos de él y, a un lado, su ubicación y el menú de la cuenta. Los datos
-// personales están verificados y no se editan; la foto es la selfie validada.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -15,15 +12,18 @@ import '../../../../core/providers/core_providers.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/formatos.dart';
 import '../../../../core/widgets/async_value_view.dart';
-import '../../../../core/widgets/boton_baja.dart';
 import '../../../../core/widgets/cabecera_perfil.dart';
 import '../../../../core/widgets/etiqueta_sector.dart';
+import '../../../../core/widgets/insignia_verificado.dart';
 import '../../../../core/widgets/mapa_ubicacion.dart';
 import '../../../../core/widgets/mensajes.dart';
 import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/tarjeta_inicio.dart';
 import '../../../perfil_puntos/domain/entities/perfil_publico.dart';
+import '../../../perfil_puntos/domain/entities/verificacion.dart';
+import '../../../perfil_puntos/presentation/providers/verificacion_provider.dart';
 import '../../../perfil_puntos/presentation/views/aviso_verificacion_cliente.dart';
+import '../../../perfil_puntos/presentation/widgets/corregir_datos_dialog.dart';
 import '../../../perfil_puntos/presentation/widgets/resenas_perfil.dart';
 import '../../../publicidad/domain/entities/anuncio.dart';
 import '../../../publicidad/presentation/widgets/bloque_publicidad.dart';
@@ -33,6 +33,7 @@ import '../../data/repositories/supabase_usuario_repository.dart';
 import '../../domain/entities/usuario.dart';
 import '../providers/resenas_cliente_provider.dart';
 import '../providers/sesion_provider.dart';
+import '../widgets/baja_cuenta.dart';
 import '../widgets/perfil_cliente_secciones.dart';
 
 String _iniciales(Usuario u) {
@@ -58,6 +59,7 @@ class PerfilClienteView extends ConsumerWidget {
       nombre: usuario.nombreCompleto,
       iniciales: _iniciales(usuario),
       fotoRuta: usuario.fotoPerfilRuta,
+      verificado: usuario.verificado,
       datos: Wrap(
         spacing: Espacios.m,
         runSpacing: Espacios.s,
@@ -94,6 +96,7 @@ class PerfilClienteView extends ConsumerWidget {
               ),
             ),
           ),
+          if (usuario.verificado) const InsigniaVerificado(),
         ],
       ),
       metricas: [
@@ -131,8 +134,6 @@ class PerfilClienteView extends ConsumerWidget {
         ),
       ),
     );
-    // Orden: solicitudes activas, reseñas, historial y volver a contratar
-    // (este último no aparece si aún no trabajó con nadie).
     final principal = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -476,14 +477,7 @@ class MenuCuentaPerfil extends ConsumerWidget {
             texto: 'Darse de baja',
             color: Colores.error,
             conChevron: false,
-            onTap: () => unawaited(
-              mostrarDialogoBaja(
-                context,
-                detalle:
-                    'Tu cuenta quedará desactivada y se cancelarán tus '
-                    'solicitudes activas.',
-              ),
-            ),
+            onTap: () => unawaited(confirmarBaja(context, ref)),
           ),
         ],
       ),
@@ -536,7 +530,8 @@ class _FilaMenu extends StatelessWidget {
   }
 }
 
-/// Datos personales en solo lectura: están verificados con la cédula.
+/// Datos personales. Con la identidad verificada son de solo lectura; antes,
+/// se pueden corregir (deben coincidir con la cédula).
 class _DatosPersonales extends ConsumerWidget {
   const _DatosPersonales();
 
@@ -550,6 +545,12 @@ class _DatosPersonales extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textos = Theme.of(context).textTheme;
     final usuario = ref.watch(usuarioActualProvider);
+    final verificado = usuario?.verificado ?? false;
+    // Para resaltar lo que no coincidió con la cédula al corregir.
+    final campos = verificado
+        ? const <CampoIdentidad>{}
+        : ref.watch(verificacionProvider).value?.camposNoCoinciden ??
+              const <CampoIdentidad>{};
     final correo = ref.watch(authRepositoryProvider).correoActual;
     final f = usuario?.creadoEn.toLocal();
     Widget dato(String etiqueta, String valor) => Padding(
@@ -603,14 +604,27 @@ class _DatosPersonales extends ConsumerWidget {
             ),
             const SizedBox(height: Espacios.m),
             Text(
-              'Tus datos están verificados y no se pueden modificar. Si hay un '
-              'error, escríbenos a soporte.',
+              verificado
+                  ? 'Tus datos están verificados y no se pueden modificar. Si '
+                        'hay un error, escríbenos a soporte.'
+                  : 'Puedes corregirlos mientras tu identidad no esté '
+                        'verificada. Deben coincidir con tu cédula.',
               style: textos.bodySmall?.copyWith(color: Colores.tintaSuave),
             ),
           ],
         ),
       ),
       actions: [
+        if (!verificado)
+          TextButton.icon(
+            onPressed: () {
+              final navegador = Navigator.of(context);
+              navegador.pop();
+              unawaited(mostrarCorregirDatos(navegador.context, campos));
+            },
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Corregir mis datos'),
+          ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Entendido'),

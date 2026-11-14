@@ -1,5 +1,3 @@
-// Listas de solicitudes: las del cliente y los trabajos del técnico.
-// Se recargan si cambia el usuario conectado (no mezclan datos de cuentas).
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/presentation/providers/sesion_provider.dart';

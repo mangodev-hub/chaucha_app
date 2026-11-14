@@ -1,4 +1,3 @@
-// Tarjeta de una reseña: estrellas, fecha, etiquetas, comentario y autor (nombre corto).
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';

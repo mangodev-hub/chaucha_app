@@ -1,7 +1,3 @@
-// "Cerca de ti" del cliente: técnicos verificados en el radio elegido, en el
-// mapa y en la lista. El slider espera 400 ms antes de volver a consultar;
-// los chips filtran por oficio. Tocar un pin o una fila lo selecciona y
-// muestra su mini tarjeta; pasar el mouse por una fila resalta su pin.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

@@ -133,9 +133,7 @@ class _CrearSolicitudViewState extends ConsumerState<CrearSolicitudView> {
 
   @override
   Widget build(BuildContext context) {
-    // Ya publicada: éxito en lugar del formulario. "Ver mi solicitud"
-    // devuelve el id (quien abrió el formulario abre el detalle); "Volver" y
-    // la flecha devuelven null.
+    // Ya publicada: éxito en lugar del formulario.
     if (_creadaId case final id?) {
       return PantallaSecundaria(
         titulo: 'Solicitud publicada',

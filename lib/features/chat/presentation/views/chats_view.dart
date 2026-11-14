@@ -1,7 +1,3 @@
-// Pestaña de chats, al estilo WhatsApp: buscador, filtro "Sin leer" y una
-// lista con avatar, nombre, último mensaje, hora, oficio e insignia de no
-// leídos. Cada chat nace de una solicitud. En escritorio, abrir un chat
-// muestra la ventana flotante; en móvil, la pantalla completa.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -15,6 +11,7 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/insignia_verificado.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/scroll_pagina.dart';
 import '../../../../core/widgets/seccion.dart';
@@ -260,7 +257,11 @@ class _FilaChat extends StatelessWidget {
                 child: InkResponse(
                   onTap: onVerPerfil,
                   radius: 28,
-                  child: AvatarUsuario(nombre: chat.otroNombre, radio: 25),
+                  child: ConIconoVerificado(
+                    verificado: chat.otroVerificado,
+                    tamano: 16,
+                    hijo: AvatarUsuario(nombre: chat.otroNombre, radio: 25),
+                  ),
                 ),
               ),
               const SizedBox(width: Espacios.m),

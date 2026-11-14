@@ -1,5 +1,4 @@
--- Publicidad: la app se financia con anuncios. Cada anuncio se muestra en
--- una ubicación (home_cliente, home_tecnico) mientras esté activo y vigente.
+-- Publicidad: la app se financia con anuncios.
 CREATE TABLE IF NOT EXISTS public.anuncios (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   titulo text NOT NULL CHECK (char_length(titulo) BETWEEN 1 AND 80),
@@ -32,8 +31,7 @@ CREATE POLICY "anuncios_leer_vigentes" ON public.anuncios
 REVOKE INSERT, UPDATE, DELETE ON public.anuncios FROM anon, authenticated;
 GRANT SELECT ON public.anuncios TO authenticated;
 
--- Bucket público para las imágenes (JPG, PNG o WebP, máx. 1 MB). Las sube el
--- admin; cualquiera las ve por URL pública.
+-- Bucket público para las imágenes (JPG, PNG o WebP, máx.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'anuncios', 'anuncios', true, 1048576,

@@ -1,5 +1,3 @@
-// El barrio se pide a la Edge Function `sector` (caché en Redis); sin sesión
-// o si la función falla, se consulta Nominatim directo.
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';

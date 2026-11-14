@@ -1,7 +1,3 @@
-// Mapa de la zona del técnico conectado a sus datos: centro y radio de su
-// perfil, y las solicitudes del feed como pines. Cambiar el radio en el mapa
-// lo guarda en el perfil y recarga el feed. Lo usan el Inicio y la pestaña
-// "Solicitudes cerca".
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

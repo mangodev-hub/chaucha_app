@@ -1,6 +1,3 @@
-// Chat en tiempo real entre cliente y técnico. Solo el cliente inicia la
-// conversación. Cuando acuerdan el precio, el técnico envía el ticket de
-// trabajo ("Empezar trabajo") y el cliente lo confirma o lo rechaza.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -182,8 +179,6 @@ class _ChatPanelState extends ConsumerState<ChatPanel> {
           mensajes: mensajes.value ?? const [],
         );
 
-    // Cada acción del ticket deja un mensaje: cuando llega uno nuevo se
-    // recarga la oferta, así la otra persona ve el ticket sin recargar.
     ref.listen(mensajesProvider(id), (anterior, actual) {
       final antes = anterior?.value?.length;
       if (antes != null && actual.value?.length != antes) {
@@ -339,10 +334,6 @@ class _MensajesState extends State<_Mensajes> {
   @override
   Widget build(BuildContext context) {
     final vistos = _vistos;
-    // Se arma en orden cronológico y se muestra invertido (reverse: true)
-    // para que el más nuevo quede junto al campo de texto. Cada elemento
-    // lleva su clave para que la lista conserve su estado (y su animación)
-    // cuando llegan mensajes nuevos.
     final elementos = <Widget>[];
     String? diaAnterior;
     String? idUltimoTicket;
@@ -484,8 +475,6 @@ class _Burbuja extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
     const radio = Radius.circular(Radios.grande);
     const esquina = Radius.circular(Espacios.xs);
-    // Como en WhatsApp: mis mensajes en verde claro, los del otro en blanco,
-    // ambos con texto oscuro. La esquina recortada apunta a quien escribió.
     return Align(
       alignment: esMio ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -529,9 +518,7 @@ class _Burbuja extends StatelessWidget {
   }
 }
 
-/// Barra blanca inferior: campo redondeado y botón verde de enviar. Si no
-/// está [habilitada] (técnico antes de que el cliente escriba), muestra un
-/// aviso y desactiva el campo.
+/// Barra blanca inferior: campo redondeado y botón verde de enviar.
 class _BarraEnvio extends StatelessWidget {
   const _BarraEnvio({
     required this.controller,

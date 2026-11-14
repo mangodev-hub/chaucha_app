@@ -1,4 +1,3 @@
-// Lista que en pantallas anchas reparte sus elementos en columnas.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

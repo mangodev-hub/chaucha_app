@@ -1,4 +1,3 @@
-// Reglas de negocio del chat entre cliente y técnico.
 import 'mensaje.dart';
 
 abstract final class ReglasChat {

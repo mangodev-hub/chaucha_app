@@ -25,6 +25,7 @@ class Solicitud {
     this.direccionReferencia,
     this.clienteNombre,
     this.clienteFotoRuta,
+    this.clienteVerificado = false,
     this.completadaEn,
   });
 
@@ -45,6 +46,9 @@ class Solicitud {
   /// Nombre corto ("Ana P.") y foto del cliente, para las tarjetas del técnico.
   final String? clienteNombre;
   final String? clienteFotoRuta;
+
+  /// La identidad del cliente está verificada.
+  final bool clienteVerificado;
 
   String get clienteIniciales {
     final partes = (clienteNombre ?? '').split(' ').where((p) => p.isNotEmpty);

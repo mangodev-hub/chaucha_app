@@ -1,4 +1,3 @@
-// Perfil de un técnico visto por el cliente: reputación, oficios y reseñas.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +7,7 @@ import '../../../../core/utils/refrescar.dart';
 import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/avatar_usuario.dart';
 import '../../../../core/widgets/estado_mensaje.dart';
+import '../../../../core/widgets/insignia_verificado.dart';
 import '../../../../core/widgets/pantalla_secundaria.dart';
 import '../../../../core/widgets/pildora.dart';
 import '../../../../core/widgets/scroll_pagina.dart';
@@ -35,8 +35,6 @@ class PerfilPublicoView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // El perfil de un técnico tiene su propia pantalla; aquí queda el del
-    // cliente (lo abre el técnico).
     if (!esCliente) return PerfilTecnicoPublico(tecnicoId: tecnicoId);
     final perfil = esCliente
         ? perfilClientePublicoProvider(tecnicoId)
@@ -165,11 +163,7 @@ class _Encabezado extends StatelessWidget {
                   runSpacing: Espacios.xs,
                   children: [
                     if (perfil.verificado)
-                      const Pildora(
-                        texto: 'Verificado',
-                        icono: Icons.verified,
-                        color: Colores.acento,
-                      )
+                      const InsigniaVerificado()
                     else
                       const Pildora(
                         texto: 'Sin verificar',

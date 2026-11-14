@@ -1,5 +1,3 @@
-// "Reportar un problema": diálogo en pantallas anchas y hoja inferior en el
-// teléfono. Al enviar muestra la confirmación con el código del reclamo.
 import 'dart:async';
 import 'dart:typed_data';
 

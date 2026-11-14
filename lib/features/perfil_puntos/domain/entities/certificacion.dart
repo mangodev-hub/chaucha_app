@@ -1,4 +1,3 @@
-// Certificado de un técnico (curso, capacitación). Lo revisa el admin.
 enum EstadoCertificacion {
   pendiente,
   aprobada,

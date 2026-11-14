@@ -1,4 +1,3 @@
-// Validador de cédula ecuatoriana con el algoritmo Módulo 10 (ADR-006).
 abstract final class CedulaValidator {
   static const int _longitud = 10;
   static const int _provinciaExtranjeros = 30;

@@ -1,7 +1,3 @@
-// Tarjeta única de la app: blanca, muy redondeada, sin sombra y con un borde
-// fino (estilo bento: la jerarquía sale del color y los radios).
-// Y su variante con título ([BloqueTarjeta]) para agrupar partes de un
-// formulario o de una pantalla.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

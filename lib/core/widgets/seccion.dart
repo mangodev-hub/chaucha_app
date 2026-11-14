@@ -1,4 +1,3 @@
-// Título de sección + contenido, con el mismo espaciado en toda la app.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

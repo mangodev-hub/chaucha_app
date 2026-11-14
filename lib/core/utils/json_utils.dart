@@ -1,4 +1,3 @@
-// Conversión segura de valores que llegan de Supabase.
 double aDouble(Object? valor, {double porDefecto = 0}) {
   if (valor is num) return valor.toDouble();
   if (valor is String) return double.tryParse(valor) ?? porDefecto;

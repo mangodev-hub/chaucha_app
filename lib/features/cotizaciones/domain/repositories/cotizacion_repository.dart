@@ -1,5 +1,3 @@
-// Contrato de las ofertas de los técnicos (tabla `cotizaciones`). Los métodos
-// lanzan [AppFailure] si fallan.
 import '../entities/cotizacion.dart';
 import '../entities/nueva_cotizacion.dart';
 import '../entities/rango_ocupado.dart';
@@ -18,9 +16,8 @@ abstract interface class CotizacionRepository {
   /// Ids de las solicitudes en las que el técnico conectado ya ofertó.
   Future<Set<String>> solicitudesCotizadasPorMi();
 
-  /// Acepta [cotizacion], rechaza las demás pendientes de la misma solicitud
-  /// y marca la solicitud como aceptada, en una sola transacción. Es lo que
-  /// hace el cliente al confirmar el ticket de trabajo.
+  /// Acepta [cotizacion], rechaza las demás pendientes de la misma solicitud y
+  /// marca la solicitud como aceptada, en una sola transacción.
   Future<void> aceptar(Cotizacion cotizacion);
 
   /// El técnico conectado envía el ticket de trabajo sobre su oferta

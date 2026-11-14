@@ -1,4 +1,3 @@
-// Lectura de columnas geography que PostgREST devuelve como EWKB en hex.
 /** Punto de una columna geography leída por PostgREST (EWKB en hex). */
 export function puntoDeEwkb(hex: string | null | undefined): { lng: number; lat: number } | null {
   if (!hex || typeof hex !== 'string' || hex.length < 42) return null;

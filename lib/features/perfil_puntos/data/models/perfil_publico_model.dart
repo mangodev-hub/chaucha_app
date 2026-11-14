@@ -1,5 +1,3 @@
-// Perfil público de un técnico armado con dos consultas de Supabase: su fila
-// de `perfiles_tecnicos` (con nivel, nombre y oficios) y sus reseñas.
 import '../../../../core/utils/json_utils.dart';
 import '../../domain/entities/perfil_publico.dart';
 

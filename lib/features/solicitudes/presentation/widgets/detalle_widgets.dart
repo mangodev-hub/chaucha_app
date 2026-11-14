@@ -1,5 +1,3 @@
-// Piezas de la pantalla de detalle: encabezado y guía de "qué sigue" con el
-// progreso de la solicitud.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';

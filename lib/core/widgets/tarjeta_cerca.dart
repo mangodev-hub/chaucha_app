@@ -1,7 +1,3 @@
-// Tarjeta "Cerca de ti": título y slider del radio arriba, chips de oficio,
-// y el mapa con su lista. Desde 1100 px el mapa va a la izquierda (60 %) y
-// la lista a la derecha (40 %, con scroll propio); en pantallas menores el
-// mapa va arriba y la lista debajo, dentro del scroll de la página.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';

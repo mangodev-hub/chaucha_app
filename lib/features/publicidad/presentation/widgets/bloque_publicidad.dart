@@ -1,14 +1,3 @@
-// Bloque de publicidad (inicio del cliente y del técnico, y perfil): la
-// fuente de ingresos de la app. Mantiene el diseño del bloque del perfil
-// (etiqueta "PUBLICIDAD", piezas de color con ícono, anunciante, título,
-// descripción y botón blanco) y se comporta como un carrusel no invasivo:
-// - alto fijo, para que el layout no salte entre anuncios ni al cargar;
-// - avanza cada 7 s con un deslizamiento de 400 ms, y se pausa con el mouse
-//   encima, con el foco dentro o con la pestaña oculta;
-// - si el sistema pide reducir animaciones, no avanza solo;
-// - se desliza con el dedo y los puntos se pueden tocar;
-// - siempre dice "PUBLICIDAD" y no se puede cerrar;
-// - solo negocios externos: la app no se anuncia a sí misma.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -39,8 +28,6 @@ class BloquePublicidad extends ConsumerStatefulWidget {
   static const int maximo = 5;
 
   /// Alto fijo de la pieza: termina unos 20 px después de la descripción.
-  /// Si algún anuncio del carrusel tiene "Ver más", todas usan
-  /// [altoConBoton] (el alto no cambia entre anuncios).
   static const double altoPieza = 190;
   static const double altoConBoton = 240;
   static const Duration intervalo = Duration(seconds: 7);
@@ -273,8 +260,6 @@ class _Pieza extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             DecoratedBox(decoration: fondo),
-            // Con imagen, va de fondo con un velo oscuro del 55 % para que
-            // el texto se lea.
             if (imagen != null) ...[
               Image.network(
                 imagen,

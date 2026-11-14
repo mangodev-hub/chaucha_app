@@ -99,8 +99,6 @@ class _VentanaState extends ConsumerState<_Ventana> {
               height: altura,
               child: Column(
                 children: [
-                  // Cabecera blanca, como las tarjetas: el azul sólido
-                  // competía con los botones principales de la pantalla.
                   Container(
                     height: 52,
                     padding: const EdgeInsets.only(left: Espacios.m),

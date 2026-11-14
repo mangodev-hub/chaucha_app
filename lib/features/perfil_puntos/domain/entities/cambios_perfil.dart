@@ -1,4 +1,3 @@
-// Datos editables del perfil del técnico.
 import 'package:latlong2/latlong.dart';
 
 class CambiosPerfil {

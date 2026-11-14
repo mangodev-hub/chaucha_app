@@ -1,4 +1,3 @@
-// Repositorios falsos y datos de prueba para los tests de solicitudes.
 import 'dart:async';
 import 'dart:typed_data';
 

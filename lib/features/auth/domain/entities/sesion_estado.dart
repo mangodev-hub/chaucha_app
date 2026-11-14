@@ -1,4 +1,3 @@
-// Estado global de la sesión. Lo lee el router para decidir a dónde ir.
 import 'usuario.dart';
 
 sealed class SesionEstado {
@@ -19,9 +18,13 @@ final class SinSesion extends SesionEstado {
 }
 
 final class ConSesion extends SesionEstado {
-  const ConSesion(this.usuario);
+  const ConSesion(this.usuario, {this.rostroVerificado = true});
 
   final Usuario usuario;
+
+  /// false: esta sesión de login aún no confirmó el rostro con la foto de
+  /// perfil, y el router no deja pasar del control de rostro.
+  final bool rostroVerificado;
 }
 
 final class SesionRecuperando extends SesionEstado {

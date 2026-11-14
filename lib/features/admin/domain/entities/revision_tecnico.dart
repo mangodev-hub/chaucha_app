@@ -1,4 +1,3 @@
-// Técnico con documentos de identidad por revisar.
 import '../../../perfil_puntos/domain/entities/documento_tecnico.dart';
 
 class RevisionTecnico {

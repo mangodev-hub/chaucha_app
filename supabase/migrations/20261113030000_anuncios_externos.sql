@@ -1,7 +1,3 @@
--- Publicidad solo de negocios externos: nombre del anunciante y categoría
--- (para el ícono de la pieza). Ya aplicado directo en la base (2026-11-13);
--- este archivo lo deja registrado. `ubicacion = 'general'` sale en todas las
--- pantallas.
 alter table public.anuncios add column if not exists anunciante text;
 alter table public.anuncios add column if not exists categoria text not null default 'otro';
 

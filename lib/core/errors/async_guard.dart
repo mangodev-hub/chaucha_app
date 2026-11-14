@@ -1,5 +1,3 @@
-// `AsyncValue.guard` que además registra en consola los errores que no son
-// [AppFailure] (los inesperados), para no perder su rastro.
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

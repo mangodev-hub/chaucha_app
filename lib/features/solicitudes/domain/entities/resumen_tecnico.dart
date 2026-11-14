@@ -1,5 +1,3 @@
-// Actividad del técnico para su pantalla de inicio: ofertas, tickets,
-// trabajos y lo que ganó en el mes.
 import '../../../cotizaciones/domain/entities/cotizacion.dart';
 import 'solicitud.dart';
 
@@ -12,10 +10,7 @@ class ResumenTecnico {
     required this.ganadoEsteMes,
   });
 
-  /// [ofertas]: las del técnico. [trabajos]: solicitudes donde lo
-  /// contrataron. Lo ganado en el mes suma los trabajos completados cuya
-  /// fecha de servicio (o, si no la hay, la de la oferta) cae en el mes de
-  /// [hoy]: el total del ticket, o el precio de la visita si no hubo ticket.
+  /// [ofertas]: las del técnico.
   factory ResumenTecnico.calcular({
     required List<Cotizacion> ofertas,
     required List<Solicitud> trabajos,

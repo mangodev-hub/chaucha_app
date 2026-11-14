@@ -1,4 +1,3 @@
-// Envuelve una llamada a Supabase y traduce sus excepciones.
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../errors/app_failure.dart';

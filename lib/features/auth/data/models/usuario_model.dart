@@ -16,6 +16,8 @@ class UsuarioModel {
     this.fotoRostroValidada = false,
     this.perfilCompleto = true,
     this.verificado = false,
+    this.verificacionVista = true,
+    this.dadoDeBaja = false,
     this.suspendidoHasta,
     this.ciudad,
     this.ubicacionRegistro,
@@ -35,6 +37,8 @@ class UsuarioModel {
       fotoRostroValidada: (json['foto_rostro_validada'] as bool?) ?? false,
       creadoEn: DateTime.parse(json['creado_en'] as String),
       verificado: (json['verificado'] as bool?) ?? false,
+      verificacionVista: (json['verificacion_vista'] as bool?) ?? true,
+      dadoDeBaja: json['dado_de_baja_en'] != null,
       suspendidoHasta: switch (json['suspendido_hasta']) {
         final String s => DateTime.parse(s).toLocal(),
         _ => null,
@@ -46,7 +50,7 @@ class UsuarioModel {
 
   /// Columnas que se piden en el `select`.
   static const String columnas =
-      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, foto_rostro_validada, suspendido_hasta, ciudad, '
+      'id, rol, nombres, apellidos, foto_perfil_ruta, creado_en, verificado, verificacion_vista, dado_de_baja_en, foto_rostro_validada, suspendido_hasta, ciudad, '
       'ubicacion_registro,'
       'identidades(usuario_id)';
 
@@ -59,6 +63,8 @@ class UsuarioModel {
   final DateTime creadoEn;
   final bool perfilCompleto;
   final bool verificado;
+  final bool verificacionVista;
+  final bool dadoDeBaja;
   final DateTime? suspendidoHasta;
   final String? ciudad;
   final LatLng? ubicacionRegistro;
@@ -73,6 +79,8 @@ class UsuarioModel {
     creadoEn: creadoEn,
     perfilCompleto: perfilCompleto,
     verificado: verificado,
+    verificacionVista: verificacionVista,
+    dadoDeBaja: dadoDeBaja,
     suspendidoHasta: suspendidoHasta,
     ciudad: ciudad,
     ubicacionRegistro: ubicacionRegistro,

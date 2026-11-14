@@ -17,6 +17,8 @@ class CompletarPerfilNotifier extends AsyncNotifier<void> {
   FutureOr<void> build() {}
 
   Future<void> completar({
+    required String nombres,
+    required String apellidos,
     required String cedula,
     required String codigoDactilar,
     required Rol rol,
@@ -27,6 +29,8 @@ class CompletarPerfilNotifier extends AsyncNotifier<void> {
       await ref
           .read(usuarioRepositoryProvider)
           .completarPerfil(
+            nombres: nombres,
+            apellidos: apellidos,
             cedula: cedula,
             codigoDactilar: codigoDactilar,
             rol: rol,

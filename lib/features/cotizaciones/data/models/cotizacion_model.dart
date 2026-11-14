@@ -1,18 +1,3 @@
-// Fila de `cotizaciones` + nombre y calificación del técnico (vía join).
-//
-// Columnas de la oferta y de su ticket de trabajo:
-//   precio_base      precio de la visita de la oferta (no cambia con el ticket)
-//   detalle          cómo resolvería el problema
-//   mano_obra        precio acordado en el ticket (null hasta enviarlo)
-//   materiales       materiales del ticket (0 por defecto)
-//   total            mano_obra + materiales (columna calculada)
-//   tarifa_enviada   true cuando el técnico envió el ticket
-//   fecha_servicio   día del servicio acordado (opcional)
-//   reagenda_inicio  nueva fecha propuesta al reagendar (null si no hay)
-//   reagenda_por     quién propuso la nueva fecha (null si no hay)
-//
-// Las ofertas antiguas (antes de `precio_base`) guardaban su precio en
-// mano_obra + materiales, y no tienen ticket.
 import '../../../../core/geo/geo_mapper.dart';
 import '../../../../core/utils/json_utils.dart';
 import '../../domain/entities/cotizacion.dart';

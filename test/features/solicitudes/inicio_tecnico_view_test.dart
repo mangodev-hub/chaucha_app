@@ -1,5 +1,3 @@
-// El inicio del técnico se arma sin errores de layout en teléfonos angostos y
-// en escritorio, con todas sus secciones a la vista.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

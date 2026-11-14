@@ -1,5 +1,3 @@
-// CapaCirculos pinta el círculo (relleno y borde) con la cámara del mapa, sin
-// el CircleLayer de flutter_map, que falla en Flutter web (issue #2234).
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';

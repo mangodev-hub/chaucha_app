@@ -1,9 +1,3 @@
-// Mensaje de estado para huecos de la pantalla: lista vacía, error o éxito.
-// Centrado y grande, o [compacto] (en una fila) para usarlo dentro de una
-// sección. Con botón de acción opcional y, en la versión grande, una acción
-// secundaria debajo (por ejemplo "Volver al inicio"). En el tipo éxito, el
-// ícono aparece con un rebote y (en la versión grande) lleva un check
-// animado.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
@@ -88,8 +82,6 @@ class EstadoMensaje extends StatelessWidget {
                       color: Colores.tintaSuave,
                     ),
                   ),
-                  // Debajo del texto (no al lado), para que quepa en
-                  // pantallas angostas o con texto grande.
                   if (hayAccion)
                     TextButton(
                       style: TextButton.styleFrom(

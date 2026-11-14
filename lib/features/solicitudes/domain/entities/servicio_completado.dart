@@ -1,5 +1,3 @@
-// Un servicio que el cliente ya cerró: con quién fue, cuánto costó la
-// visita, la calificación que dio y desde cuándo corre la garantía.
 class ServicioCompletado {
   const ServicioCompletado({
     required this.solicitudId,

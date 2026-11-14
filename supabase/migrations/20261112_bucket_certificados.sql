@@ -1,5 +1,4 @@
--- Bucket privado para certificados (JPG, PNG o PDF, máx. 5 MB).
--- `cedulas` no se toca: ahí solo van fotos.
+-- Bucket privado para certificados (JPG, PNG o PDF, máx.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'certificados', 'certificados', false, 5242880,

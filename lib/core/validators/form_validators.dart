@@ -1,4 +1,3 @@
-// Validadores reutilizables para.
 abstract final class FormValidators {
   static String? requerido(String? value, {String campo = 'Este campo'}) {
     if (value == null || value.trim().isEmpty) return '$campo es obligatorio.';

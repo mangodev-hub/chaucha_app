@@ -1,4 +1,3 @@
-// Id del usuario conectado. Lanza [AppFailure] si la sesión expiró.
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../errors/app_failure.dart';

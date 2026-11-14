@@ -1,6 +1,3 @@
-// Bloques de la columna principal de "Mi perfil" del cliente: solicitudes
-// en curso, historial de servicios (con su calificación y su garantía) y
-// los técnicos con los que ya trabajó.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

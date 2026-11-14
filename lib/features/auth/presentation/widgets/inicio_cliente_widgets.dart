@@ -1,5 +1,3 @@
-// Bloques del inicio del cliente: portada, solicitud activa, técnicos cerca,
-// chats y próxima visita.
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/tokens.dart';
@@ -135,8 +133,6 @@ class PortadaCliente extends StatelessWidget {
                     ),
                     const SizedBox(height: Espacios.s + 2),
                     ConstrainedBox(
-                      // En el teléfono deja libre el borde derecho, donde
-                      // va el círculo verde.
                       constraints: BoxConstraints(
                         maxWidth: amplia ? double.infinity : 220,
                       ),
@@ -925,9 +921,7 @@ class TextoVacio extends StatelessWidget {
   );
 }
 
-/// Tres razones para confiar: verificación, garantía y precio. En fila
-/// desde 700 px; en el teléfono, una debajo de otra. Cada una abre una
-/// ventana con más información.
+/// Tres razones para confiar: verificación, garantía y precio.
 class TarjetasConfianza extends StatelessWidget {
   const TarjetasConfianza({
     super.key,

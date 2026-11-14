@@ -1,20 +1,4 @@
 -- Sanciones: 3 reseñas "malo" en 30 días suspenden la cuenta 7 días.
--- Aplica igual a clientes y técnicos (cuenta las reseñas que RECIBE cada uno).
---
--- Cambios respecto a la versión anterior (5 días):
---   * Duración: 7 días.
---   * Reincidencia: antes, al terminar la suspensión las mismas 3 malas seguían
---     dentro de la ventana de 30 días y UNA mala más volvía a suspender.
---     Ahora solo cuentan las malas recibidas DESPUÉS del inicio de la última
---     suspensión (`suspendido_desde`).
---   * Avisos (notificación + push):
---       sancion_aviso  al llegar a 2 malas: "una más y se suspende".
---       sancion        al suspender, con la fecha de fin y qué queda bloqueado.
---       sancion_fin    al terminar (job horario de pg_cron).
---
--- Qué bloquea la suspensión (ya existía):
---   cliente  -> no puede publicar solicitudes (fn_validar_suspension_cliente)
---   técnico  -> no puede enviar propuestas    (fn_validar_cotizacion)
 
 alter table public.usuarios
   add column suspendido_desde timestamp with time zone;
@@ -108,8 +92,7 @@ begin
   return new;
 end $$;
 
--- Avisa a quienes terminaron su suspensión en la última hora. Corre cada
--- hora en punto; la ventana [hora anterior, hora actual) evita avisos dobles.
+-- Avisa a quienes terminaron su suspensión en la última hora.
 create or replace function public.avisar_fin_sanciones()
   returns integer
   language plpgsql
@@ -133,8 +116,6 @@ revoke all on function public.avisar_fin_sanciones() from public, anon, authenti
 
 select cron.schedule('avisar-fin-sanciones', '0 * * * *', $$select public.avisar_fin_sanciones()$$);
 
--- Quien esté suspendido ahora (con la regla vieja de 5 días) conserva su
--- fecha; se marca el inicio para que sus malas no se vuelvan a contar.
 update usuarios
 set suspendido_desde = suspendido_hasta - interval '5 days'
 where suspendido_hasta > now() and suspendido_desde is null;

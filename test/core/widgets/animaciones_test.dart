@@ -73,7 +73,6 @@ void main() {
 
       await tester.pumpWidget(boton(cargando: true, onPressed: () => toques++));
       // El indicador gira sin fin: no sirve pumpAndSettle.
-      // Con margen para que AnimatedSwitcher termine y retire el texto.
       await tester.pump(Movimiento.normal);
       await tester.pump(Movimiento.normal);
       expect(find.text('Enviar'), findsNothing);

@@ -30,8 +30,6 @@ class SupabaseAnuncioRepository implements AnuncioRepository {
       final filas =
           await _desdeCache(ubicacion) ?? await _desdeTabla(ubicacion);
       final ahora = DateTime.now().toUtc();
-      // Orden al azar en cada carga, para repartir la vista entre los
-      // anunciantes; se muestran como máximo 5.
       final vigentes = [
         for (final fila in filas)
           if (AnuncioModel.vigente(fila, ahora))

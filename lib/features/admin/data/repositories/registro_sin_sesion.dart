@@ -1,10 +1,3 @@
-// Registra una cuenta nueva llamando directo a `POST /auth/v1/signup`, sin
-// pasar por el cliente de Supabase de la app.
-//
-// Por qué: en web, el cliente de Supabase avisa cada inicio de sesión a las
-// demás instancias por un BroadcastChannel cuyo nombre depende del host. Un
-// segundo SupabaseClient que hiciera signUp podía reemplazar la sesión del
-// administrador. Con una llamada HTTP simple no hay sesión ni aviso.
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -25,9 +18,7 @@ class RegistroSinSesion {
   final String _redireccion;
   final http.Client _cliente;
 
-  /// Crea la cuenta con [metadatos] (los mismos del registro de la app). Lanza
-  /// [AuthException] si Supabase la rechaza, para que `supabaseGuard` la
-  /// traduzca, o [AppFailure] si el correo ya estaba registrado.
+  /// Crea la cuenta con [metadatos] (los mismos del registro de la app).
   Future<void> registrar({
     required String email,
     required String password,
@@ -58,8 +49,6 @@ class RegistroSinSesion {
       );
     }
 
-    // Con confirmación de correo activa, Supabase no revela si el correo
-    // existía: devuelve un usuario sin identidades.
     final usuario = cuerpo['user'] is Map<String, dynamic>
         ? cuerpo['user'] as Map<String, dynamic>
         : cuerpo;

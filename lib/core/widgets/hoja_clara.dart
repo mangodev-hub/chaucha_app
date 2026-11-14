@@ -1,7 +1,3 @@
-// Gran tarjeta clara donde va el contenido de cada pantalla que no se arma
-// en bloques sueltos (listas, formularios, detalle, chat, admin). Sobre el
-// fondo verde bosque nada queda suelto: el texto y las tarjetas viven aquí,
-// sobre la superficie clara, con las esquinas muy redondeadas.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
@@ -38,8 +34,6 @@ class HojaClara extends StatelessWidget {
       padding: abajoRecto
           ? margen.resolve(TextDirection.ltr).copyWith(bottom: 0)
           : margen,
-      // Un Material (y no un ColoredBox) para que los toques de las listas
-      // se dibujen encima de la hoja y no debajo.
       child: Material(
         color: color,
         borderRadius: borde,

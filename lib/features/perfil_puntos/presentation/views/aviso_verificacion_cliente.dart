@@ -14,9 +14,7 @@ import '../../domain/entities/documento_tecnico.dart';
 import '../providers/verificacion_provider.dart';
 import 'verificacion_view.dart';
 
-/// Tarjeta con los pasos que faltan para verificarse. Cada paso abre la
-/// verificación y arranca directo (cédula o selfie). Desaparece al quedar
-/// verificado.
+/// Tarjeta con los pasos que faltan para verificarse.
 class AvisoVerificacionCliente extends ConsumerWidget {
   const AvisoVerificacionCliente({
     super.key,

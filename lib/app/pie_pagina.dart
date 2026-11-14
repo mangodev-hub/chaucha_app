@@ -1,7 +1,3 @@
-// Pie de página de la web: va al final del scroll de cada pantalla (no es
-// fijo). Marca, enlaces de ChauchaApp, ayuda y legales, y la barra de
-// derechos. En la app (Android) no hay pie: "Mi perfil" termina con
-// [PieLegalMovil].
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

@@ -1,4 +1,3 @@
-// Pantalla de inicio de cada rol.
 import '../core/router/app_routes.dart';
 import '../features/auth/domain/entities/rol.dart';
 import '../features/auth/domain/entities/sesion_estado.dart';
@@ -25,11 +24,19 @@ String? resolverRedireccion({
     ConSesion(:final usuario)
         when !usuario.perfilCompleto && usuario.rol != Rol.admin =>
       ubicacion == AppRoutes.completarPerfil ? null : AppRoutes.completarPerfil,
+    ConSesion(:final usuario, rostroVerificado: false)
+        when usuario.rol != Rol.admin &&
+            usuario.verificado &&
+            usuario.fotoRostroValidada =>
+      _soloEn(AppRoutes.verificarRostro, ubicacion),
     ConSesion(:final usuario) => _redireccionConSesion(usuario.rol, ubicacion),
     SesionRecuperando() =>
       ubicacion == AppRoutes.restablecer ? null : AppRoutes.restablecer,
   };
 }
+
+String? _soloEn(String destino, String ubicacion) =>
+    ubicacion == destino ? null : destino;
 
 String? _redireccionConSesion(Rol rol, String ubicacion) {
   final inicio = rutaInicioPara(rol);

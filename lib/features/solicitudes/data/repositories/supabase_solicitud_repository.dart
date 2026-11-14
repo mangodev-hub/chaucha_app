@@ -1,5 +1,3 @@
-// Implementación de [SolicitudRepository] con Supabase (tablas + Storage).
-// Ruta de fotos en Storage: `{solicitudId}/{tipo}_{marcaDeTiempo}_{n}.jpg`.
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -56,8 +54,6 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
     int limite = 50,
   }) {
     return supabaseGuard(() async {
-      // Una sola consulta: solicitud + cotización aceptada + técnico +
-      // la reseña propia (los filtros con punto van sobre los joins).
       final filas = await _client
           .from(_tabla)
           .select(ServicioCompletadoModel.columnas)
@@ -208,8 +204,6 @@ class SupabaseSolicitudRepository implements SolicitudRepository {
               url: url,
             );
           } on AppFailure catch (e) {
-            // Una foto que no se puede firmar (por ejemplo, el archivo ya no
-            // existe) no debe tumbar todo el detalle: se omite.
             debugPrint('No se pudo firmar la foto $ruta: ${e.cause ?? e}');
             return null;
           }

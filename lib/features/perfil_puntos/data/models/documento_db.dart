@@ -1,5 +1,3 @@
-// Mapeo de los enums de documentos al texto de `documentos_tecnico`.
-// Refleja los CHECK de `tipo` y `estado` en la base.
 import '../../domain/entities/documento_tecnico.dart';
 
 extension TipoDocumentoDb on TipoDocumento {

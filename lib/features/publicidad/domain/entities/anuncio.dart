@@ -1,5 +1,3 @@
-/// Anuncio de un negocio externo. La app nunca se anuncia a sí misma en el
-/// espacio publicitario.
 class Anuncio {
   const Anuncio({
     required this.id,

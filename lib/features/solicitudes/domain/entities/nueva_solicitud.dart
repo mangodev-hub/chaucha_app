@@ -1,4 +1,3 @@
-// Datos del formulario "Nueva solicitud".
 import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';

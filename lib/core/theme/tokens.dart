@@ -1,11 +1,3 @@
-// Tokens de diseño: colores, radios, espacios y tipografía con nombre.
-//
-// Estilo "Bento orgánico" (ver `docs/DISENO.md`): fondo verde bosque muy
-// profundo, todo el contenido agrupado en tarjetas claras muy redondeadas,
-// tarjetas principales con una onda pintada de un segundo tono y sin
-// sombras: la jerarquía sale del contraste de color y de los radios. Paleta
-// Eco-Sky: tres verdes y dos celestes. Para cambiar el aspecto de la app se
-// cambian aquí, no en cada pantalla.
 import 'package:flutter/material.dart';
 
 abstract final class Colores {
@@ -30,8 +22,7 @@ abstract final class Colores {
   static const Color primarioSuave = Color(0xFFE3F6E4);
 
   /// Azul medio (`midBlue`): contenedores de selección, bordes destacados,
-  /// pestañas inactivas, el indicador de las hojas inferiores. Con texto
-  /// blanco no llega a AA: va con texto oscuro o como decoración.
+  /// pestañas inactivas, el indicador de las hojas inferiores.
   static const Color cielo = Color(0xFF27A3DF);
 
   /// Azul claro (`lightBlue`): tarjetas de contexto (cabeceras de detalle y
@@ -50,9 +41,7 @@ abstract final class Colores {
   static const Color cieloOscuro = Color(0xFF0B4F73);
 
   // Superficies.
-  /// Fondo del `Scaffold` (`appBackground`): verde bosque muy profundo. Lo
-  /// que va directo encima es blanco (`sobreOscuro`); el resto del contenido
-  /// va dentro de tarjetas claras (`HojaClara`, `TarjetaOnda`).
+  /// Fondo del `Scaffold` (`appBackground`): verde bosque muy profundo.
   static const Color fondo = Color(0xFF0B2518);
 
   /// Fondo claro de las pantallas web del cliente (inicio con menú lateral).
@@ -107,8 +96,6 @@ abstract final class Colores {
   static const Color acentoSuave = Color(0xFFDDF5DE);
   static const Color acentoOscuro = primario;
 
-  // Semánticos. Fuera de la paleta a propósito: un error o un aviso tiene
-  // que distinguirse de un estado normal.
   /// Celeste legible como texto: estados "Abierta" y similares, distancia.
   static const Color info = Color(0xFF0F6E9E);
   static const Color aviso = Color(0xFFB45309);
@@ -169,9 +156,7 @@ abstract final class Espacios {
   static const double xxl = 32;
 }
 
-/// Duraciones y curvas de las animaciones. Las pantallas y componentes piden
-/// la duración con [Movimiento.de], que respeta la opción del sistema
-/// "reducir animaciones" (accesibilidad).
+/// Duraciones y curvas de las animaciones.
 abstract final class Movimiento {
   /// Íconos que cambian (ojo de la contraseña).
   static const Duration rapido = Duration(milliseconds: 150);

@@ -1,4 +1,3 @@
-// Rol del usuario dentro de la app.
 enum Rol {
   cliente,
   tecnico,

@@ -1,5 +1,3 @@
-// Contrato del panel de administrador. Los métodos lanzan [AppFailure] si
-// fallan (incluido "Solo el administrador puede hacer esto.").
 import '../../../auth/domain/entities/registro_datos.dart';
 import '../entities/resumen_admin.dart';
 import '../entities/revision_tecnico.dart';

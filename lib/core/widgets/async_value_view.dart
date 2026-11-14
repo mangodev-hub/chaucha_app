@@ -1,6 +1,3 @@
-// Dibuja la pantalla según un [AsyncValue] de Riverpod: carga, error (con
-// botón de reintentar) o datos. La carga es un spinner, salvo que la pantalla
-// pase su propio [cargando] (por ejemplo un `EsqueletoCarga`).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -33,8 +30,6 @@ class AsyncValueView<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return value.when(
-      // Al reintentar tras un error se muestra la carga; al refrescar datos
-      // que ya se ven, se mantienen en pantalla.
       skipLoadingOnRefresh: !value.hasError,
       data: (data) => onData(context, data),
       loading: () =>

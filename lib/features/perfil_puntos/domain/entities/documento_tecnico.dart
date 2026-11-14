@@ -1,4 +1,3 @@
-// Documento de verificación de identidad que sube el técnico.
 enum TipoDocumento { cedulaFrontal, cedulaPosterior, selfie }
 
 enum EstadoDocumento { pendiente, aprobada, rechazada }
@@ -9,6 +8,7 @@ class DocumentoTecnico {
     required this.tipo,
     required this.estado,
     required this.ruta,
+    this.observacion,
     this.url,
   });
 
@@ -19,6 +19,9 @@ class DocumentoTecnico {
   /// Ruta del archivo en Storage.
   final String ruta;
 
+  /// Por qué se rechazó (validación automática o admin), si se rechazó.
+  final String? observacion;
+
   /// URL firmada para mostrar la imagen (el bucket es privado).
   final String? url;
 
@@ -27,6 +30,7 @@ class DocumentoTecnico {
     tipo: tipo,
     estado: estado,
     ruta: ruta,
+    observacion: observacion,
     url: url,
   );
 }

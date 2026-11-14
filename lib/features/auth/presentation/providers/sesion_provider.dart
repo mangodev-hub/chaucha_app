@@ -1,4 +1,3 @@
-// Fuente única de verdad sobre "quién está conectado". La lee el router.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +8,7 @@ import '../../../../core/presence/presencia_service.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../data/repositories/supabase_auth_repository.dart';
 import '../../data/repositories/supabase_usuario_repository.dart';
+import '../../domain/entities/rol.dart';
 import '../../domain/entities/sesion_estado.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -27,6 +27,9 @@ final usuarioActualProvider = Provider<Usuario?>(
 );
 
 class SesionNotifier extends Notifier<SesionEstado> {
+  static const String _avisoDadoDeBaja =
+      'Esta cuenta se dio de baja. Si quieres reactivarla, escríbenos a '
+      'soporte.';
   static const String _avisoSinPerfil =
       'Tu cuenta no tiene un perfil registrado. Contacta al soporte.';
 
@@ -77,7 +80,44 @@ class SesionNotifier extends Notifier<SesionEstado> {
     final actual = state;
     if (actual is! ConSesion) return;
     final perfil = await _usuarios.obtenerPorId(actual.usuario.id);
-    if (perfil != null) _emitir(ConSesion(perfil));
+    if (perfil == null) return;
+    // Si ya estaba verificado no se vuelve a consultar.
+    final rostro = actual.rostroVerificado || await _rostroVerificado(perfil);
+    _emitir(ConSesion(perfil, rostroVerificado: rostro));
+  }
+
+  /// El rostro del login coincidió con la foto de perfil.
+  void marcarRostroVerificado() {
+    final actual = state;
+    if (actual is ConSesion) _emitir(ConSesion(actual.usuario));
+  }
+
+  /// Cierra la sesión y muestra [aviso] en el login.
+  Future<void> darseDeBaja() async {
+    await _usuarios.darseDeBaja();
+    await cerrarSesionConAviso(
+      'Tu cuenta se dio de baja. Gracias por haber sido parte de ChauchaApp.',
+    );
+  }
+
+  Future<void> cerrarSesionConAviso(String aviso) async {
+    _avisoPendiente = aviso;
+    try {
+      await cerrarSesion();
+    } catch (_) {
+      await _cerrarConAviso(aviso);
+    }
+  }
+
+  /// El admin no tiene foto de perfil ni pasa por el control de rostro, y quien
+  /// aún no verificó su identidad tampoco.
+  Future<bool> _rostroVerificado(Usuario perfil) async {
+    if (perfil.rol == Rol.admin || !perfil.verificado) return true;
+    try {
+      return await _usuarios.rostroSesionVerificado();
+    } on AppFailure {
+      return false;
+    }
   }
 
   void consumirVerificado() {
@@ -119,8 +159,12 @@ class SesionNotifier extends Notifier<SesionEstado> {
       if (version != _version) return;
       if (perfil == null) {
         await _cerrarConAviso(_avisoSinPerfil);
+      } else if (perfil.dadoDeBaja) {
+        await _cerrarConAviso(_avisoDadoDeBaja);
       } else {
-        _emitir(ConSesion(perfil));
+        final rostro = await _rostroVerificado(perfil);
+        if (version != _version) return;
+        _emitir(ConSesion(perfil, rostroVerificado: rostro));
       }
     } on AppFailure catch (falla) {
       if (version != _version) return;
@@ -134,8 +178,7 @@ class SesionNotifier extends Notifier<SesionEstado> {
     try {
       await _auth.cerrarSesion();
     } on AppFailure {
-      // La sesión ya quedó cerrada en la app (SinSesion con el aviso); si
-      // cerrarla también en Supabase falla, no hay nada más que hacer.
+      // La sesión ya quedó cerrada en la app.
     }
   }
 

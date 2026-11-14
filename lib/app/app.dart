@@ -1,4 +1,3 @@
-// Widget raíz. El router vive en `routerProvider` (se crea una sola vez).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

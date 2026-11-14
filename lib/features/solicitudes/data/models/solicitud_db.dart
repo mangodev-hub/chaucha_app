@@ -1,5 +1,3 @@
-// Mapeo de los enums de solicitudes al texto de la base. Refleja los CHECK de
-// `solicitudes_servicio.estado` y `solicitud_archivos.tipo`.
 import '../../domain/entities/foto_solicitud.dart';
 import '../../domain/entities/solicitud.dart';
 

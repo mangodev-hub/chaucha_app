@@ -1,25 +1,15 @@
-// Tema visual único de la app, construido a partir de los tokens.
-//
-// Estilo "Bento orgánico" (ver `docs/DISENO.md`): fondo verde bosque
-// profundo, barra superior oscura con texto blanco, contenido en tarjetas
-// claras muy redondeadas, botones y campos con forma de píldora y ninguna
-// sombra (`elevation: 0` en todo).
 import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 
 abstract final class AppTheme {
-  // El esquema describe las superficies claras (tarjetas, hojas, diálogos):
-  // ahí vive casi todo el texto. Lo que va directo sobre el fondo oscuro
-  // usa `Colores.sobreOscuro` de forma explícita.
   static const ColorScheme _colores = ColorScheme(
     brightness: Brightness.light,
     primary: Colores.primario,
     onPrimary: Colores.sobreOscuro,
     primaryContainer: Colores.primarioSuave,
     onPrimaryContainer: Colores.primarioOscuro,
-    // Secundario: celeste. Con texto blanco no llega a AA, así que lleva
-    // texto oscuro encima.
+    // Secundario: celeste.
     secondary: Colores.cielo,
     onSecondary: Colores.tinta,
     secondaryContainer: Colores.cieloSuave,
@@ -79,8 +69,6 @@ abstract final class AppTheme {
           ),
         ),
       ),
-      // Botón secundario: píldora blanca con borde fino y texto oscuro, para
-      // que el verde quede solo en la acción principal.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: Colores.tinta,
@@ -118,8 +106,6 @@ abstract final class AppTheme {
         highlightElevation: 0,
         shape: StadiumBorder(),
       ),
-      // Campos: relleno verdoso, sin borde y muy redondeados (los de una
-      // línea quedan como píldora); borde verde medio al enfocarlos.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colores.superficie,
@@ -219,8 +205,6 @@ abstract final class AppTheme {
         titleTextStyle: textos.titleLarge,
         iconColor: Colores.primario,
       ),
-      // Hojas inferiores: superficie clara, esquinas de arriba muy
-      // redondeadas y un indicador celeste tipo píldora.
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Colores.lienzo,
         surfaceTintColor: Colors.transparent,
@@ -268,8 +252,6 @@ abstract final class AppTheme {
     TextStyle? titular(TextStyle? estilo, FontWeight peso) =>
         estilo?.copyWith(fontWeight: peso, height: 1.15);
 
-    // Sin espaciado de letras: el de Material 3 separa de más los textos
-    // chicos con esta fuente.
     final sinEspaciado = conFuente.copyWith(
       displayLarge: conFuente.displayLarge?.copyWith(letterSpacing: 0),
       displayMedium: conFuente.displayMedium?.copyWith(letterSpacing: 0),

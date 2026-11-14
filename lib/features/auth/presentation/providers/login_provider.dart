@@ -1,5 +1,3 @@
-// Envío del formulario de login. Si sale bien, el router redirige solo
-// (escucha a `sesionProvider`).
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

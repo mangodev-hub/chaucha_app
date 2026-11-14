@@ -1,5 +1,3 @@
-// Feed del técnico. Depende del perfil: cuando el técnico guarda su perfil
-// (oficios, ubicación, radio), el feed se recalcula solo.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../cotizaciones/data/repositories/supabase_cotizacion_repository.dart';

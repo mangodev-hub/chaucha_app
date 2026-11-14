@@ -1,16 +1,3 @@
-// Presencia en línea con Redis.
-//
-// La app manda un latido cada 30 s mientras está abierta. Cada latido renueva
-// `pres:{uid}` (hash con TTL de 90 s): si dejan de llegar, el usuario pasa
-// solo a "desconectado". Se usa Redis y no Realtime Presence porque esta
-// presencia la tienen que leer el servidor (enviar-push no manda el aviso de
-// un mensaje si el destinatario ya tiene ese chat abierto) y otras funciones.
-//
-// POST {conversacion_id?}        latido (conversación abierta en pantalla)
-// POST {salir: true}             desconectar ya (logout, app en segundo plano)
-// GET  ?ids=a,b,c                {estados: {id: {en_linea, visto}}}
-// GET  ?lat=&lng=&radio=&oficio= {total, ids} técnicos verificados en línea
-//                                cerca (nunca sus coordenadas)
 import { preflight, responder } from '../_shared/cors.ts';
 import { clienteAdmin, usuarioDe } from '../_shared/auth.ts';
 import { limitar, respuesta429 } from '../_shared/limite.ts';

@@ -1,8 +1,3 @@
-// Una visita de la agenda: la franja agendada de una cotización aceptada,
-// con su solicitud y la otra persona (para el cliente, el técnico; para el
-// técnico, el cliente).
-
-/// Estado de la visita en la agenda. Colores en `ColoresVisita`.
 enum EstadoVisita {
   /// Franja fija, todavía no empieza.
   agendada,

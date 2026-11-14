@@ -1,8 +1,3 @@
-// Encabezado del inicio sobre el fondo oscuro: avatar con aro, "Hola,
-// Carlos" en blanco y una línea debajo. En móvil reemplaza a la barra
-// superior, así que el avatar abre el menú de la cuenta
-// (perfil, agenda, configuración, salir), que el shell entrega por
-// [AccionesShell].
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

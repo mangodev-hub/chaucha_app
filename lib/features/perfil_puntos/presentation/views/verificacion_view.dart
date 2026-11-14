@@ -1,6 +1,3 @@
-// "Verifica tu identidad" en tres pasos que se desbloquean en orden:
-// 1) frente de la cédula, 2) reverso y 3) selfie. Se abre como hoja inferior
-// en móvil y como diálogo en escritorio.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +16,7 @@ import '../../../auth/presentation/providers/sesion_provider.dart';
 import '../../domain/entities/documento_tecnico.dart';
 import '../../domain/entities/verificacion.dart';
 import '../providers/verificacion_provider.dart';
+import '../widgets/corregir_datos_dialog.dart';
 
 /// Abre la verificación. No arranca nada solo: cada paso se inicia con su botón.
 Future<void> mostrarVerificacion(BuildContext context) async {
@@ -44,7 +42,8 @@ Future<void> mostrarVerificacion(BuildContext context) async {
   final confirmado = await resultado;
   if (confirmado == true && context.mounted) {
     context.mostrarMensaje(
-      'Perfil en revisión. Tu verificación se realizará pronto.',
+      'Recibimos tus fotos. Estamos verificando tu identidad y te avisaremos '
+      'con una notificación.',
       tipo: TipoMensaje.exito,
     );
   }
@@ -72,8 +71,31 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
     final Uint8List? bytes = await SelectorFotos.una(camara: camara);
     if (bytes == null || !mounted) return;
     setState(() => _subiendoCedula = true);
-    await ref.read(subirDocumentoProvider.notifier).subir(tipo, bytes);
-    if (mounted) setState(() => _subiendoCedula = false);
+    try {
+      final ok = await ref
+          .read(subirDocumentoProvider.notifier)
+          .subir(tipo, bytes);
+      if (ok) await _cerrarSiTodoEnviado();
+    } finally {
+      if (mounted) setState(() => _subiendoCedula = false);
+    }
+  }
+
+  /// Con todo enviado ya no hay nada que hacer aquí: se cierra y la
+  /// validación sigue en segundo plano.
+  Future<void> _cerrarSiTodoEnviado() async {
+    try {
+      final v = await ref.read(verificacionProvider.future);
+      final foto = ref.read(usuarioActualProvider)?.fotoVerificada ?? false;
+      final aprobado = v.documentos.values.every(
+        (d) => d.estado == EstadoDocumento.aprobada,
+      );
+      if (foto && v.todoEnviado && !aprobado && mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (_) {
+      // Si no se pudo recargar, el panel queda abierto con su estado.
+    }
   }
 
   Future<void> _tomarSelfie() async {
@@ -84,16 +106,21 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
         : await SelectorFotos.una(camara: true);
     if (bytes == null || !mounted) return;
     setState(() => _enviandoSelfie = true);
-    await ref.read(selfieProvider.notifier).enviar(bytes);
-    if (!mounted) return;
-    // La misma selfie queda como documento para que el admin la compare.
-    final valida = ref.read(usuarioActualProvider)?.fotoVerificada ?? false;
-    if (valida) {
-      await ref
-          .read(subirDocumentoProvider.notifier)
-          .subir(TipoDocumento.selfie, bytes);
+    try {
+      if (!(ref.read(usuarioActualProvider)?.fotoVerificada ?? false)) {
+        await ref.read(selfieProvider.notifier).enviar(bytes);
+        if (!mounted) return;
+      }
+      final valida = ref.read(usuarioActualProvider)?.fotoVerificada ?? false;
+      if (valida) {
+        final ok = await ref
+            .read(subirDocumentoProvider.notifier)
+            .subir(TipoDocumento.selfie, bytes);
+        if (ok) await _cerrarSiTodoEnviado();
+      }
+    } finally {
+      if (mounted) setState(() => _enviandoSelfie = false);
     }
-    if (mounted) setState(() => _enviandoSelfie = false);
   }
 
   Future<bool?> _pedirLado(TipoDocumento tipo, bool camara) {
@@ -236,12 +263,22 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
     );
     final docSelfie = v.documentos[TipoDocumento.selfie];
     final selfieRechazada = docSelfie?.estado == EstadoDocumento.rechazada;
+    final selfieLista = fotoOk && !v.puedeSubir(TipoDocumento.selfie);
     final todoListo = fotoOk && v.todoEnviado;
+    final motivosRechazo = v.documentos.values
+        .where((d) => d.estado == EstadoDocumento.rechazada)
+        .map((d) => d.observacion)
+        .whereType<String>()
+        .toSet();
     final verificado =
         todoListo &&
         v.documentos.values.every((d) => d.estado == EstadoDocumento.aprobada);
     final hayRechazo = cedulaRechazada || selfieRechazada;
-    final enRevision = todoListo && !verificado && !hayRechazo;
+    final camposMal = v.camposNoCoinciden;
+    final datosMal = todoListo && !hayRechazo && camposMal.isNotEmpty;
+    final validando = ref.watch(validacionIdentidadProvider);
+    final enRevision =
+        todoListo && !verificado && (validando || !hayRechazo && !datosMal);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -252,13 +289,39 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
             mensaje: 'Tu identidad está verificada.',
           )
         else if (enRevision)
-          const _EnRevision()
+          _EnRevision(validando: validando)
         else if (hayRechazo)
-          const _Aviso(
+          _Aviso(
+            tipo: TipoAviso.error,
+            mensaje: motivosRechazo.isEmpty
+                ? 'Algo de lo que enviaste fue rechazado. Vuelve a enviarlo.'
+                : motivosRechazo.join(' '),
+          ),
+        if (datosMal && !validando) ...[
+          _Aviso(
             tipo: TipoAviso.error,
             mensaje:
-                'Algo de lo que enviaste fue rechazado. Vuelve a enviarlo.',
+                'Tus datos no coinciden con tu cédula: revisa '
+                '${_enumerar(camposMal.map((c) => c.descripcion).toList())}. '
+                'Ingrésalos nuevamente.',
           ),
+          FilledButton.icon(
+            onPressed: ocupado
+                ? null
+                : () async {
+                    final guardado = await mostrarCorregirDatos(
+                      context,
+                      camposMal,
+                    );
+                    if (guardado == true && mounted) {
+                      Navigator.pop(context, true);
+                    }
+                  },
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Corregir mis datos'),
+          ),
+          const SizedBox(height: Espacios.l),
+        ],
         if (errorFoto != null)
           _Aviso(tipo: TipoAviso.error, mensaje: errorFoto),
         if (errorSubida != null)
@@ -305,8 +368,8 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
           ayuda:
               'De frente y con el rostro descubierto. Será tu foto pública '
               'y no podrás cambiarla.',
-          listo: fotoOk,
-          activo: frenteListo && reversoListo && !fotoOk,
+          listo: selfieLista,
+          activo: frenteListo && reversoListo && !selfieLista,
           cargando: _enviandoSelfie,
           etiquetaListo: docSelfie?.estado == EstadoDocumento.aprobada
               ? 'Aprobada'
@@ -344,7 +407,7 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cerrar'),
           )
-        else if (todoListo)
+        else if (todoListo && !datosMal)
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Entendido'),
@@ -358,6 +421,11 @@ class _VerificacionPanelState extends ConsumerState<VerificacionPanel> {
     );
   }
 }
+
+/// "a", "a y b", "a, b y c".
+String _enumerar(List<String> partes) => partes.length <= 1
+    ? partes.join()
+    : '${partes.sublist(0, partes.length - 1).join(', ')} y ${partes.last}';
 
 class _Aviso extends StatelessWidget {
   const _Aviso({required this.tipo, required this.mensaje});
@@ -373,7 +441,10 @@ class _Aviso extends StatelessWidget {
 }
 
 class _EnRevision extends StatelessWidget {
-  const _EnRevision();
+  const _EnRevision({required this.validando});
+
+  /// La validación automática está corriendo ahora mismo.
+  final bool validando;
 
   @override
   Widget build(BuildContext context) {
@@ -394,11 +465,19 @@ class _EnRevision extends StatelessWidget {
               size: 36,
             ),
             const SizedBox(height: Espacios.s),
-            Text('Perfil en revisión', style: textos.titleLarge),
+            Text(
+              validando
+                  ? 'Estamos verificando tu identidad'
+                  : 'Perfil en revisión',
+              style: textos.titleLarge,
+            ),
             const SizedBox(height: Espacios.xs),
             Text(
-              'Tu verificación se realizará pronto. Te avisaremos cuando '
-              'tu cuenta quede verificada.',
+              validando
+                  ? 'Toma unos segundos. Puedes cerrar esta ventana: te '
+                        'avisaremos con una notificación.'
+                  : 'Tu verificación se realizará pronto. Te avisaremos '
+                        'cuando tu cuenta quede verificada.',
               textAlign: TextAlign.center,
               style: textos.bodyMedium?.copyWith(color: Colores.tintaSuave),
             ),

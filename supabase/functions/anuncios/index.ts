@@ -1,15 +1,3 @@
-// Anuncios vigentes por ubicación, con caché compartida en Redis.
-//
-// Son los mismos para todos los usuarios y se piden en cada carga del inicio:
-// se leen de Postgres una vez cada 5 minutos como máximo. Cuando el admin
-// crea, edita o borra un anuncio, el trigger `trg_anuncios_cache` llama a
-// esta función con `?invalidar=1` y la caché se vacía al instante.
-//
-// GET ?ubicacion=home_cliente|home_tecnico -> {anuncios: fila[], cache: bool}
-// POST ?invalidar=1 (header x-push-secreto) -> {invalidadas: n}
-//
-// Se despliega con --no-verify-jwt (el trigger no tiene JWT); el GET exige
-// sesión a mano, igual que la RLS de `anuncios` (solo authenticated).
 import { preflight, responder } from '../_shared/cors.ts';
 import { clienteAdmin, usuarioDe } from '../_shared/auth.ts';
 import { clave, conRedis, TTL } from '../_shared/redis.ts';

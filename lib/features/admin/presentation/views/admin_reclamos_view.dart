@@ -1,6 +1,3 @@
-// Pestaña "Reclamos" del panel: los reclamos por estado (abiertos por
-// defecto), del más antiguo al más nuevo.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

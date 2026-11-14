@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { encodeBase64, encodeHex } from 'jsr:@std/encoding@1';
+import { sesionDe } from '../_shared/auth.ts';
 import { limitarTodas, respuesta429 } from '../_shared/limite.ts';
 import { clave, conRedis, TTL } from '../_shared/redis.ts';
 
@@ -12,14 +13,13 @@ const CORS = {
 const lista = (v: string | undefined) =>
   (v ?? '').split(',').map((m) => m.trim()).filter((m) => /^[A-Za-z0-9._\-\/]+$/.test(m));
 
-// Modelos de visión de Gemini, en orden de prioridad. Si MODELO_VISION_GEMINI
-// trae nombres inexistentes, dan 404 y se saltan al instante; los de respaldo
-// siempre quedan al final.
+// Modelos de visión de Gemini, en orden de prioridad.
 const MODELOS_GEMINI = [
   ...new Set([
     ...lista(Deno.env.get('MODELO_VISION_GEMINI')),
-    'gemini-3.8-flash',
+    // 3.5-flash primero: 3.8-flash se estaba colgando (timeouts de 25 s).
     'gemini-3.5-flash',
+    'gemini-3.8-flash',
     'gemini-3.5-flash-lite',
   ]),
 ];
@@ -69,7 +69,7 @@ async function conGemini(clave: string, tipo: string, datos: string): Promise<st
           {
             method: 'POST',
             headers: { 'x-goog-api-key': clave, 'content-type': 'application/json' },
-            signal: AbortSignal.timeout(25000),
+            signal: AbortSignal.timeout(20000),
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: INSTRUCCIONES }] },
               contents: [{
@@ -86,8 +86,7 @@ async function conGemini(clave: string, tipo: string, datos: string): Promise<st
         );
       } catch (e) {
         console.error('gemini red/timeout', modelo, intento, String(e));
-        await pausa(800 * (intento + 1));
-        continue;
+        break;
       }
 
       if (r.ok) {
@@ -124,7 +123,6 @@ Deno.serve(async (req) => {
     const { data: { user } } = await delUsuario.auth.getUser();
     if (!user) return responder({ error: 'Sesión requerida.' }, 401);
 
-
     const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: fila } = await admin
       .from('usuarios')
@@ -149,8 +147,6 @@ Deno.serve(async (req) => {
     const tipo = TIPOS.includes(archivo.type) ? archivo.type : 'image/jpeg';
     const bytes = new Uint8Array(await archivo.arrayBuffer());
 
-    // Mismo archivo, mismo veredicto: si ya se revisó (reintento, doble
-    // toque), no se vuelve a llamar a Gemini.
     const huella = encodeHex(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)));
     const llaveCache = clave('cache', 'selfie', huella);
     type Veredicto = { rostro_humano: boolean; motivo?: string };
@@ -176,11 +172,23 @@ Deno.serve(async (req) => {
       ? null
       : String(veredicto.motivo ?? 'No se ve un rostro claro.').slice(0, 160);
 
-    await admin
+    const { data: actualizada } = await admin
       .from('usuarios')
       .update({ foto_rostro_validada: valida, foto_rostro_motivo: motivo })
       .eq('id', user.id)
-      .eq('foto_perfil_ruta', ruta);
+      .eq('foto_perfil_ruta', ruta)
+      .select('id');
+
+    const sesion = sesionDe(req);
+    if (valida && sesion && actualizada?.length) {
+      const { error: errSesion } = await admin
+        .from('verificaciones_rostro_sesion')
+        .upsert(
+          { session_id: sesion, usuario_id: user.id, verificado_en: new Date().toISOString() },
+          { onConflict: 'session_id' },
+        );
+      if (errSesion) console.error('sesion verificada', errSesion.message);
+    }
 
     return responder({ valida, motivo });
   } catch (e) {

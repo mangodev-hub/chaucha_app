@@ -1,7 +1,3 @@
-// Mapa con un centro ("Tú"), el círculo del radio y puntos tocables. Usa
-// flutter_map con la capa de círculos propia ([CapaCirculos]) y ajusta el
-// zoom para que el círculo entre completo cada vez que cambia el radio.
-// Lo usan "Cerca de ti" del cliente (técnicos) y del técnico (solicitudes).
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -92,8 +88,6 @@ class _MapaRadioState extends State<MapaRadio> {
 
   /// Encuadra el círculo del radio con un margen.
   void _ajustar() {
-    // Sin radio se queda en el zoom inicial (una caja vacía acercaría al
-    // máximo).
     if (!_listo || widget.radioM <= 0) return;
     final c = widget.centro;
     final dLat = widget.radioM / 111320;

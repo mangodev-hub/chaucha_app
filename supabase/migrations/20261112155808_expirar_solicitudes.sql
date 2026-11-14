@@ -1,11 +1,4 @@
 -- Tareas programadas (pg_cron): expiración automática de solicitudes.
---
--- Cada noche se cancelan las solicitudes que llevan más de 30 días sin
--- técnico asignado (estado `abierta` o `cotizada`, es decir, sin cotización
--- aceptada). Al pasar a `cancelada`:
---   - trg_solicitud_cierra_propuestas rechaza las cotizaciones pendientes;
---   - se avisa al cliente con una notificación (y por push, vía trg_notificacion_push).
--- Las solicitudes con visita agendada (`aceptada`, `por_confirmar`) no se tocan.
 
 create extension if not exists pg_cron;
 

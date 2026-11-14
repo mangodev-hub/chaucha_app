@@ -1,11 +1,8 @@
-// Cabecera de perfil (Mi perfil del cliente y perfil público del técnico):
-// banda celeste con dos círculos de adorno, el avatar montado sobre ella,
-// el nombre con su línea de datos, las acciones y una fila de métricas.
-// La foto es la selfie validada: no se cambia desde aquí.
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 import 'foto_perfil_caja.dart';
+import 'insignia_verificado.dart';
 
 class MetricaPerfil {
   const MetricaPerfil({
@@ -30,6 +27,7 @@ class CabeceraPerfil extends StatelessWidget {
     required this.metricas,
     this.fotoRuta,
     this.acciones,
+    this.verificado = false,
   });
 
   final String nombre;
@@ -41,6 +39,9 @@ class CabeceraPerfil extends StatelessWidget {
   final Widget? acciones;
   final List<MetricaPerfil> metricas;
 
+  /// Muestra el ícono de verificado sobre la foto.
+  final bool verificado;
+
   static const double _alturaBanda = 140;
 
   @override
@@ -50,7 +51,7 @@ class CabeceraPerfil extends StatelessWidget {
       builder: (context, r) {
         final movil = r.maxWidth < 640;
         final lado = movil ? 96.0 : 120.0;
-        final avatar = Container(
+        final foto = Container(
           width: lado + 10,
           height: lado + 10,
           padding: const EdgeInsets.all(5),
@@ -70,6 +71,11 @@ class CabeceraPerfil extends StatelessWidget {
               color: Colores.cieloOscuro,
             ),
           ),
+        );
+        final avatar = ConIconoVerificado(
+          verificado: verificado,
+          tamano: lado * 0.28,
+          hijo: foto,
         );
         final titulo = Text(
           nombre,

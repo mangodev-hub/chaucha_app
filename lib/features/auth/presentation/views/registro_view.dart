@@ -40,10 +40,7 @@ class _RegistroViewState extends ConsumerState<RegistroView> {
 
   void _avisarFallo() => setState(() => _fallos++);
 
-  /// Veces que el servidor rechazó el registro. Es la clave de los campos
-  /// de contraseña: tras cada rechazo se arman de nuevo (conservan lo
-  /// escrito). En la web, el administrador de contraseñas del navegador
-  /// reacciona al envío fallido y podía dejarlos sin aceptar cambios.
+  /// Veces que el servidor rechazó el registro.
   int _rechazos = 0;
 
   void _alRechazar() {
